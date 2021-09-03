@@ -1,3 +1,50 @@
+@import url("https://p.typekit.net/p.css?s=1&k=jfa4vxe&ht=tk&f=32854.32855.32859.32862.32863.32868.32869&a=12466929&app=typekit&e=css");
+
+@font-face {
+font-family:"hero-new-hairline";
+src:url("https://use.typekit.net/af/37769a/00000000000000003b9af1d0/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n1&v=3") format("woff2"),url("https://use.typekit.net/af/37769a/00000000000000003b9af1d0/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n1&v=3") format("woff"),url("https://use.typekit.net/af/37769a/00000000000000003b9af1d0/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n1&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:100;
+}
+
+@font-face {
+font-family:"hero-new-hairline";
+src:url("https://use.typekit.net/af/13eddd/00000000000000003b9af1d1/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=i1&v=3") format("woff2"),url("https://use.typekit.net/af/13eddd/00000000000000003b9af1d1/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=i1&v=3") format("woff"),url("https://use.typekit.net/af/13eddd/00000000000000003b9af1d1/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=i1&v=3") format("opentype");
+font-display:auto;font-style:italic;font-weight:100;
+}
+
+@font-face {
+font-family:"hero-new";
+src:url("https://use.typekit.net/af/0060ec/00000000000000003b9af1d5/27/l?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n2&v=3") format("woff2"),url("https://use.typekit.net/af/0060ec/00000000000000003b9af1d5/27/d?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n2&v=3") format("woff"),url("https://use.typekit.net/af/0060ec/00000000000000003b9af1d5/27/a?primer=7cdcb44be4a7db8877ffa5c0007b8dd865b3bbc383831fe2ea177f62257a9191&fvd=n2&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:200;
+}
+
+@font-face {
+font-family:"hero-new";
+src:url("https://use.typekit.net/af/bcdde2/00000000000000003b9af1d8/27/l?subset_id=2&fvd=n4&v=3") format("woff2"),url("https://use.typekit.net/af/bcdde2/00000000000000003b9af1d8/27/d?subset_id=2&fvd=n4&v=3") format("woff"),url("https://use.typekit.net/af/bcdde2/00000000000000003b9af1d8/27/a?subset_id=2&fvd=n4&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:400;
+}
+
+@font-face {
+font-family:"hero-new";
+src:url("https://use.typekit.net/af/173a8e/00000000000000003b9af1d9/27/l?subset_id=2&fvd=i4&v=3") format("woff2"),url("https://use.typekit.net/af/173a8e/00000000000000003b9af1d9/27/d?subset_id=2&fvd=i4&v=3") format("woff"),url("https://use.typekit.net/af/173a8e/00000000000000003b9af1d9/27/a?subset_id=2&fvd=i4&v=3") format("opentype");
+font-display:auto;font-style:italic;font-weight:400;
+}
+
+@font-face {
+font-family:"hero-new";
+src:url("https://use.typekit.net/af/5424c6/00000000000000003b9af1de/27/l?subset_id=2&fvd=i7&v=3") format("woff2"),url("https://use.typekit.net/af/5424c6/00000000000000003b9af1de/27/d?subset_id=2&fvd=i7&v=3") format("woff"),url("https://use.typekit.net/af/5424c6/00000000000000003b9af1de/27/a?subset_id=2&fvd=i7&v=3") format("opentype");
+font-display:auto;font-style:italic;font-weight:700;
+}
+
+@font-face {
+font-family:"hero-new";
+src:url("https://use.typekit.net/af/8db0ad/00000000000000003b9af1df/27/l?subset_id=2&fvd=n7&v=3") format("woff2"),url("https://use.typekit.net/af/8db0ad/00000000000000003b9af1df/27/d?subset_id=2&fvd=n7&v=3") format("woff"),url("https://use.typekit.net/af/8db0ad/00000000000000003b9af1df/27/a?subset_id=2&fvd=n7&v=3") format("opentype");
+font-display:auto;font-style:normal;font-weight:700;
+}
+
+.tk-hero-new-hairline { font-family: "hero-new-hairline",sans-serif; }
+.tk-hero-new { font-family: "hero-new",sans-serif; }
+
 .container {
   min-height: 100vh;
   padding: 0 0.5rem;
@@ -47,7 +94,9 @@
 .title {
   margin: 0;
   line-height: 1.15;
+  font-family: hero-new-hairline, sans-serif;
   font-size: 4rem;
+  font-style: normal;
 }
 
 .title,
@@ -57,7 +106,8 @@
 
 .description {
   line-height: 1.5;
-  font-size: 1.5rem;
+  font-family: hero-new, sans-serif;
+  font-size: 1rem;
 }
 
 .code {
