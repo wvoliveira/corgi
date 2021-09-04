@@ -1,4 +1,4 @@
-import { url } from '../../data'
+import { url } from '../../../data'
 
 export default function urlHandler({ query: { id } }, res) {
   const filtered = url.filter((p) => p.id === id)
