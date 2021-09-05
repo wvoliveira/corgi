@@ -6,7 +6,8 @@ export default function Home() {
 
       <main className={styles.main}>
         <h1 className={styles.title}>ELGA</h1>
-        <p className={styles.description}>Redirect API.</p>
+        <p className={styles.description}>Design & Technology</p>
+        <p className={styles.description}>URL shortener.</p>
       </main>
     </div>
   );
