@@ -1,32 +1,43 @@
 import { useRouter } from "next/router";
-import useSWR from "swr";
 import redirect from 'nextjs-redirect'
 
 import styles from "../styles/Home.module.css";
+import { urls } from '../constants/urls.js'
 
-async function fetcher(...args) {
-  const res = await fetch(...args)
-  return res.json()
+function searchHash(hash) {
+  const filtered = urls.filter((p) => p.hash === hash)
+
+  var payload = {
+    'id': '',
+    'url': '',
+    'status': 200,
+    'message': 'successful',
+  }
+
+  if (filtered.length > 0) {
+    const data = filtered[0]
+    payload['id'] = data.id
+    payload['url'] = data.url
+  } else {
+    payload['status'] = 404,
+    payload['message'] = `url with id ${hash} not found.`
+  }
+  return payload
 }
 
 export default function URL() {
-  const router = useRouter();
   const { query } = useRouter();
+  const data = searchHash(query.id)
 
-  console.log(query.id)
+  const Redirect = redirect(data.url)
 
-  const { data } = useSWR(`/api/hash/${query.id}`, fetcher)
-
-  console.log(data)
-
-  return <div style={{ textAlign: 'center' }}>
+  return <div className={styles.container}>
     <div>
     {
       data ? 
-        window.location.href = data.url
-      : 'loading...'
+        <Redirect />
+      : <p className={styles.description}>loading...</p>
     }
     </div>
   </div>
-
 }
