@@ -1,7 +1,6 @@
-import { useRouter } from "next/router";
 import redirect from "nextjs-redirect";
 
-import styles from "../styles/Home.module.css";
+import styles from "../styles/styles.module.css";
 import { urls } from "../constants/urls.js";
 
 // This function gets called at build time
