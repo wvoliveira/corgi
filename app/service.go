@@ -28,8 +28,8 @@ type Profile struct {
 	Name      string         `json:"name,omitempty"`
 }
 
-func (user *Profile) BeforeCreate(db *gorm.DB) error {
-	user.ID = uuid.New().String()
+func (p *Profile) BeforeCreate(db *gorm.DB) error {
+	p.ID = uuid.New().String()
 	return nil
 }
 
