@@ -26,13 +26,10 @@ import (
 type Endpoints struct {
 	PostProfileEndpoint   endpoint.Endpoint
 	GetProfileEndpoint    endpoint.Endpoint
+	GetProfilesEndpoint   endpoint.Endpoint
 	PutProfileEndpoint    endpoint.Endpoint
 	PatchProfileEndpoint  endpoint.Endpoint
 	DeleteProfileEndpoint endpoint.Endpoint
-	GetAddressesEndpoint  endpoint.Endpoint
-	GetAddressEndpoint    endpoint.Endpoint
-	PostAddressEndpoint   endpoint.Endpoint
-	DeleteAddressEndpoint endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct where each endpoint invokes
@@ -42,6 +39,7 @@ func MakeServerEndpoints(s Service) Endpoints {
 	return Endpoints{
 		PostProfileEndpoint:   MakePostProfileEndpoint(s),
 		GetProfileEndpoint:    MakeGetProfileEndpoint(s),
+		GetProfilesEndpoint:   MakeGetProfilesEndpoint(s),
 		PutProfileEndpoint:    MakePutProfileEndpoint(s),
 		PatchProfileEndpoint:  MakePatchProfileEndpoint(s),
 		DeleteProfileEndpoint: MakeDeleteProfileEndpoint(s),
@@ -70,6 +68,7 @@ func MakeClientEndpoints(instance string) (Endpoints, error) {
 	return Endpoints{
 		PostProfileEndpoint:   httptransport.NewClient("POST", tgt, encodePostProfileRequest, decodePostProfileResponse, options...).Endpoint(),
 		GetProfileEndpoint:    httptransport.NewClient("GET", tgt, encodeGetProfileRequest, decodeGetProfileResponse, options...).Endpoint(),
+		GetProfilesEndpoint:   httptransport.NewClient("GET", tgt, encodeGetProfilesRequest, decodeGetProfilesResponse, options...).Endpoint(),
 		PutProfileEndpoint:    httptransport.NewClient("PUT", tgt, encodePutProfileRequest, decodePutProfileResponse, options...).Endpoint(),
 		PatchProfileEndpoint:  httptransport.NewClient("PATCH", tgt, encodePatchProfileRequest, decodePatchProfileResponse, options...).Endpoint(),
 		DeleteProfileEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteProfileRequest, decodeDeleteProfileResponse, options...).Endpoint(),
@@ -151,6 +150,16 @@ func MakeGetProfileEndpoint(s Service) endpoint.Endpoint {
 	}
 }
 
+// MakeGetProfilesEndpoint returns an endpoint via the passed service.
+// Primarily useful in a server.
+func MakeGetProfilesEndpoint(s Service) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		req := request.(getProfilesRequest)
+		p, e := s.GetProfiles(ctx, req.Offset, req.PageSize)
+		return getProfilesResponse{Profiles: p, Err: e}, nil
+	}
+}
+
 // MakePutProfileEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
 func MakePutProfileEndpoint(s Service) endpoint.Endpoint {
@@ -210,9 +219,19 @@ type getProfileRequest struct {
 	ID string
 }
 
+type getProfilesRequest struct {
+	Offset   int
+	PageSize int
+}
+
 type getProfileResponse struct {
 	Profile Profile `json:"profile,omitempty"`
 	Err     error   `json:"err,omitempty"`
+}
+
+type getProfilesResponse struct {
+	Profiles []Profile `json:"profiles,omitempty"`
+	Err      error     `json:"err,omitempty"`
 }
 
 func (r getProfileResponse) error() error { return r.Err }

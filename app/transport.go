@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/gorilla/mux"
 
@@ -34,14 +35,21 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	// GET 		 /																	 Web UI application
-
+	// GET     /profiles/                          list profiles
 	// POST    /profiles/                          adds another profile
 	// GET     /profiles/:id                       retrieves the given profile by id
 	// PUT     /profiles/:id                       post updated profile information about the profile
 	// PATCH   /profiles/:id                       partial updated profile information
 	// DELETE  /profiles/:id                       remove the given profile
 
+	// GET 		 /																	 Web UI application
+
+	r.Methods("GET").Path("/{profiles:profiles\\/?}").Handler(httptransport.NewServer(
+		e.GetProfilesEndpoint,
+		decodeGetProfilesRequest,
+		encodeResponse,
+		options...,
+	))
 	r.Methods("POST").Path("/profiles/").Handler(httptransport.NewServer(
 		e.PostProfileEndpoint,
 		decodePostProfileRequest,
@@ -93,6 +101,25 @@ func decodeGetProfileRequest(_ context.Context, r *http.Request) (request interf
 		return nil, ErrBadRouting
 	}
 	return getProfileRequest{ID: id}, nil
+}
+
+func decodeGetProfilesRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	vars := mux.Vars(r)
+	page, _ := strconv.Atoi(vars["page"])
+	if page == 0 {
+		page = 1
+	}
+
+	pageSize, _ := strconv.Atoi(vars["page_size"])
+	switch {
+	case pageSize > 100:
+		pageSize = 100
+	case pageSize <= 0:
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+	return getProfilesRequest{Offset: offset, PageSize: pageSize}, nil
 }
 
 func decodePutProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -150,6 +177,12 @@ func encodeGetProfileRequest(ctx context.Context, req *http.Request, request int
 	return encodeRequest(ctx, req, request)
 }
 
+func encodeGetProfilesRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("GET").Path("/profiles")
+	req.URL.Path = "/profiles"
+	return encodeRequest(ctx, req, request)
+}
+
 func encodePutProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
 	// r.Methods("PUT").Path("/profiles/{id}")
 	r := request.(putProfileRequest)
@@ -182,6 +215,12 @@ func decodePostProfileResponse(_ context.Context, resp *http.Response) (interfac
 
 func decodeGetProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
 	var response getProfileResponse
+	err := json.NewDecoder(resp.Body).Decode(&response)
+	return response, err
+}
+
+func decodeGetProfilesResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response getProfilesResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }

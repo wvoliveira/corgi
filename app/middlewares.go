@@ -38,6 +38,13 @@ func (mw loggingMiddleware) GetProfile(ctx context.Context, id string) (p Profil
 	return mw.next.GetProfile(ctx, id)
 }
 
+func (mw loggingMiddleware) GetProfiles(ctx context.Context, offset, pageSize int) (p []Profile, err error) {
+	defer func(begin time.Time) {
+		mw.logger.Log("method", "GetProfiles", "offset", offset, "page_size", pageSize, "took", time.Since(begin), "err", err)
+	}(time.Now())
+	return mw.next.GetProfiles(ctx, offset, pageSize)
+}
+
 func (mw loggingMiddleware) PutProfile(ctx context.Context, id string, p Profile) (err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "PutProfile", "id", id, "took", time.Since(begin), "err", err)

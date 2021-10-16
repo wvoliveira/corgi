@@ -13,6 +13,7 @@ import (
 type Service interface {
 	PostProfile(ctx context.Context, p Profile) error
 	GetProfile(ctx context.Context, id string) (Profile, error)
+	GetProfiles(ctx context.Context, offset, pageSize int) ([]Profile, error)
 	PutProfile(ctx context.Context, id string, p Profile) error
 	PatchProfile(ctx context.Context, id string, p Profile) error
 	DeleteProfile(ctx context.Context, id string) error
@@ -22,10 +23,10 @@ type Service interface {
 // ID should be globally unique.
 type Profile struct {
 	ID        string `gorm:"primaryKey;"`
+	Name      string `json:"name,omitempty"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
-	Name      string         `json:"name,omitempty"`
+	Active    bool `json:"active" gorm:"type:bool;default:true"`
 }
 
 func (p *Profile) BeforeCreate(db *gorm.DB) error {
@@ -55,6 +56,8 @@ func (s *dbService) PostProfile(ctx context.Context, p Profile) error {
 	if result.RowsAffected > 0 {
 		return ErrAlreadyExists // POST = create, don't overwrite
 	}
+
+	p.ID = uuid.New().String()
 	s.db.Create(&p)
 	return nil
 }
@@ -64,6 +67,15 @@ func (s *dbService) GetProfile(ctx context.Context, id string) (Profile, error) 
 	result := s.db.First(&p, id)
 	if result.RowsAffected == 0 {
 		return p, ErrNotFound
+	}
+	return p, nil
+}
+
+func (s *dbService) GetProfiles(ctx context.Context, offset, pageSize int) ([]Profile, error) {
+	var p []Profile
+	result := s.db.Offset(offset).Limit(pageSize).Find(&p)
+	if result.Error != nil {
+		return p, result.Error
 	}
 	return p, nil
 }
