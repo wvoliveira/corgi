@@ -46,9 +46,6 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 	// POST    /profiles/:id/addresses/            add a new address
 	// DELETE  /profiles/:id/addresses/:addressID  remove an address
 
-	// The static Next.js app will be served under `/`.
-	r.Handle("/", hh)
-
 	r.Methods("POST").Path("/profiles/").Handler(httptransport.NewServer(
 		e.PostProfileEndpoint,
 		decodePostProfileRequest,
@@ -103,6 +100,9 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 		encodeResponse,
 		options...,
 	))
+
+	// The static Next.js app will be served under `/`.
+	r.PathPrefix("/").Handler(hh)
 	return r
 }
 
