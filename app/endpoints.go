@@ -9,7 +9,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 )
 
-// Endpoints collects all of the endpoints that compose a profile service. It's
+// Endpoints collects all of the endpoints that compose a URL service. It's
 // meant to be used as a helper struct, to collect all of the endpoints into a
 // single parameter.
 //
@@ -24,31 +24,31 @@ import (
 // construct individual endpoints using transport/http.NewClient, combine them
 // into an Endpoints, and return it to the caller as a Service.
 type Endpoints struct {
-	PostProfileEndpoint   endpoint.Endpoint
-	GetProfileEndpoint    endpoint.Endpoint
-	GetProfilesEndpoint   endpoint.Endpoint
-	PutProfileEndpoint    endpoint.Endpoint
-	PatchProfileEndpoint  endpoint.Endpoint
-	DeleteProfileEndpoint endpoint.Endpoint
+	PostURLEndpoint   endpoint.Endpoint
+	GetURLEndpoint    endpoint.Endpoint
+	GetURLsEndpoint   endpoint.Endpoint
+	PutURLEndpoint    endpoint.Endpoint
+	PatchURLEndpoint  endpoint.Endpoint
+	DeleteURLEndpoint endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct where each endpoint invokes
-// the corresponding method on the provided service. Useful in a profilesvc
+// the corresponding method on the provided service. Useful in a URLsvc
 // server.
 func MakeServerEndpoints(s Service) Endpoints {
 	return Endpoints{
-		PostProfileEndpoint:   MakePostProfileEndpoint(s),
-		GetProfileEndpoint:    MakeGetProfileEndpoint(s),
-		GetProfilesEndpoint:   MakeGetProfilesEndpoint(s),
-		PutProfileEndpoint:    MakePutProfileEndpoint(s),
-		PatchProfileEndpoint:  MakePatchProfileEndpoint(s),
-		DeleteProfileEndpoint: MakeDeleteProfileEndpoint(s),
+		PostURLEndpoint:   MakePostURLEndpoint(s),
+		GetURLEndpoint:    MakeGetURLEndpoint(s),
+		GetURLsEndpoint:   MakeGetURLsEndpoint(s),
+		PutURLEndpoint:    MakePutURLEndpoint(s),
+		PatchURLEndpoint:  MakePatchURLEndpoint(s),
+		DeleteURLEndpoint: MakeDeleteURLEndpoint(s),
 	}
 }
 
 // MakeClientEndpoints returns an Endpoints struct where each endpoint invokes
 // the corresponding method on the remote instance, via a transport/http.Client.
-// Useful in a profilesvc client.
+// Useful in a URLsvc client.
 func MakeClientEndpoints(instance string) (Endpoints, error) {
 	if !strings.HasPrefix(instance, "http") {
 		instance = "http://" + instance
@@ -66,127 +66,127 @@ func MakeClientEndpoints(instance string) (Endpoints, error) {
 	// each endpoint.
 
 	return Endpoints{
-		PostProfileEndpoint:   httptransport.NewClient("POST", tgt, encodePostProfileRequest, decodePostProfileResponse, options...).Endpoint(),
-		GetProfileEndpoint:    httptransport.NewClient("GET", tgt, encodeGetProfileRequest, decodeGetProfileResponse, options...).Endpoint(),
-		GetProfilesEndpoint:   httptransport.NewClient("GET", tgt, encodeGetProfilesRequest, decodeGetProfilesResponse, options...).Endpoint(),
-		PutProfileEndpoint:    httptransport.NewClient("PUT", tgt, encodePutProfileRequest, decodePutProfileResponse, options...).Endpoint(),
-		PatchProfileEndpoint:  httptransport.NewClient("PATCH", tgt, encodePatchProfileRequest, decodePatchProfileResponse, options...).Endpoint(),
-		DeleteProfileEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteProfileRequest, decodeDeleteProfileResponse, options...).Endpoint(),
+		PostURLEndpoint:   httptransport.NewClient("POST", tgt, encodePostURLRequest, decodePostURLResponse, options...).Endpoint(),
+		GetURLEndpoint:    httptransport.NewClient("GET", tgt, encodeGetURLRequest, decodeGetURLResponse, options...).Endpoint(),
+		GetURLsEndpoint:   httptransport.NewClient("GET", tgt, encodeGetURLsRequest, decodeGetURLsResponse, options...).Endpoint(),
+		PutURLEndpoint:    httptransport.NewClient("PUT", tgt, encodePutURLRequest, decodePutURLResponse, options...).Endpoint(),
+		PatchURLEndpoint:  httptransport.NewClient("PATCH", tgt, encodePatchURLRequest, decodePatchURLResponse, options...).Endpoint(),
+		DeleteURLEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteURLRequest, decodeDeleteURLResponse, options...).Endpoint(),
 	}, nil
 }
 
-// PostProfile implements Service. Primarily useful in a client.
-func (e Endpoints) PostProfile(ctx context.Context, p Profile) error {
-	request := postProfileRequest{Profile: p}
-	response, err := e.PostProfileEndpoint(ctx, request)
+// PostURL implements Service. Primarily useful in a client.
+func (e Endpoints) PostURL(ctx context.Context, p URL) error {
+	request := postURLRequest{URL: p}
+	response, err := e.PostURLEndpoint(ctx, request)
 	if err != nil {
 		return err
 	}
-	resp := response.(postProfileResponse)
+	resp := response.(postURLResponse)
 	return resp.Err
 }
 
-// GetProfile implements Service. Primarily useful in a client.
-func (e Endpoints) GetProfile(ctx context.Context, id string) (Profile, error) {
-	request := getProfileRequest{ID: id}
-	response, err := e.GetProfileEndpoint(ctx, request)
+// GetURL implements Service. Primarily useful in a client.
+func (e Endpoints) GetURL(ctx context.Context, id string) (URL, error) {
+	request := getURLRequest{ID: id}
+	response, err := e.GetURLEndpoint(ctx, request)
 	if err != nil {
-		return Profile{}, err
+		return URL{}, err
 	}
-	resp := response.(getProfileResponse)
-	return resp.Profile, resp.Err
+	resp := response.(getURLResponse)
+	return resp.URL, resp.Err
 }
 
-// PutProfile implements Service. Primarily useful in a client.
-func (e Endpoints) PutProfile(ctx context.Context, id string, p Profile) error {
-	request := putProfileRequest{ID: id, Profile: p}
-	response, err := e.PutProfileEndpoint(ctx, request)
-	if err != nil {
-		return err
-	}
-	resp := response.(putProfileResponse)
-	return resp.Err
-}
-
-// PatchProfile implements Service. Primarily useful in a client.
-func (e Endpoints) PatchProfile(ctx context.Context, id string, p Profile) error {
-	request := patchProfileRequest{ID: id, Profile: p}
-	response, err := e.PatchProfileEndpoint(ctx, request)
+// PutURL implements Service. Primarily useful in a client.
+func (e Endpoints) PutURL(ctx context.Context, id string, p URL) error {
+	request := putURLRequest{ID: id, URL: p}
+	response, err := e.PutURLEndpoint(ctx, request)
 	if err != nil {
 		return err
 	}
-	resp := response.(patchProfileResponse)
+	resp := response.(putURLResponse)
 	return resp.Err
 }
 
-// DeleteProfile implements Service. Primarily useful in a client.
-func (e Endpoints) DeleteProfile(ctx context.Context, id string) error {
-	request := deleteProfileRequest{ID: id}
-	response, err := e.DeleteProfileEndpoint(ctx, request)
+// PatchURL implements Service. Primarily useful in a client.
+func (e Endpoints) PatchURL(ctx context.Context, id string, p URL) error {
+	request := patchURLRequest{ID: id, URL: p}
+	response, err := e.PatchURLEndpoint(ctx, request)
 	if err != nil {
 		return err
 	}
-	resp := response.(deleteProfileResponse)
+	resp := response.(patchURLResponse)
 	return resp.Err
 }
 
-// MakePostProfileEndpoint returns an endpoint via the passed service.
+// DeleteURL implements Service. Primarily useful in a client.
+func (e Endpoints) DeleteURL(ctx context.Context, id string) error {
+	request := deleteURLRequest{ID: id}
+	response, err := e.DeleteURLEndpoint(ctx, request)
+	if err != nil {
+		return err
+	}
+	resp := response.(deleteURLResponse)
+	return resp.Err
+}
+
+// MakePostURLEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakePostProfileEndpoint(s Service) endpoint.Endpoint {
+func MakePostURLEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(postProfileRequest)
-		e := s.PostProfile(ctx, req.Profile)
-		return postProfileResponse{Err: e}, nil
+		req := request.(postURLRequest)
+		e := s.PostURL(ctx, req.URL)
+		return postURLResponse{Err: e}, nil
 	}
 }
 
-// MakeGetProfileEndpoint returns an endpoint via the passed service.
+// MakeGetURLEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakeGetProfileEndpoint(s Service) endpoint.Endpoint {
+func MakeGetURLEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(getProfileRequest)
-		p, e := s.GetProfile(ctx, req.ID)
-		return getProfileResponse{Profile: p, Err: e}, nil
+		req := request.(getURLRequest)
+		p, e := s.GetURL(ctx, req.ID)
+		return getURLResponse{URL: p, Err: e}, nil
 	}
 }
 
-// MakeGetProfilesEndpoint returns an endpoint via the passed service.
+// MakeGetURLsEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakeGetProfilesEndpoint(s Service) endpoint.Endpoint {
+func MakeGetURLsEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(getProfilesRequest)
-		p, e := s.GetProfiles(ctx, req.Offset, req.PageSize)
-		return getProfilesResponse{Profiles: p, Err: e}, nil
+		req := request.(getURLsRequest)
+		p, e := s.GetURLs(ctx, req.Offset, req.PageSize)
+		return getURLsResponse{URLs: p, Err: e}, nil
 	}
 }
 
-// MakePutProfileEndpoint returns an endpoint via the passed service.
+// MakePutURLEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakePutProfileEndpoint(s Service) endpoint.Endpoint {
+func MakePutURLEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(putProfileRequest)
-		e := s.PutProfile(ctx, req.ID, req.Profile)
-		return putProfileResponse{Err: e}, nil
+		req := request.(putURLRequest)
+		e := s.PutURL(ctx, req.ID, req.URL)
+		return putURLResponse{Err: e}, nil
 	}
 }
 
-// MakePatchProfileEndpoint returns an endpoint via the passed service.
+// MakePatchURLEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakePatchProfileEndpoint(s Service) endpoint.Endpoint {
+func MakePatchURLEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(patchProfileRequest)
-		e := s.PatchProfile(ctx, req.ID, req.Profile)
-		return patchProfileResponse{Err: e}, nil
+		req := request.(patchURLRequest)
+		e := s.PatchURL(ctx, req.ID, req.URL)
+		return patchURLResponse{Err: e}, nil
 	}
 }
 
-// MakeDeleteProfileEndpoint returns an endpoint via the passed service.
+// MakeDeleteURLEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakeDeleteProfileEndpoint(s Service) endpoint.Endpoint {
+func MakeDeleteURLEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(deleteProfileRequest)
-		e := s.DeleteProfile(ctx, req.ID)
-		return deleteProfileResponse{Err: e}, nil
+		req := request.(deleteURLRequest)
+		e := s.DeleteURL(ctx, req.ID)
+		return deleteURLResponse{Err: e}, nil
 	}
 }
 
@@ -205,65 +205,65 @@ func MakeDeleteProfileEndpoint(s Service) endpoint.Endpoint {
 // Response types that may contain business-logic errors implement that
 // interface.
 
-type postProfileRequest struct {
-	Profile Profile
+type postURLRequest struct {
+	URL URL
 }
 
-type postProfileResponse struct {
+type postURLResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r postProfileResponse) error() error { return r.Err }
+func (r postURLResponse) error() error { return r.Err }
 
-type getProfileRequest struct {
+type getURLRequest struct {
 	ID string
 }
 
-type getProfilesRequest struct {
+type getURLsRequest struct {
 	Offset   int
 	PageSize int
 }
 
-type getProfileResponse struct {
-	Profile Profile `json:"profile,omitempty"`
-	Err     error   `json:"err,omitempty"`
+type getURLResponse struct {
+	URL URL   `json:"data,omitempty"`
+	Err error `json:"error,omitempty"`
 }
 
-type getProfilesResponse struct {
-	Profiles []Profile `json:"profiles,omitempty"`
-	Err      error     `json:"err,omitempty"`
+type getURLsResponse struct {
+	URLs []URL `json:"data,omitempty"`
+	Err  error `json:"error,omitempty"`
 }
 
-func (r getProfileResponse) error() error { return r.Err }
+func (r getURLResponse) error() error { return r.Err }
 
-type putProfileRequest struct {
-	ID      string
-	Profile Profile
+type putURLRequest struct {
+	ID  string
+	URL URL
 }
 
-type putProfileResponse struct {
+type putURLResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r putProfileResponse) error() error { return nil }
+func (r putURLResponse) error() error { return nil }
 
-type patchProfileRequest struct {
-	ID      string
-	Profile Profile
+type patchURLRequest struct {
+	ID  string
+	URL URL
 }
 
-type patchProfileResponse struct {
+type patchURLResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r patchProfileResponse) error() error { return r.Err }
+func (r patchURLResponse) error() error { return r.Err }
 
-type deleteProfileRequest struct {
+type deleteURLRequest struct {
 	ID string
 }
 
-type deleteProfileResponse struct {
+type deleteURLResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r deleteProfileResponse) error() error { return r.Err }
+func (r deleteURLResponse) error() error { return r.Err }

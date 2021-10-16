@@ -9,35 +9,41 @@ import (
 	"gorm.io/gorm"
 )
 
-// Service is a simple CRUD interface for user profiles.
+// Service is a simple CRUD interface for URL struct.
 type Service interface {
-	PostProfile(ctx context.Context, p Profile) error
-	GetProfile(ctx context.Context, id string) (Profile, error)
-	GetProfiles(ctx context.Context, offset, pageSize int) ([]Profile, error)
-	PutProfile(ctx context.Context, id string, p Profile) error
-	PatchProfile(ctx context.Context, id string, p Profile) error
-	DeleteProfile(ctx context.Context, id string) error
+	PostURL(ctx context.Context, u URL) error
+	GetURL(ctx context.Context, id string) (URL, error)
+	GetURLs(ctx context.Context, offset, pageSize int) ([]URL, error)
+	PutURL(ctx context.Context, id string, u URL) error
+	PatchURL(ctx context.Context, id string, u URL) error
+	DeleteURL(ctx context.Context, id string) error
 }
 
-// Profile represents a single user profile.
+// URL represents a single struct for URL.
 // ID should be globally unique.
-type Profile struct {
-	ID        string `gorm:"primaryKey;"`
-	Name      string `json:"name,omitempty"`
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	Active    bool `json:"active" gorm:"type:bool;default:true"`
+type URL struct {
+	ID        string    `json:"id" gorm:"primaryKey;"`
+	Keyword   string    `json:"keyword"`
+	URL       string    `json:"url"`
+	Title     string    `json:"title"`
+	Active    *bool     `json:"active" gorm:"type:bool;default:true"`
+	OwnerID   string    `json:"owner_id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (p *Profile) BeforeCreate(db *gorm.DB) error {
-	p.ID = uuid.New().String()
+// BeforeCreate create uuid before insert into database
+func (u *URL) BeforeCreate(db *gorm.DB) error {
+	u.ID = uuid.New().String()
 	return nil
 }
 
+//nolint
 var (
 	ErrInconsistentIDs = errors.New("inconsistent IDs")
 	ErrAlreadyExists   = errors.New("already exists")
 	ErrNotFound        = errors.New("not found")
+	ErrFieldsRequired  = errors.New("fields required: ")
 )
 
 type dbService struct {
@@ -51,82 +57,96 @@ func NewDBService(db *gorm.DB) Service {
 	}
 }
 
-func (s *dbService) PostProfile(ctx context.Context, p Profile) error {
-	result := s.db.Limit(1).Where("id=?", p.ID).Find(&p)
+func (s *dbService) PostURL(ctx context.Context, u URL) error {
+	if u.Keyword == "" || u.URL == "" || u.Title == "" || u.OwnerID == "" {
+		return errors.New("fields required: keyword, url, title and owner_id")
+	}
+
+	result := s.db.Limit(1).Where("id=?", u.ID).Find(&u)
 	if result.RowsAffected > 0 {
 		return ErrAlreadyExists // POST = create, don't overwrite
 	}
-
-	p.ID = uuid.New().String()
-	s.db.Create(&p)
+	s.db.Create(&u)
 	return nil
 }
 
-func (s *dbService) GetProfile(ctx context.Context, id string) (Profile, error) {
-	p := Profile{}
-	result := s.db.First(&p, id)
+func (s *dbService) GetURL(ctx context.Context, id string) (URL, error) {
+	u := URL{}
+	result := s.db.Model(&u).Where("id = ?", id).First(&u)
 	if result.RowsAffected == 0 {
-		return p, ErrNotFound
+		return u, ErrNotFound
 	}
-	return p, nil
+	return u, nil
 }
 
-func (s *dbService) GetProfiles(ctx context.Context, offset, pageSize int) ([]Profile, error) {
-	var p []Profile
-	result := s.db.Offset(offset).Limit(pageSize).Find(&p)
+func (s *dbService) GetURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
+	var u []URL
+	result := s.db.Offset(offset).Limit(pageSize).Find(&u)
 	if result.Error != nil {
-		return p, result.Error
+		return u, result.Error
 	}
-	return p, nil
+	return u, nil
 }
 
-func (s *dbService) PutProfile(ctx context.Context, id string, p Profile) error {
-	if id != p.ID {
+func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
+	if id != u.ID {
 		return ErrInconsistentIDs
 	}
 
 	var result *gorm.DB
-	if result = s.db.Model(&p).Where("id = ?", id).Updates(&p); result.Error != nil {
+	if result = s.db.Model(&u).Where("id = ?", id).Updates(&u); result.Error != nil {
 		return result.Error
 	}
 
 	if result.RowsAffected == 0 {
-		return s.db.Create(&p).Error
+		return s.db.Create(&u).Error
 	}
 
 	return nil
 }
 
-func (s *dbService) PatchProfile(ctx context.Context, id string, p Profile) error {
-	var ep Profile
-	result := s.db.First(&ep, id)
+func (s *dbService) PatchURL(ctx context.Context, id string, u URL) error {
+	var eu URL
+	result := s.db.First(&eu, id)
 
 	if result.Error != nil {
 		return ErrNotFound // PATCH = update existing, don't create
 	}
 
-	if id == "" && id != ep.ID {
+	if id == "" && id != eu.ID {
 		return ErrInconsistentIDs
 	}
 
 	// We assume that it's not possible to PATCH the ID, and that it's not
 	// possible to PATCH any field to its zero value. That is, the zero value
 	// means not specified. The way around this is to use e.g. Name *string in
-	// the Profile definition. But since this is just a demonstrative example,
+	// the URL definition. But since this is just a demonstrative example,
 	// I'm leaving that out.
 
-	if p.Name != "" {
-		ep.Name = p.Name
+	if u.Keyword != "" {
+		eu.Keyword = u.Keyword
 	}
 
-	if result = s.db.Updates(&ep); result.Error != nil {
+	if u.URL != "" {
+		eu.URL = u.URL
+	}
+
+	if u.Title != "" {
+		eu.Title = u.Title
+	}
+
+	if u.Active != nil {
+		eu.Active = u.Active
+	}
+
+	if result = s.db.Updates(&eu); result.Error != nil {
 		return result.Error
 	}
 	return nil
 }
 
-func (s *dbService) DeleteProfile(ctx context.Context, id string) error {
-	p := Profile{}
+func (s *dbService) DeleteURL(ctx context.Context, id string) error {
+	p := URL{}
 
 	if result := s.db.First(&p, id); result.RowsAffected == 0 {
 		return ErrNotFound

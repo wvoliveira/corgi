@@ -1,6 +1,6 @@
 package app
 
-// The profilesvc is just over HTTP, so we just have a single transport.go.
+// The URL is just over HTTP, so we just have a single transport.go.
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ var (
 )
 
 // MakeHTTPHandler mounts all of the service endpoints into an http.Handler.
-// Useful in a profilesvc server.
+// Useful in a urlsvc server.
 func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
 	e := MakeServerEndpoints(s)
@@ -35,48 +35,48 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 		httptransport.ServerErrorEncoder(encodeError),
 	}
 
-	// GET     /profiles/                          list profiles
-	// POST    /profiles/                          adds another profile
-	// GET     /profiles/:id                       retrieves the given profile by id
-	// PUT     /profiles/:id                       post updated profile information about the profile
-	// PATCH   /profiles/:id                       partial updated profile information
-	// DELETE  /profiles/:id                       remove the given profile
+	// GET     /urls/                          list urls
+	// POST    /urls/                          adds another url
+	// GET     /urls/:id                       retrieves the given url by id
+	// PUT     /urls/:id                       post updated url information about the url
+	// PATCH   /urls/:id                       partial updated url information
+	// DELETE  /urls/:id                       remove the given url
 
 	// GET 		 /																	 Web UI application
 
-	r.Methods("GET").Path("/{profiles:profiles\\/?}").Handler(httptransport.NewServer(
-		e.GetProfilesEndpoint,
-		decodeGetProfilesRequest,
+	r.Methods("GET").Path("/{urls:urls\\/?}").Handler(httptransport.NewServer(
+		e.GetURLsEndpoint,
+		decodeGetURLsRequest,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("POST").Path("/profiles/").Handler(httptransport.NewServer(
-		e.PostProfileEndpoint,
-		decodePostProfileRequest,
+	r.Methods("POST").Path("/{urls:urls\\/?}").Handler(httptransport.NewServer(
+		e.PostURLEndpoint,
+		decodePostURLRequest,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("GET").Path("/profiles/{id}").Handler(httptransport.NewServer(
-		e.GetProfileEndpoint,
-		decodeGetProfileRequest,
+	r.Methods("GET").Path("/urls/{id}").Handler(httptransport.NewServer(
+		e.GetURLEndpoint,
+		decodeGetURLRequest,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("PUT").Path("/profiles/{id}").Handler(httptransport.NewServer(
-		e.PutProfileEndpoint,
-		decodePutProfileRequest,
+	r.Methods("PUT").Path("/urls/{id}").Handler(httptransport.NewServer(
+		e.PutURLEndpoint,
+		decodePutURLRequest,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("PATCH").Path("/profiles/{id}").Handler(httptransport.NewServer(
-		e.PatchProfileEndpoint,
-		decodePatchProfileRequest,
+	r.Methods("PATCH").Path("/urls/{id}").Handler(httptransport.NewServer(
+		e.PatchURLEndpoint,
+		decodePatchURLRequest,
 		encodeResponse,
 		options...,
 	))
-	r.Methods("DELETE").Path("/profiles/{id}").Handler(httptransport.NewServer(
-		e.DeleteProfileEndpoint,
-		decodeDeleteProfileRequest,
+	r.Methods("DELETE").Path("/urls/{id}").Handler(httptransport.NewServer(
+		e.DeleteURLEndpoint,
+		decodeDeleteURLRequest,
 		encodeResponse,
 		options...,
 	))
@@ -86,24 +86,24 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 	return r
 }
 
-func decodePostProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req postProfileRequest
-	if e := json.NewDecoder(r.Body).Decode(&req.Profile); e != nil {
+func decodePostURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	var req postURLRequest
+	if e := json.NewDecoder(r.Body).Decode(&req.URL); e != nil {
 		return nil, e
 	}
 	return req, nil
 }
 
-func decodeGetProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	return getProfileRequest{ID: id}, nil
+	return getURLRequest{ID: id}, nil
 }
 
-func decodeGetProfilesRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	page, _ := strconv.Atoi(vars["page"])
 	if page == 0 {
@@ -119,126 +119,126 @@ func decodeGetProfilesRequest(_ context.Context, r *http.Request) (request inter
 	}
 
 	offset := (page - 1) * pageSize
-	return getProfilesRequest{Offset: offset, PageSize: pageSize}, nil
+	return getURLsRequest{Offset: offset, PageSize: pageSize}, nil
 }
 
-func decodePutProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	var profile Profile
-	if err := json.NewDecoder(r.Body).Decode(&profile); err != nil {
+	var url URL
+	if err := json.NewDecoder(r.Body).Decode(&url); err != nil {
 		return nil, err
 	}
-	return putProfileRequest{
-		ID:      id,
-		Profile: profile,
+	return putURLRequest{
+		ID:  id,
+		URL: url,
 	}, nil
 }
 
-func decodePatchProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodePatchURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	var profile Profile
-	if err := json.NewDecoder(r.Body).Decode(&profile); err != nil {
+	var url URL
+	if err := json.NewDecoder(r.Body).Decode(&url); err != nil {
 		return nil, err
 	}
-	return patchProfileRequest{
-		ID:      id,
-		Profile: profile,
+	return patchURLRequest{
+		ID:  id,
+		URL: url,
 	}, nil
 }
 
-func decodeDeleteProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeDeleteURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	return deleteProfileRequest{ID: id}, nil
+	return deleteURLRequest{ID: id}, nil
 }
 
-func encodePostProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("POST").Path("/profiles/")
-	req.URL.Path = "/profiles/"
+func encodePostURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("POST").Path("/urls/")
+	req.URL.Path = "/urls/"
 	return encodeRequest(ctx, req, request)
 }
 
-func encodeGetProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/profiles/{id}")
-	r := request.(getProfileRequest)
-	profileID := url.QueryEscape(r.ID)
-	req.URL.Path = "/profiles/" + profileID
+func encodeGetURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("GET").Path("/urls/{id}")
+	r := request.(getURLRequest)
+	urlID := url.QueryEscape(r.ID)
+	req.URL.Path = "/urls/" + urlID
 	return encodeRequest(ctx, req, request)
 }
 
-func encodeGetProfilesRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/profiles")
-	req.URL.Path = "/profiles"
+func encodeGetURLsRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("GET").Path("/urls")
+	req.URL.Path = "/urls"
 	return encodeRequest(ctx, req, request)
 }
 
-func encodePutProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PUT").Path("/profiles/{id}")
-	r := request.(putProfileRequest)
-	profileID := url.QueryEscape(r.ID)
-	req.URL.Path = "/profiles/" + profileID
+func encodePutURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("PUT").Path("/urls/{id}")
+	r := request.(putURLRequest)
+	urlID := url.QueryEscape(r.ID)
+	req.URL.Path = "/urls/" + urlID
 	return encodeRequest(ctx, req, request)
 }
 
-func encodePatchProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PATCH").Path("/profiles/{id}")
-	r := request.(patchProfileRequest)
-	profileID := url.QueryEscape(r.ID)
-	req.URL.Path = "/profiles/" + profileID
+func encodePatchURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("PATCH").Path("/urls/{id}")
+	r := request.(patchURLRequest)
+	urlID := url.QueryEscape(r.ID)
+	req.URL.Path = "/urls/" + urlID
 	return encodeRequest(ctx, req, request)
 }
 
-func encodeDeleteProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("DELETE").Path("/profiles/{id}")
-	r := request.(deleteProfileRequest)
-	profileID := url.QueryEscape(r.ID)
-	req.URL.Path = "/profiles/" + profileID
+func encodeDeleteURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("DELETE").Path("/urls/{id}")
+	r := request.(deleteURLRequest)
+	urlID := url.QueryEscape(r.ID)
+	req.URL.Path = "/urls/" + urlID
 	return encodeRequest(ctx, req, request)
 }
 
-func decodePostProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response postProfileResponse
+func decodePostURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response postURLResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodeGetProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getProfileResponse
+func decodeGetURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response getURLResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodeGetProfilesResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getProfilesResponse
+func decodeGetURLsResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response getURLsResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodePutProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response putProfileResponse
+func decodePutURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response putURLResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodePatchProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response patchProfileResponse
+func decodePatchURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response patchURLResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodeDeleteProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response deleteProfileResponse
+func decodeDeleteURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response deleteURLResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
@@ -268,7 +268,7 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 
 // encodeRequest likewise JSON-encodes the request to the HTTP request body.
 // Don't use it directly as a transport/http.Client EncodeRequestFunc:
-// profilesvc endpoints require mutating the HTTP method and request path.
+// urlsvc endpoints require mutating the HTTP method and request path.
 func encodeRequest(_ context.Context, req *http.Request, request interface{}) error {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(request)

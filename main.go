@@ -25,7 +25,7 @@ import (
 var nextFS embed.FS
 
 func initialMigration(db *gorm.DB) {
-	db.AutoMigrate(&app.Profile{})
+	db.AutoMigrate(&app.URL{})
 }
 
 func main() {
