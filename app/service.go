@@ -3,7 +3,10 @@ package app
 import (
 	"context"
 	"errors"
-	"sync"
+	"time"
+
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 // Service is a simple CRUD interface for user profiles.
@@ -13,25 +16,21 @@ type Service interface {
 	PutProfile(ctx context.Context, id string, p Profile) error
 	PatchProfile(ctx context.Context, id string, p Profile) error
 	DeleteProfile(ctx context.Context, id string) error
-	GetAddresses(ctx context.Context, profileID string) ([]Address, error)
-	GetAddress(ctx context.Context, profileID string, addressID string) (Address, error)
-	PostAddress(ctx context.Context, profileID string, a Address) error
-	DeleteAddress(ctx context.Context, profileID string, addressID string) error
 }
 
 // Profile represents a single user profile.
 // ID should be globally unique.
 type Profile struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name,omitempty"`
-	Addresses []Address `json:"addresses,omitempty"`
+	ID        string `gorm:"primaryKey;"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
+	Name      string         `json:"name,omitempty"`
 }
 
-// Address is a field of a user profile.
-// ID should be unique within the profile (at a minimum).
-type Address struct {
-	ID       string `json:"id"`
-	Location string `json:"location,omitempty"`
+func (user *Profile) BeforeCreate(db *gorm.DB) error {
+	user.ID = uuid.New().String()
+	return nil
 }
 
 var (
@@ -40,58 +39,62 @@ var (
 	ErrNotFound        = errors.New("not found")
 )
 
-type inmemService struct {
-	mtx sync.RWMutex
-	m   map[string]Profile
+type dbService struct {
+	db *gorm.DB
 }
 
-func NewInmemService() Service {
-	return &inmemService{
-		m: map[string]Profile{},
+// NewDBService create a new service with gorm DB
+func NewDBService(db *gorm.DB) Service {
+	return &dbService{
+		db: db,
 	}
 }
 
-func (s *inmemService) PostProfile(ctx context.Context, p Profile) error {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
-	if _, ok := s.m[p.ID]; ok {
+func (s *dbService) PostProfile(ctx context.Context, p Profile) error {
+	result := s.db.Limit(1).Where("id=?", p.ID).Find(&p)
+	if result.RowsAffected > 0 {
 		return ErrAlreadyExists // POST = create, don't overwrite
 	}
-	s.m[p.ID] = p
+	s.db.Create(&p)
 	return nil
 }
 
-func (s *inmemService) GetProfile(ctx context.Context, id string) (Profile, error) {
-	s.mtx.RLock()
-	defer s.mtx.RUnlock()
-	p, ok := s.m[id]
-	if !ok {
-		return Profile{}, ErrNotFound
+func (s *dbService) GetProfile(ctx context.Context, id string) (Profile, error) {
+	p := Profile{}
+	result := s.db.First(&p, id)
+	if result.RowsAffected == 0 {
+		return p, ErrNotFound
 	}
 	return p, nil
 }
 
-func (s *inmemService) PutProfile(ctx context.Context, id string, p Profile) error {
+func (s *dbService) PutProfile(ctx context.Context, id string, p Profile) error {
 	if id != p.ID {
 		return ErrInconsistentIDs
 	}
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
-	s.m[id] = p // PUT = create or update
+
+	var result *gorm.DB
+	if result = s.db.Model(&p).Where("id = ?", id).Updates(&p); result.Error != nil {
+		return result.Error
+	}
+
+	if result.RowsAffected == 0 {
+		return s.db.Create(&p).Error
+	}
+
 	return nil
 }
 
-func (s *inmemService) PatchProfile(ctx context.Context, id string, p Profile) error {
-	if p.ID != "" && id != p.ID {
-		return ErrInconsistentIDs
+func (s *dbService) PatchProfile(ctx context.Context, id string, p Profile) error {
+	var ep Profile
+	result := s.db.First(&ep, id)
+
+	if result.Error != nil {
+		return ErrNotFound // PATCH = update existing, don't create
 	}
 
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
-
-	existing, ok := s.m[id]
-	if !ok {
-		return ErrNotFound // PATCH = update existing, don't create
+	if id == "" && id != ep.ID {
+		return ErrInconsistentIDs
 	}
 
 	// We assume that it's not possible to PATCH the ID, and that it's not
@@ -101,85 +104,24 @@ func (s *inmemService) PatchProfile(ctx context.Context, id string, p Profile) e
 	// I'm leaving that out.
 
 	if p.Name != "" {
-		existing.Name = p.Name
+		ep.Name = p.Name
 	}
-	if len(p.Addresses) > 0 {
-		existing.Addresses = p.Addresses
+
+	if result = s.db.Updates(&ep); result.Error != nil {
+		return result.Error
 	}
-	s.m[id] = existing
 	return nil
 }
 
-func (s *inmemService) DeleteProfile(ctx context.Context, id string) error {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
-	if _, ok := s.m[id]; !ok {
+func (s *dbService) DeleteProfile(ctx context.Context, id string) error {
+	p := Profile{}
+
+	if result := s.db.First(&p, id); result.RowsAffected == 0 {
 		return ErrNotFound
 	}
-	delete(s.m, id)
-	return nil
-}
 
-func (s *inmemService) GetAddresses(ctx context.Context, profileID string) ([]Address, error) {
-	s.mtx.RLock()
-	defer s.mtx.RUnlock()
-	p, ok := s.m[profileID]
-	if !ok {
-		return []Address{}, ErrNotFound
+	if result := s.db.Delete(&p, id); result.Error != nil {
+		return result.Error
 	}
-	return p.Addresses, nil
-}
-
-func (s *inmemService) GetAddress(ctx context.Context, profileID string, addressID string) (Address, error) {
-	s.mtx.RLock()
-	defer s.mtx.RUnlock()
-	p, ok := s.m[profileID]
-	if !ok {
-		return Address{}, ErrNotFound
-	}
-	for _, address := range p.Addresses {
-		if address.ID == addressID {
-			return address, nil
-		}
-	}
-	return Address{}, ErrNotFound
-}
-
-func (s *inmemService) PostAddress(ctx context.Context, profileID string, a Address) error {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
-	p, ok := s.m[profileID]
-	if !ok {
-		return ErrNotFound
-	}
-	for _, address := range p.Addresses {
-		if address.ID == a.ID {
-			return ErrAlreadyExists
-		}
-	}
-	p.Addresses = append(p.Addresses, a)
-	s.m[profileID] = p
-	return nil
-}
-
-func (s *inmemService) DeleteAddress(ctx context.Context, profileID string, addressID string) error {
-	s.mtx.Lock()
-	defer s.mtx.Unlock()
-	p, ok := s.m[profileID]
-	if !ok {
-		return ErrNotFound
-	}
-	newAddresses := make([]Address, 0, len(p.Addresses))
-	for _, address := range p.Addresses {
-		if address.ID == addressID {
-			continue // delete
-		}
-		newAddresses = append(newAddresses, address)
-	}
-	if len(newAddresses) == len(p.Addresses) {
-		return ErrNotFound
-	}
-	p.Addresses = newAddresses
-	s.m[profileID] = p
 	return nil
 }

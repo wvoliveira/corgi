@@ -45,10 +45,6 @@ func MakeServerEndpoints(s Service) Endpoints {
 		PutProfileEndpoint:    MakePutProfileEndpoint(s),
 		PatchProfileEndpoint:  MakePatchProfileEndpoint(s),
 		DeleteProfileEndpoint: MakeDeleteProfileEndpoint(s),
-		GetAddressesEndpoint:  MakeGetAddressesEndpoint(s),
-		GetAddressEndpoint:    MakeGetAddressEndpoint(s),
-		PostAddressEndpoint:   MakePostAddressEndpoint(s),
-		DeleteAddressEndpoint: MakeDeleteAddressEndpoint(s),
 	}
 }
 
@@ -77,10 +73,6 @@ func MakeClientEndpoints(instance string) (Endpoints, error) {
 		PutProfileEndpoint:    httptransport.NewClient("PUT", tgt, encodePutProfileRequest, decodePutProfileResponse, options...).Endpoint(),
 		PatchProfileEndpoint:  httptransport.NewClient("PATCH", tgt, encodePatchProfileRequest, decodePatchProfileResponse, options...).Endpoint(),
 		DeleteProfileEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteProfileRequest, decodeDeleteProfileResponse, options...).Endpoint(),
-		GetAddressesEndpoint:  httptransport.NewClient("GET", tgt, encodeGetAddressesRequest, decodeGetAddressesResponse, options...).Endpoint(),
-		GetAddressEndpoint:    httptransport.NewClient("GET", tgt, encodeGetAddressRequest, decodeGetAddressResponse, options...).Endpoint(),
-		PostAddressEndpoint:   httptransport.NewClient("POST", tgt, encodePostAddressRequest, decodePostAddressResponse, options...).Endpoint(),
-		DeleteAddressEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteAddressRequest, decodeDeleteAddressResponse, options...).Endpoint(),
 	}, nil
 }
 
@@ -139,50 +131,6 @@ func (e Endpoints) DeleteProfile(ctx context.Context, id string) error {
 	return resp.Err
 }
 
-// GetAddresses implements Service. Primarily useful in a client.
-func (e Endpoints) GetAddresses(ctx context.Context, profileID string) ([]Address, error) {
-	request := getAddressesRequest{ProfileID: profileID}
-	response, err := e.GetAddressesEndpoint(ctx, request)
-	if err != nil {
-		return nil, err
-	}
-	resp := response.(getAddressesResponse)
-	return resp.Addresses, resp.Err
-}
-
-// GetAddress implements Service. Primarily useful in a client.
-func (e Endpoints) GetAddress(ctx context.Context, profileID string, addressID string) (Address, error) {
-	request := getAddressRequest{ProfileID: profileID, AddressID: addressID}
-	response, err := e.GetAddressEndpoint(ctx, request)
-	if err != nil {
-		return Address{}, err
-	}
-	resp := response.(getAddressResponse)
-	return resp.Address, resp.Err
-}
-
-// PostAddress implements Service. Primarily useful in a client.
-func (e Endpoints) PostAddress(ctx context.Context, profileID string, a Address) error {
-	request := postAddressRequest{ProfileID: profileID, Address: a}
-	response, err := e.PostAddressEndpoint(ctx, request)
-	if err != nil {
-		return err
-	}
-	resp := response.(postAddressResponse)
-	return resp.Err
-}
-
-// DeleteAddress implements Service. Primarily useful in a client.
-func (e Endpoints) DeleteAddress(ctx context.Context, profileID string, addressID string) error {
-	request := deleteAddressRequest{ProfileID: profileID, AddressID: addressID}
-	response, err := e.DeleteAddressEndpoint(ctx, request)
-	if err != nil {
-		return err
-	}
-	resp := response.(deleteAddressResponse)
-	return resp.Err
-}
-
 // MakePostProfileEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
 func MakePostProfileEndpoint(s Service) endpoint.Endpoint {
@@ -230,46 +178,6 @@ func MakeDeleteProfileEndpoint(s Service) endpoint.Endpoint {
 		req := request.(deleteProfileRequest)
 		e := s.DeleteProfile(ctx, req.ID)
 		return deleteProfileResponse{Err: e}, nil
-	}
-}
-
-// MakeGetAddressesEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeGetAddressesEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(getAddressesRequest)
-		a, e := s.GetAddresses(ctx, req.ProfileID)
-		return getAddressesResponse{Addresses: a, Err: e}, nil
-	}
-}
-
-// MakeGetAddressEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeGetAddressEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(getAddressRequest)
-		a, e := s.GetAddress(ctx, req.ProfileID, req.AddressID)
-		return getAddressResponse{Address: a, Err: e}, nil
-	}
-}
-
-// MakePostAddressEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakePostAddressEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(postAddressRequest)
-		e := s.PostAddress(ctx, req.ProfileID, req.Address)
-		return postAddressResponse{Err: e}, nil
-	}
-}
-
-// MakeDeleteAddressEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeDeleteAddressEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(deleteAddressRequest)
-		e := s.DeleteAddress(ctx, req.ProfileID, req.AddressID)
-		return deleteAddressResponse{Err: e}, nil
 	}
 }
 
@@ -340,48 +248,3 @@ type deleteProfileResponse struct {
 }
 
 func (r deleteProfileResponse) error() error { return r.Err }
-
-type getAddressesRequest struct {
-	ProfileID string
-}
-
-type getAddressesResponse struct {
-	Addresses []Address `json:"addresses,omitempty"`
-	Err       error     `json:"err,omitempty"`
-}
-
-func (r getAddressesResponse) error() error { return r.Err }
-
-type getAddressRequest struct {
-	ProfileID string
-	AddressID string
-}
-
-type getAddressResponse struct {
-	Address Address `json:"address,omitempty"`
-	Err     error   `json:"err,omitempty"`
-}
-
-func (r getAddressResponse) error() error { return r.Err }
-
-type postAddressRequest struct {
-	ProfileID string
-	Address   Address
-}
-
-type postAddressResponse struct {
-	Err error `json:"err,omitempty"`
-}
-
-func (r postAddressResponse) error() error { return r.Err }
-
-type deleteAddressRequest struct {
-	ProfileID string
-	AddressID string
-}
-
-type deleteAddressResponse struct {
-	Err error `json:"err,omitempty"`
-}
-
-func (r deleteAddressResponse) error() error { return r.Err }

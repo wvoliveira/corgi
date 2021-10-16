@@ -58,31 +58,3 @@ func (mw loggingMiddleware) DeleteProfile(ctx context.Context, id string) (err e
 	}(time.Now())
 	return mw.next.DeleteProfile(ctx, id)
 }
-
-func (mw loggingMiddleware) GetAddresses(ctx context.Context, profileID string) (addresses []Address, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetAddresses", "profileID", profileID, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.GetAddresses(ctx, profileID)
-}
-
-func (mw loggingMiddleware) GetAddress(ctx context.Context, profileID string, addressID string) (a Address, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetAddress", "profileID", profileID, "addressID", addressID, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.GetAddress(ctx, profileID, addressID)
-}
-
-func (mw loggingMiddleware) PostAddress(ctx context.Context, profileID string, a Address) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "PostAddress", "profileID", profileID, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.PostAddress(ctx, profileID, a)
-}
-
-func (mw loggingMiddleware) DeleteAddress(ctx context.Context, profileID string, addressID string) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "DeleteAddress", "profileID", profileID, "addressID", addressID, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.DeleteAddress(ctx, profileID, addressID)
-}
