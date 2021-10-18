@@ -7,3 +7,7 @@ build-nextjs:
 .PHONY: build
 build: build-nextjs
 	go build .
+
+.PHONY: run
+run:
+	go run main.go

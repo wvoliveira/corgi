@@ -97,6 +97,17 @@ func (e Endpoints) GetURL(ctx context.Context, id string) (URL, error) {
 	return resp.URL, resp.Err
 }
 
+// GetURLs implements Service. Primarily useful in a client.
+func (e Endpoints) GetURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
+	request := getURLsRequest{Offset: offset, PageSize: pageSize}
+	response, err := e.GetURLsEndpoint(ctx, request)
+	if err != nil {
+		return []URL{}, err
+	}
+	resp := response.(getURLsResponse)
+	return resp.URLs, resp.Err
+}
+
 // PutURL implements Service. Primarily useful in a client.
 func (e Endpoints) PutURL(ctx context.Context, id string, p URL) error {
 	request := putURLRequest{ID: id, URL: p}

@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 
 	"github.com/elga-io/redirect/app"
 
@@ -16,6 +17,8 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	"github.com/patrickmn/go-cache"
 )
 
 //go:embed ui/dist
@@ -47,11 +50,14 @@ func main() {
 		os.Exit(2)
 	}
 
+	// Init cache
+	c := cache.New(5*time.Minute, 10*time.Minute)
+
 	initialMigration(db)
 
 	// Init services
 	var s app.Service
-	s = app.NewDBService(db)
+	s = app.NewDBService(db, c)
 	s = app.LoggingMiddleware(logger)(s)
 
 	// Web UI

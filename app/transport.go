@@ -104,13 +104,13 @@ func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{
 }
 
 func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	vars := mux.Vars(r)
-	page, _ := strconv.Atoi(vars["page"])
+	q := r.URL.Query()
+	page, _ := strconv.Atoi(q.Get("page"))
 	if page == 0 {
 		page = 1
 	}
 
-	pageSize, _ := strconv.Atoi(vars["page_size"])
+	pageSize, _ := strconv.Atoi(q.Get("page_size"))
 	switch {
 	case pageSize > 100:
 		pageSize = 100

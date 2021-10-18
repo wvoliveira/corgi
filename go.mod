@@ -20,5 +20,6 @@ require (
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.2 // indirect
 	github.com/mattn/go-sqlite3 v1.14.8 // indirect
+	github.com/patrickmn/go-cache v2.1.0+incompatible // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
