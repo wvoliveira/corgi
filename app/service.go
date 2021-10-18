@@ -110,29 +110,48 @@ func (s *dbService) GetURLs(ctx context.Context, offset, pageSize int) ([]URL, e
 }
 
 func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
+	var eu URL
 	var result *gorm.DB
 	cache_key := fmt.Sprintf("url_id:%s", id)
 
-	if id != u.ID {
+	if !IsValidUUID(id) {
 		return ErrInconsistentIDs
 	}
 
-	// Fix: create if not exist
-	// PUT = create or update
-	if result = s.db.Model(&u).Where("id = ?", id).Updates(&u); result.Error != nil {
-		return result.Error
-	}
+	result = s.db.Model(&u).Where("id = ?", id).First(&eu)
 
 	if result.RowsAffected == 0 {
-		result = s.db.Create(&u)
+		if u.Keyword == "" || u.URL == "" || u.Title == "" || u.OwnerID == "" {
+			return errors.New("fields required: keyword, url, title and owner_id")
+		}
+
+		if result = s.db.Create(&u); result.Error != nil {
+			return result.Error
+		}
 	}
 
-	if result.Error != nil {
+	if u.Keyword != "" {
+		eu.Keyword = u.Keyword
+	}
+
+	if u.URL != "" {
+		eu.URL = u.URL
+	}
+
+	if u.Title != "" {
+		eu.Title = u.Title
+	}
+
+	if u.Active != nil {
+		eu.Active = u.Active
+	}
+
+	if result = s.db.Model(&eu).Where("id = ?", id).Save(&eu); result.Error != nil {
 		return result.Error
 	}
 
 	// set cache
-	s.c.Set(cache_key, u, cache.DefaultExpiration)
+	s.c.Set(cache_key, eu, cache.DefaultExpiration)
 	return nil
 }
 
