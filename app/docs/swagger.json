@@ -1,0 +1,178 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Micro-serice for managing URLs",
+        "title": "URLs API",
+        "termsOfService": "http://elga.io/terms",
+        "contact": {
+            "name": "API Support",
+            "email": "support@elga.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        },
+        "version": "0.0.1"
+    },
+    "host": "localhost:8080",
+    "basePath": "/",
+    "paths": {
+        "/urls": {
+            "get": {
+                "description": "Get details of all URLs",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "URLs"
+                ],
+                "summary": "Get details of all URLs",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Quantity of items",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/app.URL"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new URL",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "URLs"
+                ],
+                "summary": "Add a new URL",
+                "parameters": [
+                    {
+                        "description": "URL struct",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/app.PostURL"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/urls/{id}": {
+            "get": {
+                "description": "Get URL by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "URLs"
+                ],
+                "summary": "Get an URL",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "URL ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "app.PostURL": {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "example": "google"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Google Home"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://www.google.com"
+                }
+            }
+        },
+        "app.URL": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2021-10-18T00:45:07.818344164-03:00"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "eed7df28-5a16-46f0-b5bf-c26071a42ade"
+                },
+                "keyword": {
+                    "type": "string",
+                    "example": "google"
+                },
+                "owner_id": {
+                    "type": "string",
+                    "example": "5ca04a43-ff3c-4154-a8ad-02e2e906a847"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Google Home"
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2021-10-18T00:49:06.160059334-03:00"
+                },
+                "url": {
+                    "type": "string",
+                    "example": "https://www.google.com"
+                }
+            }
+        }
+    }
+}

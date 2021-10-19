@@ -14,9 +14,11 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/transport"
 	httptransport "github.com/go-kit/kit/transport/http"
+	"github.com/go-kit/log"
+
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 var (
@@ -42,7 +44,8 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 	// PATCH   /urls/:id                       partial updated url information
 	// DELETE  /urls/:id                       remove the given url
 
-	// GET 		 /																	 Web UI application
+	// GET     /swagger                        swagger specification
+	// GET     /                               web ui application
 
 	r.Methods("GET").Path("/{urls:urls\\/?}").Handler(httptransport.NewServer(
 		e.GetURLsEndpoint,
@@ -81,11 +84,22 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 		options...,
 	))
 
+	r.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
+
 	// The static Next.js app will be served under `/`.
 	r.PathPrefix("/").Handler(hh)
 	return r
 }
 
+// PostURL godoc
+// @Summary Add a new URL
+// @Description Add a new URL
+// @Tags URLs
+// @Accept json
+// @Produce json
+// @Param data body app.PostURL true "URL struct"
+// @Success 200
+// @Router /urls [post]
 func decodePostURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req postURLRequest
 	if e := json.NewDecoder(r.Body).Decode(&req.URL); e != nil {
@@ -94,6 +108,16 @@ func decodePostURLRequest(_ context.Context, r *http.Request) (request interface
 	return req, nil
 }
 
+// GetURL godoc
+// @Summary Get an URL
+// @Description Get URL by ID
+// @Tags URLs
+// @Accept json
+// @Produce json
+// @Param id path string true "URL ID"
+// @Success 200
+// @Failure 404
+// @Router /urls/{id} [get]
 func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -103,6 +127,16 @@ func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{
 	return getURLRequest{ID: id}, nil
 }
 
+// GetURLs godoc
+// @Summary Get details of all URLs
+// @Description Get details of all URLs
+// @Tags URLs
+// @Accept json
+// @Produce json
+// @Param page query int false "Page number"
+// @Param page_size query int false "Quantity of items"
+// @Success 200 {object} []URL
+// @Router /urls [get]
 func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))

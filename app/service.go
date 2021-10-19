@@ -24,14 +24,20 @@ type Service interface {
 // URL represents a single struct for URL.
 // ID should be globally unique.
 type URL struct {
-	ID        string    `json:"id" gorm:"primaryKey;"`
-	Keyword   string    `json:"keyword" gorm:"index"`
-	URL       string    `json:"url"`
-	Title     string    `json:"title"`
-	Active    *bool     `json:"active" gorm:"type:bool;default:true"`
-	OwnerID   string    `json:"owner_id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        string    `json:"id" gorm:"primaryKey;" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
+	Keyword   string    `json:"keyword" gorm:"index" example:"google"`
+	URL       string    `json:"url" example:"https://www.google.com"`
+	Title     string    `json:"title" example:"Google Home"`
+	Active    *bool     `json:"active" gorm:"type:bool;default:true" example:"false"`
+	OwnerID   string    `json:"owner_id" example:"5ca04a43-ff3c-4154-a8ad-02e2e906a847"`
+	CreatedAt time.Time `json:"created_at" example:"2021-10-18T00:45:07.818344164-03:00"`
+	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
+}
+
+type PostURL struct {
+	Keyword string `json:"keyword" gorm:"index" example:"google"`
+	URL     string `json:"url" example:"https://www.google.com"`
+	Title   string `json:"title" example:"Google Home"`
 }
 
 //nolint

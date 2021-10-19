@@ -11,14 +11,16 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/elga-io/redirect/app"
+	"github.com/elga-io/redir/app"
 
-	"github.com/go-kit/kit/log"
+	"github.com/go-kit/log"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	"github.com/patrickmn/go-cache"
+
+	_ "github.com/elga-io/redir/app/docs"
 )
 
 //go:embed ui/dist
@@ -31,6 +33,16 @@ func initialMigration(db *gorm.DB) {
 	db.AutoMigrate(&app.URL{})
 }
 
+// @title URLs API
+// @version 0.0.1
+// @description Micro-serice for managing URLs
+// @termsOfService http://elga.io/terms
+// @contact.name API Support
+// @contact.email support@elga.io
+// @license.name Apache 2.0
+// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
+// @host localhost:8080
+// @BasePath /
 func main() {
 	var (
 		httpAddr = flag.String("http.addr", ":8080", "HTTP listen address")

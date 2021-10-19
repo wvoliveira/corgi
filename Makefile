@@ -11,3 +11,6 @@ build: build-nextjs
 .PHONY: run
 run:
 	go run main.go
+
+swagger:
+	swag init --parseInternal --dir "./" -g main.go -o app/docs
