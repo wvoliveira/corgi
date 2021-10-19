@@ -156,6 +156,16 @@ func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface
 	return getURLsRequest{Offset: offset, PageSize: pageSize}, nil
 }
 
+// PutURL godoc
+// @Summary Change or create URL item
+// @Description Change or create URL item
+// @Tags URLs
+// @Accept json
+// @Produce json
+// @Param id path string true "URL ID"
+// @Param data body app.PostURL true "URL struct"
+// @Success 200
+// @Router /urls/{id} [put]
 func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -172,6 +182,16 @@ func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{
 	}, nil
 }
 
+// PatchURL godoc
+// @Summary Change URL item
+// @Description Change URL item
+// @Tags URLs
+// @Accept json
+// @Produce json
+// @Param id path string true "URL ID"
+// @Param data body app.PostURL true "URL struct"
+// @Success 200
+// @Router /urls/{id} [patch]
 func decodePatchURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -188,6 +208,15 @@ func decodePatchURLRequest(_ context.Context, r *http.Request) (request interfac
 	}, nil
 }
 
+// DeleteURL godoc
+// @Summary Delete URL item
+// @Description Delete URL item
+// @Tags URLs
+// @Accept json
+// @Produce json
+// @Param id path string true "URL ID"
+// @Success 200
+// @Router /urls/{id} [delete]
 func decodeDeleteURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]

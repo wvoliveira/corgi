@@ -116,9 +116,10 @@ func (s *dbService) GetURLs(ctx context.Context, offset, pageSize int) ([]URL, e
 }
 
 func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
+	// PUT = Update or create
 	var eu URL
 	var result *gorm.DB
-	cache_key := fmt.Sprintf("url_id:%s", id)
+	cacheKey := fmt.Sprintf("url_id:%s", id)
 
 	if !IsValidUUID(id) {
 		return ErrInconsistentIDs
@@ -157,17 +158,18 @@ func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
 	}
 
 	// set cache
-	s.c.Set(cache_key, eu, cache.DefaultExpiration)
+	s.c.Set(cacheKey, eu, cache.DefaultExpiration)
 	return nil
 }
 
 func (s *dbService) PatchURL(ctx context.Context, id string, u URL) error {
+	// PATCH = update existing, don't create
 	var eu URL
 	result := s.db.First(&eu, id)
-	cache_key := fmt.Sprintf("url_id:%s", id)
+	cacheKey := fmt.Sprintf("url_id:%s", id)
 
 	if result.Error != nil {
-		return ErrNotFound // PATCH = update existing, don't create
+		return ErrNotFound
 	}
 
 	if id == "" && id != eu.ID {
@@ -201,13 +203,13 @@ func (s *dbService) PatchURL(ctx context.Context, id string, u URL) error {
 	}
 
 	// set in cache
-	s.c.Set(cache_key, eu, cache.DefaultExpiration)
+	s.c.Set(cacheKey, eu, cache.DefaultExpiration)
 	return nil
 }
 
 func (s *dbService) DeleteURL(ctx context.Context, id string) error {
 	u := URL{}
-	cache_key := fmt.Sprintf("url_id:%s", id)
+	cacheKey := fmt.Sprintf("url_id:%s", id)
 
 	if result := s.db.Model(&u).Where("id = ?", id).First(&u); result.RowsAffected == 0 {
 		return ErrNotFound
@@ -218,6 +220,6 @@ func (s *dbService) DeleteURL(ctx context.Context, id string) error {
 	}
 
 	// delete cache
-	s.c.Delete(cache_key)
+	s.c.Delete(cacheKey)
 	return nil
 }

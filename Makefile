@@ -12,5 +12,5 @@ build: build-nextjs
 run:
 	go run main.go
 
-swagger:
+swag:
 	swag init --parseInternal --dir "./" -g main.go -o app/docs

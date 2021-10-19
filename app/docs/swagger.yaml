@@ -98,6 +98,24 @@ paths:
       tags:
       - URLs
   /urls/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete URL item
+      parameters:
+      - description: URL ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Delete URL item
+      tags:
+      - URLs
     get:
       consumes:
       - application/json
@@ -116,6 +134,54 @@ paths:
         "404":
           description: ""
       summary: Get an URL
+      tags:
+      - URLs
+    patch:
+      consumes:
+      - application/json
+      description: Change URL item
+      parameters:
+      - description: URL ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: URL struct
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/app.PostURL'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Change URL item
+      tags:
+      - URLs
+    put:
+      consumes:
+      - application/json
+      description: Change or create URL item
+      parameters:
+      - description: URL ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: URL struct
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/app.PostURL'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Change or create URL item
       tags:
       - URLs
 swagger: "2.0"
