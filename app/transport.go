@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/gorilla/mux"
 
@@ -18,6 +19,7 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 	"github.com/go-kit/log"
 
+	"github.com/heptiolabs/healthcheck"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
 
@@ -46,6 +48,9 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 
 	// GET     /swagger                        swagger specification
 	// GET     /                               web ui application
+
+	// GET     /health/ready                   it corresponds to the Kubernetes readiness probe
+	// GET     /health/live                    this endpoint corresponds to the Kubernetes liveness probe, which automatically restarts the pod if the check fails.
 
 	r.Methods("GET").Path("/{urls:urls\\/?}").Handler(httptransport.NewServer(
 		e.GetURLsEndpoint,
@@ -85,6 +90,17 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 	))
 
 	r.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
+
+	// Healthcheck endpoints
+	health := healthcheck.NewHandler()
+	health.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(100))
+
+	health.AddReadinessCheck(
+		"upstream-dep-dns",
+		healthcheck.DNSResolveCheck("localhost", 50*time.Millisecond))
+
+	r.Path("/health/{ready:ready\\/?}").HandlerFunc(health.ReadyEndpoint)
+	r.Path("/health/{live:live\\/?}").HandlerFunc(health.LiveEndpoint)
 
 	// The static Next.js app will be served under `/`.
 	r.PathPrefix("/").Handler(hh)

@@ -78,17 +78,17 @@ func (s *dbService) PostURL(ctx context.Context, u URL) error {
 	}
 
 	// store new url in in memory cache
-	cache_key := fmt.Sprintf("url_id:%s", u.ID)
-	s.c.Set(cache_key, u, cache.DefaultExpiration)
+	cacheKey := fmt.Sprintf("url_id:%s", u.ID)
+	s.c.Set(cacheKey, u, cache.DefaultExpiration)
 	return nil
 }
 
 func (s *dbService) GetURL(ctx context.Context, id string) (URL, error) {
 	u := URL{}
-	cache_key := fmt.Sprintf("url_id:%s", id)
+	cacheKey := fmt.Sprintf("url_id:%s", id)
 
 	// check cache
-	foo, found := s.c.Get(cache_key)
+	foo, found := s.c.Get(cacheKey)
 	if found {
 		return foo.(URL), nil
 	}
@@ -100,7 +100,7 @@ func (s *dbService) GetURL(ctx context.Context, id string) (URL, error) {
 	}
 
 	// if found, set cache
-	s.c.Set(cache_key, u, cache.DefaultExpiration)
+	s.c.Set(cacheKey, u, cache.DefaultExpiration)
 	return u, nil
 }
 
