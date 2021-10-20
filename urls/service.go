@@ -1,4 +1,4 @@
-package app
+package urls
 
 import (
 	"context"
@@ -121,7 +121,7 @@ func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
 	var result *gorm.DB
 	cacheKey := fmt.Sprintf("url_id:%s", id)
 
-	if !IsValidUUID(id) {
+	if !isValidUUID(id) {
 		return ErrInconsistentIDs
 	}
 

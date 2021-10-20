@@ -64,7 +64,7 @@ var doc = `{
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/app.URL"
+                                "$ref": "#/definitions/urls.URL"
                             }
                         }
                     }
@@ -89,7 +89,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/app.PostURL"
+                            "$ref": "#/definitions/urls.PostURL"
                         }
                     }
                 ],
@@ -157,7 +157,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/app.PostURL"
+                            "$ref": "#/definitions/urls.PostURL"
                         }
                     }
                 ],
@@ -220,7 +220,7 @@ var doc = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/app.PostURL"
+                            "$ref": "#/definitions/urls.PostURL"
                         }
                     }
                 ],
@@ -233,7 +233,7 @@ var doc = `{
         }
     },
     "definitions": {
-        "app.PostURL": {
+        "urls.PostURL": {
             "type": "object",
             "properties": {
                 "keyword": {
@@ -250,7 +250,7 @@ var doc = `{
                 }
             }
         },
-        "app.URL": {
+        "urls.URL": {
             "type": "object",
             "properties": {
                 "active": {

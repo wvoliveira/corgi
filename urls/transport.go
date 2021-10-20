@@ -1,4 +1,4 @@
-package app
+package urls
 
 // The URL is just over HTTP, so we just have a single transport.go.
 
@@ -31,7 +31,7 @@ var (
 
 // MakeHTTPHandler mounts all of the service endpoints into an http.Handler.
 // Useful in a urlsvc server.
-func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler {
+func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
 	e := MakeServerEndpoints(s)
 	options := []httptransport.ServerOption{
@@ -102,8 +102,6 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 	r.Path("/health/{ready:ready\\/?}").HandlerFunc(health.ReadyEndpoint)
 	r.Path("/health/{live:live\\/?}").HandlerFunc(health.LiveEndpoint)
 
-	// The static Next.js app will be served under `/`.
-	r.PathPrefix("/").Handler(hh)
 	return r
 }
 
@@ -113,7 +111,7 @@ func MakeHTTPHandler(hh http.Handler, s Service, logger log.Logger) http.Handler
 // @Tags URLs
 // @Accept json
 // @Produce json
-// @Param data body app.PostURL true "URL struct"
+// @Param data body urls.PostURL true "URL struct"
 // @Success 200
 // @Router /urls [post]
 func decodePostURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -179,7 +177,7 @@ func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
-// @Param data body app.PostURL true "URL struct"
+// @Param data body urls.PostURL true "URL struct"
 // @Success 200
 // @Router /urls/{id} [put]
 func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -205,7 +203,7 @@ func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
-// @Param data body app.PostURL true "URL struct"
+// @Param data body urls.PostURL true "URL struct"
 // @Success 200
 // @Router /urls/{id} [patch]
 func decodePatchURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {

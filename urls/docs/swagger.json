@@ -50,7 +50,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/app.URL"
+                                "$ref": "#/definitions/urls.URL"
                             }
                         }
                     }
@@ -75,7 +75,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/app.PostURL"
+                            "$ref": "#/definitions/urls.PostURL"
                         }
                     }
                 ],
@@ -143,7 +143,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/app.PostURL"
+                            "$ref": "#/definitions/urls.PostURL"
                         }
                     }
                 ],
@@ -206,7 +206,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/app.PostURL"
+                            "$ref": "#/definitions/urls.PostURL"
                         }
                     }
                 ],
@@ -219,7 +219,7 @@
         }
     },
     "definitions": {
-        "app.PostURL": {
+        "urls.PostURL": {
             "type": "object",
             "properties": {
                 "keyword": {
@@ -236,7 +236,7 @@
                 }
             }
         },
-        "app.URL": {
+        "urls.URL": {
             "type": "object",
             "properties": {
                 "active": {

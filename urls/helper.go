@@ -1,8 +1,8 @@
-package app
+package urls
 
 import "github.com/google/uuid"
 
-func IsValidUUID(u string) bool {
+func isValidUUID(u string) bool {
 	_, err := uuid.Parse(u)
 	return err == nil
 }
