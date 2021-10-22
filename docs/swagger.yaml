@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  urls.PostURL:
+  url.PostURL:
     properties:
       keyword:
         example: google
@@ -12,7 +12,7 @@ definitions:
         example: https://www.google.com
         type: string
     type: object
-  urls.URL:
+  url.URL:
     properties:
       active:
         example: false
@@ -44,15 +44,15 @@ info:
   contact:
     email: support@elga.io
     name: API Support
-  description: Micro-serice for managing URLs
+  description: Micro-serice for managing URL
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
   termsOfService: http://elga.io/terms
-  title: URLs API
+  title: URL API
   version: 0.0.1
 paths:
-  /urls:
+  /url/v1/urls:
     get:
       consumes:
       - application/json
@@ -73,11 +73,11 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/urls.URL'
+              $ref: '#/definitions/url.URL'
             type: array
       summary: Get details of all URLs
       tags:
-      - URLs
+      - URL
     post:
       consumes:
       - application/json
@@ -88,7 +88,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/urls.PostURL'
+          $ref: '#/definitions/url.PostURL'
       produces:
       - application/json
       responses:
@@ -96,8 +96,8 @@ paths:
           description: ""
       summary: Add a new URL
       tags:
-      - URLs
-  /urls/{id}:
+      - URL
+  /url/v1/urls/{id}:
     delete:
       consumes:
       - application/json
@@ -115,7 +115,7 @@ paths:
           description: ""
       summary: Delete URL item
       tags:
-      - URLs
+      - URL
     get:
       consumes:
       - application/json
@@ -135,7 +135,7 @@ paths:
           description: ""
       summary: Get an URL
       tags:
-      - URLs
+      - URL
     patch:
       consumes:
       - application/json
@@ -151,7 +151,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/urls.PostURL'
+          $ref: '#/definitions/url.PostURL'
       produces:
       - application/json
       responses:
@@ -159,7 +159,7 @@ paths:
           description: ""
       summary: Change URL item
       tags:
-      - URLs
+      - URL
     put:
       consumes:
       - application/json
@@ -175,7 +175,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/urls.PostURL'
+          $ref: '#/definitions/url.PostURL'
       produces:
       - application/json
       responses:
@@ -183,5 +183,5 @@ paths:
           description: ""
       summary: Change or create URL item
       tags:
-      - URLs
+      - URL
 swagger: "2.0"

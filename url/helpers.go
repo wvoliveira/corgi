@@ -1,4 +1,4 @@
-package urls
+package url
 
 import "github.com/google/uuid"
 

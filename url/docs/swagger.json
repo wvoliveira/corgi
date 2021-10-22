@@ -1,8 +1,8 @@
 {
     "swagger": "2.0",
     "info": {
-        "description": "Micro-serice for managing URLs",
-        "title": "URLs API",
+        "description": "Micro-serice for managing URL",
+        "title": "URL API",
         "termsOfService": "http://elga.io/terms",
         "contact": {
             "name": "API Support",
@@ -17,7 +17,7 @@
     "host": "localhost:8080",
     "basePath": "/",
     "paths": {
-        "/urls": {
+        "/url/v1/urls": {
             "get": {
                 "description": "Get details of all URLs",
                 "consumes": [
@@ -27,7 +27,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "URLs"
+                    "URL"
                 ],
                 "summary": "Get details of all URLs",
                 "parameters": [
@@ -50,7 +50,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/urls.URL"
+                                "$ref": "#/definitions/url.URL"
                             }
                         }
                     }
@@ -65,7 +65,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "URLs"
+                    "URL"
                 ],
                 "summary": "Add a new URL",
                 "parameters": [
@@ -75,7 +75,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/urls.PostURL"
+                            "$ref": "#/definitions/url.PostURL"
                         }
                     }
                 ],
@@ -86,7 +86,7 @@
                 }
             }
         },
-        "/urls/{id}": {
+        "/url/v1/urls/{id}": {
             "get": {
                 "description": "Get URL by ID",
                 "consumes": [
@@ -96,7 +96,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "URLs"
+                    "URL"
                 ],
                 "summary": "Get an URL",
                 "parameters": [
@@ -126,7 +126,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "URLs"
+                    "URL"
                 ],
                 "summary": "Change or create URL item",
                 "parameters": [
@@ -143,7 +143,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/urls.PostURL"
+                            "$ref": "#/definitions/url.PostURL"
                         }
                     }
                 ],
@@ -162,7 +162,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "URLs"
+                    "URL"
                 ],
                 "summary": "Delete URL item",
                 "parameters": [
@@ -189,7 +189,7 @@
                     "application/json"
                 ],
                 "tags": [
-                    "URLs"
+                    "URL"
                 ],
                 "summary": "Change URL item",
                 "parameters": [
@@ -206,7 +206,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/urls.PostURL"
+                            "$ref": "#/definitions/url.PostURL"
                         }
                     }
                 ],
@@ -219,7 +219,7 @@
         }
     },
     "definitions": {
-        "urls.PostURL": {
+        "url.PostURL": {
             "type": "object",
             "properties": {
                 "keyword": {
@@ -236,7 +236,7 @@
                 }
             }
         },
-        "urls.URL": {
+        "url.URL": {
             "type": "object",
             "properties": {
                 "active": {

@@ -1,4 +1,4 @@
-package urls
+package url
 
 // The URL is just over HTTP, so we just have a single transport.go.
 
@@ -16,7 +16,7 @@ import (
 	"github.com/gorilla/mux"
 
 	"github.com/go-kit/kit/transport"
-	httptransport "github.com/go-kit/kit/transport/http"
+	kithttp "github.com/go-kit/kit/transport/http"
 	"github.com/go-kit/log"
 
 	"github.com/heptiolabs/healthcheck"
@@ -34,73 +34,68 @@ var (
 func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
 	e := MakeServerEndpoints(s)
-	options := []httptransport.ServerOption{
-		httptransport.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
-		httptransport.ServerErrorEncoder(encodeError),
+	options := []kithttp.ServerOption{
+		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
+		kithttp.ServerErrorEncoder(encodeError),
 	}
 
-	// GET     /urls/                          list urls
-	// POST    /urls/                          adds another url
-	// GET     /urls/:id                       retrieves the given url by id
-	// PUT     /urls/:id                       post updated url information about the url
-	// PATCH   /urls/:id                       partial updated url information
-	// DELETE  /urls/:id                       remove the given url
-
-	// GET     /swagger                        swagger specification
-	// GET     /                               web ui application
-
-	// GET     /health/ready                   it corresponds to the Kubernetes readiness probe
-	// GET     /health/live                    this endpoint corresponds to the Kubernetes liveness probe, which automatically restarts the pod if the check fails.
-
-	r.Methods("GET").Path("/{urls:urls\\/?}").Handler(httptransport.NewServer(
+	getURLsHandler := kithttp.NewServer(
 		e.GetURLsEndpoint,
 		decodeGetURLsRequest,
 		encodeResponse,
 		options...,
-	))
-	r.Methods("POST").Path("/{urls:urls\\/?}").Handler(httptransport.NewServer(
+	)
+
+	postURLHandler := kithttp.NewServer(
 		e.PostURLEndpoint,
 		decodePostURLRequest,
 		encodeResponse,
 		options...,
-	))
-	r.Methods("GET").Path("/urls/{id}").Handler(httptransport.NewServer(
+	)
+
+	getURLHandler := kithttp.NewServer(
 		e.GetURLEndpoint,
 		decodeGetURLRequest,
 		encodeResponse,
 		options...,
-	))
-	r.Methods("PUT").Path("/urls/{id}").Handler(httptransport.NewServer(
+	)
+
+	putURLHandler := kithttp.NewServer(
 		e.PutURLEndpoint,
 		decodePutURLRequest,
 		encodeResponse,
 		options...,
-	))
-	r.Methods("PATCH").Path("/urls/{id}").Handler(httptransport.NewServer(
+	)
+
+	patchURLHandler := kithttp.NewServer(
 		e.PatchURLEndpoint,
 		decodePatchURLRequest,
 		encodeResponse,
 		options...,
-	))
-	r.Methods("DELETE").Path("/urls/{id}").Handler(httptransport.NewServer(
+	)
+
+	deleteURLHandler := kithttp.NewServer(
 		e.DeleteURLEndpoint,
 		decodeDeleteURLRequest,
 		encodeResponse,
 		options...,
-	))
+	)
 
-	r.PathPrefix("/swagger").Handler(httpSwagger.WrapHandler)
-
-	// Healthcheck endpoints
 	health := healthcheck.NewHandler()
 	health.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(100))
+	health.AddReadinessCheck("upstream-dep-dns", healthcheck.DNSResolveCheck("localhost", 50*time.Millisecond))
 
-	health.AddReadinessCheck(
-		"upstream-dep-dns",
-		healthcheck.DNSResolveCheck("localhost", 50*time.Millisecond))
+	r.Handle("/url/v1/urls", getURLsHandler).Methods("GET")
+	r.Handle("/url/v1/urls", postURLHandler).Methods("POST")
+	r.Handle("/url/v1/urls/{id}", getURLHandler).Methods("GET")
+	r.Handle("/url/v1/urls/{id}", putURLHandler).Methods("PUT")
+	r.Handle("/url/v1/urls/{id}", patchURLHandler).Methods("PATCH")
+	r.Handle("/url/v1/urls/{id}", deleteURLHandler).Methods("DELETE")
 
-	r.Path("/health/{ready:ready\\/?}").HandlerFunc(health.ReadyEndpoint)
-	r.Path("/health/{live:live\\/?}").HandlerFunc(health.LiveEndpoint)
+	r.HandleFunc("/url/v1/health/ready", health.ReadyEndpoint)
+	r.HandleFunc("/url/v1/health/live", health.LiveEndpoint)
+
+	r.PathPrefix("/url/v1/swagger").Handler(httpSwagger.WrapHandler)
 
 	return r
 }
@@ -108,12 +103,12 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 // PostURL godoc
 // @Summary Add a new URL
 // @Description Add a new URL
-// @Tags URLs
+// @Tags URL
 // @Accept json
 // @Produce json
-// @Param data body urls.PostURL true "URL struct"
+// @Param data body url.PostURL true "URL struct"
 // @Success 200
-// @Router /urls [post]
+// @Router /url/v1/urls [post]
 func decodePostURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req postURLRequest
 	if e := json.NewDecoder(r.Body).Decode(&req.URL); e != nil {
@@ -125,13 +120,13 @@ func decodePostURLRequest(_ context.Context, r *http.Request) (request interface
 // GetURL godoc
 // @Summary Get an URL
 // @Description Get URL by ID
-// @Tags URLs
+// @Tags URL
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
 // @Success 200
 // @Failure 404
-// @Router /urls/{id} [get]
+// @Router /url/v1/urls/{id} [get]
 func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -144,13 +139,13 @@ func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{
 // GetURLs godoc
 // @Summary Get details of all URLs
 // @Description Get details of all URLs
-// @Tags URLs
+// @Tags URL
 // @Accept json
 // @Produce json
 // @Param page query int false "Page number"
 // @Param page_size query int false "Quantity of items"
 // @Success 200 {object} []URL
-// @Router /urls [get]
+// @Router /url/v1/urls [get]
 func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
@@ -173,13 +168,13 @@ func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface
 // PutURL godoc
 // @Summary Change or create URL item
 // @Description Change or create URL item
-// @Tags URLs
+// @Tags URL
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
-// @Param data body urls.PostURL true "URL struct"
+// @Param data body url.PostURL true "URL struct"
 // @Success 200
-// @Router /urls/{id} [put]
+// @Router /url/v1/urls/{id} [put]
 func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -199,13 +194,13 @@ func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{
 // PatchURL godoc
 // @Summary Change URL item
 // @Description Change URL item
-// @Tags URLs
+// @Tags URL
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
-// @Param data body urls.PostURL true "URL struct"
+// @Param data body url.PostURL true "URL struct"
 // @Success 200
-// @Router /urls/{id} [patch]
+// @Router /url/v1/urls/{id} [patch]
 func decodePatchURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -225,12 +220,12 @@ func decodePatchURLRequest(_ context.Context, r *http.Request) (request interfac
 // DeleteURL godoc
 // @Summary Delete URL item
 // @Description Delete URL item
-// @Tags URLs
+// @Tags URL
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
 // @Success 200
-// @Router /urls/{id} [delete]
+// @Router /url/v1/urls/{id} [delete]
 func decodeDeleteURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
@@ -242,7 +237,7 @@ func decodeDeleteURLRequest(_ context.Context, r *http.Request) (request interfa
 
 func encodePostURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
 	// r.Methods("POST").Path("/urls/")
-	req.URL.Path = "/urls/"
+	req.URL.Path = "/url/v1/urls"
 	return encodeRequest(ctx, req, request)
 }
 
@@ -250,13 +245,13 @@ func encodeGetURLRequest(ctx context.Context, req *http.Request, request interfa
 	// r.Methods("GET").Path("/urls/{id}")
 	r := request.(getURLRequest)
 	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/urls/" + urlID
+	req.URL.Path = "/url/v1/urls/" + urlID
 	return encodeRequest(ctx, req, request)
 }
 
 func encodeGetURLsRequest(ctx context.Context, req *http.Request, request interface{}) error {
 	// r.Methods("GET").Path("/urls")
-	req.URL.Path = "/urls"
+	req.URL.Path = "/url/v1/urls"
 	return encodeRequest(ctx, req, request)
 }
 
@@ -264,7 +259,7 @@ func encodePutURLRequest(ctx context.Context, req *http.Request, request interfa
 	// r.Methods("PUT").Path("/urls/{id}")
 	r := request.(putURLRequest)
 	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/urls/" + urlID
+	req.URL.Path = "/url/v1/urls/" + urlID
 	return encodeRequest(ctx, req, request)
 }
 
@@ -272,7 +267,7 @@ func encodePatchURLRequest(ctx context.Context, req *http.Request, request inter
 	// r.Methods("PATCH").Path("/urls/{id}")
 	r := request.(patchURLRequest)
 	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/urls/" + urlID
+	req.URL.Path = "/url/v1/urls/" + urlID
 	return encodeRequest(ctx, req, request)
 }
 
@@ -280,7 +275,7 @@ func encodeDeleteURLRequest(ctx context.Context, req *http.Request, request inte
 	// r.Methods("DELETE").Path("/urls/{id}")
 	r := request.(deleteURLRequest)
 	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/urls/" + urlID
+	req.URL.Path = "/url/v1/urls/" + urlID
 	return encodeRequest(ctx, req, request)
 }
 

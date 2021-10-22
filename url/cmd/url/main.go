@@ -1,24 +1,23 @@
 package main
 
 import (
-	"embed"
 	"flag"
 	"fmt"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	stdprometheus "github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promhttp"
-
-	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 	"github.com/go-kit/log"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+
+	stdprometheus "github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
+
+	kitprometheus "github.com/go-kit/kit/metrics/prometheus"
 
 	"github.com/patrickmn/go-cache"
 
@@ -26,19 +25,13 @@ import (
 	_ "github.com/elga-io/redir/url/docs"
 )
 
-//go:embed ui/dist
-//go:embed ui/dist/_next
-//go:embed ui/dist/_next/static/chunks/pages/*.js
-//go:embed ui/dist/_next/static/*/*.js
-var nextFS embed.FS
+func initialMigration(db *gorm.DB) {
+	db.AutoMigrate(&url.URL{})
+}
 
-const (
-	defaultPort = "8080"
-)
-
-// @title URL API
+// @title URLs API
 // @version 0.0.1
-// @description Micro-serice for managing URL
+// @description Micro-serice for managing URLs
 // @termsOfService http://elga.io/terms
 // @contact.name API Support
 // @contact.email support@elga.io
@@ -48,9 +41,7 @@ const (
 // @BasePath /
 func main() {
 	var (
-		addr = envString("PORT", defaultPort)
-
-		httpAddr = flag.String("http.addr", ":"+addr, "HTTP listen address")
+		httpAddr = flag.String("http.addr", ":8080", "HTTP listen address")
 	)
 	flag.Parse()
 
@@ -66,20 +57,10 @@ func main() {
 		logger.Log("failed to connect database", err)
 		os.Exit(2)
 	}
+	initialMigration(db)
 
 	// Init cache
 	c := cache.New(5*time.Minute, 10*time.Minute)
-
-	initialMigration(db)
-
-	// Web UI
-	distFS, err := fs.Sub(nextFS, "ui/dist")
-	ui := http.FileServer(http.FS(distFS))
-
-	if err != nil {
-		logger.Log("exit", err)
-		os.Exit(2)
-	}
 
 	fieldKeys := []string{"method"}
 
@@ -103,11 +84,15 @@ func main() {
 		us,
 	)
 
+	if err != nil {
+		logger.Log("exit", err)
+		os.Exit(2)
+	}
+
 	httpLogger := log.With(logger, "component", "http")
 	mux := http.NewServeMux()
 
 	mux.Handle("/url/v1/", url.MakeHTTPHandler(us, httpLogger))
-	mux.Handle("/", ui)
 
 	http.Handle("/", accessControl(mux))
 	http.Handle("/metrics", promhttp.Handler())
@@ -126,10 +111,6 @@ func main() {
 	logger.Log("terminated", <-errs)
 }
 
-func initialMigration(db *gorm.DB) {
-	db.AutoMigrate(&url.URL{})
-}
-
 func accessControl(h http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
@@ -142,12 +123,4 @@ func accessControl(h http.Handler) http.Handler {
 
 		h.ServeHTTP(w, r)
 	})
-}
-
-func envString(env, fallback string) string {
-	e := os.Getenv(env)
-	if e == "" {
-		return fallback
-	}
-	return e
 }

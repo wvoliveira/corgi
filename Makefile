@@ -8,9 +8,12 @@ build-nextjs:
 build: build-nextjs
 	go build .
 
-.PHONY: urls
-urls:
-	go run ./urls/cmd/urls/main.go -http.addr :8080
+.PHONY: url
+url:
+	go run ./url/cmd/url/main.go -http.addr :8080
 
-urls-swag:
-	swag init --parseInternal --dir "./" -g ./urls/cmd/urls/main.go -o urls/docs
+url-swag:
+	swag init --parseInternal --dir "./" -g ./url/cmd/url/main.go -o url/docs
+
+main-swag:
+	swag init --parseInternal --dir "./" -g main.go -o docs
