@@ -25,44 +25,45 @@ type loggingMiddleware struct {
 	logger log.Logger
 }
 
-func (mw loggingMiddleware) PostURL(ctx context.Context, p URL) (err error) {
+func (mw loggingMiddleware) PostUser(ctx context.Context, u User) (err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "PostURL", "id", p.ID, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "PostUser", "id", u.ID, "took", time.Since(begin), "err", err)
 	}(time.Now())
-	return mw.next.PostURL(ctx, p)
+	return mw.next.PostUser(ctx, u)
 }
 
-func (mw loggingMiddleware) GetURL(ctx context.Context, id string) (p URL, err error) {
+func (mw loggingMiddleware) GetUser(ctx context.Context, id string) (u User, err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetURL", "id", id, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "GetUser", "id", id, "took", time.Since(begin), "err", err)
 	}(time.Now())
-	return mw.next.GetURL(ctx, id)
+	return mw.next.GetUser(ctx, id)
 }
 
-func (mw loggingMiddleware) GetURLs(ctx context.Context, offset, pageSize int) (p []URL, err error) {
+func (mw loggingMiddleware) GetUsers(ctx context.Context, offset, pageSize int) (p []User, err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetURLs", "offset", offset, "page_size", pageSize, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "GetUsers", "offset", offset, "page_size", pageSize, "took", time.Since(begin), "err", err)
 	}(time.Now())
-	return mw.next.GetURLs(ctx, offset, pageSize)
+	return mw.next.GetUsers(ctx, offset, pageSize)
 }
 
-func (mw loggingMiddleware) PutURL(ctx context.Context, id string, p URL) (err error) {
+func (mw loggingMiddleware) PutUser(ctx context.Context, id string, u User) (err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "PutURL", "id", id, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "PutUser", "id", id, "took", time.Since(begin), "err", err)
 	}(time.Now())
-	return mw.next.PutURL(ctx, id, p)
+	return mw.next.PutUser(ctx, id, u)
 }
 
-func (mw loggingMiddleware) PatchURL(ctx context.Context, id string, p URL) (err error) {
+func (mw loggingMiddleware) PatchUser(ctx context.Context, id string, u User) (err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "PatchURL", "id", id, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "PatchUser", "id", id, "took", time.Since(begin), "err", err)
 	}(time.Now())
-	return mw.next.PatchURL(ctx, id, p)
+	return mw.next.PatchUser(ctx, id, u)
 }
 
-func (mw loggingMiddleware) DeleteURL(ctx context.Context, id string) (err error) {
+// Just disable user, not delete
+func (mw loggingMiddleware) DeleteUser(ctx context.Context, id string) (err error) {
 	defer func(begin time.Time) {
-		mw.logger.Log("method", "DeleteURL", "id", id, "took", time.Since(begin), "err", err)
+		mw.logger.Log("method", "DeleteUser", "id", id, "took", time.Since(begin), "err", err)
 	}(time.Now())
-	return mw.next.DeleteURL(ctx, id)
+	return mw.next.DeleteUser(ctx, id)
 }

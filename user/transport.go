@@ -1,6 +1,6 @@
 package user
 
-// The URL is just over HTTP, so we just have a single transport.go.
+// The User is just over HTTP, so we just have a single transport.go.
 
 import (
 	"bytes"
@@ -30,7 +30,7 @@ var (
 )
 
 // MakeHTTPHandler mounts all of the service endpoints into an http.Handler.
-// Useful in a urlsvc server.
+// Useful in a user service server.
 func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	r := mux.NewRouter()
 	e := MakeServerEndpoints(s)
@@ -39,44 +39,44 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 		kithttp.ServerErrorEncoder(encodeError),
 	}
 
-	getURLsHandler := kithttp.NewServer(
-		e.GetURLsEndpoint,
-		decodeGetURLsRequest,
+	getUsersHandler := kithttp.NewServer(
+		e.GetUsersEndpoint,
+		decodeGetUsersRequest,
 		encodeResponse,
 		options...,
 	)
 
-	postURLHandler := kithttp.NewServer(
-		e.PostURLEndpoint,
-		decodePostURLRequest,
+	postUserHandler := kithttp.NewServer(
+		e.PostUserEndpoint,
+		decodePostUserRequest,
 		encodeResponse,
 		options...,
 	)
 
-	getURLHandler := kithttp.NewServer(
-		e.GetURLEndpoint,
-		decodeGetURLRequest,
+	getUserHandler := kithttp.NewServer(
+		e.GetUserEndpoint,
+		decodeGetUserRequest,
 		encodeResponse,
 		options...,
 	)
 
-	putURLHandler := kithttp.NewServer(
-		e.PutURLEndpoint,
-		decodePutURLRequest,
+	putUserHandler := kithttp.NewServer(
+		e.PutUserEndpoint,
+		decodePutUserRequest,
 		encodeResponse,
 		options...,
 	)
 
-	patchURLHandler := kithttp.NewServer(
-		e.PatchURLEndpoint,
-		decodePatchURLRequest,
+	patchUserHandler := kithttp.NewServer(
+		e.PatchUserEndpoint,
+		decodePatchUserRequest,
 		encodeResponse,
 		options...,
 	)
 
-	deleteURLHandler := kithttp.NewServer(
-		e.DeleteURLEndpoint,
-		decodeDeleteURLRequest,
+	deleteUserHandler := kithttp.NewServer(
+		e.DeleteUserEndpoint,
+		decodeDeleteUserRequest,
 		encodeResponse,
 		options...,
 	)
@@ -85,68 +85,68 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	health.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(100))
 	health.AddReadinessCheck("upstream-dep-dns", healthcheck.DNSResolveCheck("localhost", 50*time.Millisecond))
 
-	r.Handle("/url/v1/urls", getURLsHandler).Methods("GET")
-	r.Handle("/url/v1/urls", postURLHandler).Methods("POST")
-	r.Handle("/url/v1/urls/{id}", getURLHandler).Methods("GET")
-	r.Handle("/url/v1/urls/{id}", putURLHandler).Methods("PUT")
-	r.Handle("/url/v1/urls/{id}", patchURLHandler).Methods("PATCH")
-	r.Handle("/url/v1/urls/{id}", deleteURLHandler).Methods("DELETE")
+	r.Handle("/user/v1/users", getUsersHandler).Methods("GET")
+	r.Handle("/user/v1/users", postUserHandler).Methods("POST")
+	r.Handle("/user/v1/users/{id}", getUserHandler).Methods("GET")
+	r.Handle("/user/v1/users/{id}", putUserHandler).Methods("PUT")
+	r.Handle("/user/v1/users/{id}", patchUserHandler).Methods("PATCH")
+	r.Handle("/user/v1/users/{id}", deleteUserHandler).Methods("DELETE")
 
-	r.HandleFunc("/url/v1/health/ready", health.ReadyEndpoint)
-	r.HandleFunc("/url/v1/health/live", health.LiveEndpoint)
+	r.HandleFunc("/user/v1/health/ready", health.ReadyEndpoint)
+	r.HandleFunc("/user/v1/health/live", health.LiveEndpoint)
 
-	r.PathPrefix("/url/v1/swagger").Handler(httpSwagger.WrapHandler)
+	r.PathPrefix("/user/v1/swagger").Handler(httpSwagger.WrapHandler)
 
 	return r
 }
 
-// PostURL godoc
-// @Summary Add a new URL
-// @Description Add a new URL
-// @Tags URL
+// PostUser godoc
+// @Summary Add a new User
+// @Description Add a new User
+// @Tags User
 // @Accept json
 // @Produce json
-// @Param data body url.PostURL true "URL struct"
+// @Param data body user.PostUser true "User struct"
 // @Success 200
-// @Router /url/v1/urls [post]
-func decodePostURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req postURLRequest
-	if e := json.NewDecoder(r.Body).Decode(&req.URL); e != nil {
+// @Router /user/v1/users [post]
+func decodePostUserRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+	var req postUserRequest
+	if e := json.NewDecoder(r.Body).Decode(&req.User); e != nil {
 		return nil, e
 	}
 	return req, nil
 }
 
-// GetURL godoc
-// @Summary Get an URL
-// @Description Get URL by ID
-// @Tags URL
+// GetUser godoc
+// @Summary Get an User
+// @Description Get User by ID
+// @Tags User
 // @Accept json
 // @Produce json
-// @Param id path string true "URL ID"
+// @Param id path string true "User ID"
 // @Success 200
 // @Failure 404
-// @Router /url/v1/urls/{id} [get]
-func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+// @Router /user/v1/users/{id} [get]
+func decodeGetUserRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	return getURLRequest{ID: id}, nil
+	return getUserRequest{ID: id}, nil
 }
 
-// GetURLs godoc
-// @Summary Get details of all URLs
-// @Description Get details of all URLs
-// @Tags URL
+// GetUsers godoc
+// @Summary Get details of all Users
+// @Description Get details of all Users
+// @Tags User
 // @Accept json
 // @Produce json
 // @Param page query int false "Page number"
 // @Param page_size query int false "Quantity of items"
-// @Success 200 {object} []URL
-// @Router /url/v1/urls [get]
-func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+// @Success 200 {object} []User
+// @Router /user/v1/users [get]
+func decodeGetUsersRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page == 0 {
@@ -162,155 +162,155 @@ func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface
 	}
 
 	offset := (page - 1) * pageSize
-	return getURLsRequest{Offset: offset, PageSize: pageSize}, nil
+	return getUsersRequest{Offset: offset, PageSize: pageSize}, nil
 }
 
-// PutURL godoc
-// @Summary Change or create URL item
-// @Description Change or create URL item
-// @Tags URL
+// PutUser godoc
+// @Summary Change or create User item
+// @Description Change or create User item
+// @Tags User
 // @Accept json
 // @Produce json
-// @Param id path string true "URL ID"
-// @Param data body url.PostURL true "URL struct"
+// @Param id path string true "User ID"
+// @Param data body user.PostUser true "User struct"
 // @Success 200
-// @Router /url/v1/urls/{id} [put]
-func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+// @Router /user/v1/users/{id} [put]
+func decodePutUserRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	var url URL
-	if err := json.NewDecoder(r.Body).Decode(&url); err != nil {
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		return nil, err
 	}
-	return putURLRequest{
-		ID:  id,
-		URL: url,
+	return putUserRequest{
+		ID:   id,
+		User: u,
 	}, nil
 }
 
-// PatchURL godoc
-// @Summary Change URL item
-// @Description Change URL item
-// @Tags URL
+// PatchUser godoc
+// @Summary Change User item
+// @Description Change User item
+// @Tags User
 // @Accept json
 // @Produce json
-// @Param id path string true "URL ID"
-// @Param data body url.PostURL true "URL struct"
+// @Param id path string true "User ID"
+// @Param data body user.PostUser true "User struct"
 // @Success 200
-// @Router /url/v1/urls/{id} [patch]
-func decodePatchURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+// @Router /user/v1/users/{id} [patch]
+func decodePatchUserRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	var url URL
-	if err := json.NewDecoder(r.Body).Decode(&url); err != nil {
+	var u User
+	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
 		return nil, err
 	}
-	return patchURLRequest{
-		ID:  id,
-		URL: url,
+	return patchUserRequest{
+		ID:   id,
+		User: u,
 	}, nil
 }
 
-// DeleteURL godoc
-// @Summary Delete URL item
-// @Description Delete URL item
-// @Tags URL
+// DeleteUser godoc
+// @Summary Delete User item
+// @Description Delete User item
+// @Tags User
 // @Accept json
 // @Produce json
-// @Param id path string true "URL ID"
+// @Param id path string true "User ID"
 // @Success 200
-// @Router /url/v1/urls/{id} [delete]
-func decodeDeleteURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+// @Router /user/v1/users/{id} [delete]
+func decodeDeleteUserRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
 		return nil, ErrBadRouting
 	}
-	return deleteURLRequest{ID: id}, nil
+	return deleteUserRequest{ID: id}, nil
 }
 
-func encodePostURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("POST").Path("/urls/")
-	req.URL.Path = "/url/v1/urls"
+func encodePostUserRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("POST").Path("/users/")
+	req.URL.Path = "/user/v1/users"
 	return encodeRequest(ctx, req, request)
 }
 
-func encodeGetURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/urls/{id}")
-	r := request.(getURLRequest)
-	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/url/v1/urls/" + urlID
+func encodeGetUserRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("GET").Path("/users/{id}")
+	r := request.(getUserRequest)
+	userID := url.QueryEscape(r.ID)
+	req.URL.Path = "/user/v1/users/" + userID
 	return encodeRequest(ctx, req, request)
 }
 
-func encodeGetURLsRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/urls")
-	req.URL.Path = "/url/v1/urls"
+func encodeGetUsersRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("GET").Path("/users")
+	req.URL.Path = "/user/v1/users"
 	return encodeRequest(ctx, req, request)
 }
 
-func encodePutURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PUT").Path("/urls/{id}")
-	r := request.(putURLRequest)
-	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/url/v1/urls/" + urlID
+func encodePutUserRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("PUT").Path("/users/{id}")
+	r := request.(putUserRequest)
+	userID := url.QueryEscape(r.ID)
+	req.URL.Path = "/user/v1/users/" + userID
 	return encodeRequest(ctx, req, request)
 }
 
-func encodePatchURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PATCH").Path("/urls/{id}")
-	r := request.(patchURLRequest)
-	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/url/v1/urls/" + urlID
+func encodePatchUserRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("PATCH").Path("/users/{id}")
+	r := request.(patchUserRequest)
+	userID := url.QueryEscape(r.ID)
+	req.URL.Path = "/user/v1/users/" + userID
 	return encodeRequest(ctx, req, request)
 }
 
-func encodeDeleteURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("DELETE").Path("/urls/{id}")
-	r := request.(deleteURLRequest)
-	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/url/v1/urls/" + urlID
+func encodeDeleteUserRequest(ctx context.Context, req *http.Request, request interface{}) error {
+	// r.Methods("DELETE").Path("/users/{id}")
+	r := request.(deleteUserRequest)
+	userID := url.QueryEscape(r.ID)
+	req.URL.Path = "/user/v1/users/" + userID
 	return encodeRequest(ctx, req, request)
 }
 
-func decodePostURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response postURLResponse
+func decodePostUserResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response postUserResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodeGetURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getURLResponse
+func decodeGetUserResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response getUserResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodeGetURLsResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getURLsResponse
+func decodeGetUsersResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response getUsersResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodePutURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response putURLResponse
+func decodePutUserResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response putUserResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodePatchURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response patchURLResponse
+func decodePatchUserResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response patchUserResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
 
-func decodeDeleteURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response deleteURLResponse
+func decodeDeleteUserResponse(_ context.Context, resp *http.Response) (interface{}, error) {
+	var response deleteUserResponse
 	err := json.NewDecoder(resp.Body).Decode(&response)
 	return response, err
 }
@@ -340,7 +340,7 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 
 // encodeRequest likewise JSON-encodes the request to the HTTP request body.
 // Don't use it directly as a transport/http.Client EncodeRequestFunc:
-// urlsvc endpoints require mutating the HTTP method and request path.
+// user service endpoints require mutating the HTTP method and request path.
 func encodeRequest(_ context.Context, req *http.Request, request interface{}) error {
 	var buf bytes.Buffer
 	err := json.NewEncoder(&buf).Encode(request)

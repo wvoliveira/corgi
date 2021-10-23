@@ -22,29 +22,29 @@ func NewInstrumentingService(counter metrics.Counter, latency metrics.Histogram,
 	}
 }
 
-func (s *instrumentingService) PostURL(ctx context.Context, u URL) error {
+func (s *instrumentingService) PostUser(ctx context.Context, u User) error {
 	defer func(begin time.Time) {
 		s.requestCount.With("method", "new").Add(1)
 		s.requestLatency.With("method", "new").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return s.Service.PostURL(ctx, u)
+	return s.Service.PostUser(ctx, u)
 }
 
-func (s *instrumentingService) GetURL(ctx context.Context, id string) (URL, error) {
+func (s *instrumentingService) GetUser(ctx context.Context, id string) (User, error) {
 	defer func(begin time.Time) {
 		s.requestCount.With("method", "load").Add(1)
 		s.requestLatency.With("method", "load").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return s.Service.GetURL(ctx, id)
+	return s.Service.GetUser(ctx, id)
 }
 
-func (s *instrumentingService) GetURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
+func (s *instrumentingService) GetUsers(ctx context.Context, offset, pageSize int) ([]User, error) {
 	defer func(begin time.Time) {
-		s.requestCount.With("method", "list_urls").Add(1)
-		s.requestLatency.With("method", "list_urls").Observe(time.Since(begin).Seconds())
+		s.requestCount.With("method", "list_users").Add(1)
+		s.requestLatency.With("method", "list_users").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return s.Service.GetURLs(ctx, offset, pageSize)
+	return s.Service.GetUsers(ctx, offset, pageSize)
 }

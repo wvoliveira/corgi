@@ -48,7 +48,7 @@ func MakeServerEndpoints(s Service) Endpoints {
 
 // MakeClientEndpoints returns an Endpoints struct where each endpoint invokes
 // the corresponding method on the remote instance, via a transport/http.Client.
-// Useful in a URLsvc client.
+// Useful in a User service client.
 func MakeClientEndpoints(instance string) (Endpoints, error) {
 	if !strings.HasPrefix(instance, "http") {
 		instance = "http://" + instance
@@ -61,143 +61,143 @@ func MakeClientEndpoints(instance string) (Endpoints, error) {
 
 	options := []httptransport.ClientOption{}
 
-	// Note that the request encoders need to modify the request URL, changing
+	// Note that the request encoders need to modify the request User, changing
 	// the path. That's fine: we simply need to provide specific encoders for
 	// each endpoint.
 
 	return Endpoints{
-		PostURLEndpoint:   httptransport.NewClient("POST", tgt, encodePostURLRequest, decodePostURLResponse, options...).Endpoint(),
-		GetURLEndpoint:    httptransport.NewClient("GET", tgt, encodeGetURLRequest, decodeGetURLResponse, options...).Endpoint(),
-		GetURLsEndpoint:   httptransport.NewClient("GET", tgt, encodeGetURLsRequest, decodeGetURLsResponse, options...).Endpoint(),
-		PutURLEndpoint:    httptransport.NewClient("PUT", tgt, encodePutURLRequest, decodePutURLResponse, options...).Endpoint(),
-		PatchURLEndpoint:  httptransport.NewClient("PATCH", tgt, encodePatchURLRequest, decodePatchURLResponse, options...).Endpoint(),
-		DeleteURLEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteURLRequest, decodeDeleteURLResponse, options...).Endpoint(),
+		PostUserEndpoint:   httptransport.NewClient("POST", tgt, encodePostUserRequest, decodePostUserResponse, options...).Endpoint(),
+		GetUserEndpoint:    httptransport.NewClient("GET", tgt, encodeGetUserRequest, decodeGetUserResponse, options...).Endpoint(),
+		GetUsersEndpoint:   httptransport.NewClient("GET", tgt, encodeGetUsersRequest, decodeGetUsersResponse, options...).Endpoint(),
+		PutUserEndpoint:    httptransport.NewClient("PUT", tgt, encodePutUserRequest, decodePutUserResponse, options...).Endpoint(),
+		PatchUserEndpoint:  httptransport.NewClient("PATCH", tgt, encodePatchUserRequest, decodePatchUserResponse, options...).Endpoint(),
+		DeleteUserEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteUserRequest, decodeDeleteUserResponse, options...).Endpoint(),
 	}, nil
 }
 
-// PostURL implements Service. Primarily useful in a client.
-func (e Endpoints) PostURL(ctx context.Context, p URL) error {
-	request := postURLRequest{URL: p}
-	response, err := e.PostURLEndpoint(ctx, request)
+// PostUser implements Service. Primarily useful in a client.
+func (e Endpoints) PostUser(ctx context.Context, u User) error {
+	request := postUserRequest{User: u}
+	response, err := e.PostUserEndpoint(ctx, request)
 	if err != nil {
 		return err
 	}
-	resp := response.(postURLResponse)
+	resp := response.(postUserResponse)
 	return resp.Err
 }
 
-// GetURL implements Service. Primarily useful in a client.
-func (e Endpoints) GetURL(ctx context.Context, id string) (URL, error) {
-	request := getURLRequest{ID: id}
-	response, err := e.GetURLEndpoint(ctx, request)
+// GetUser implements Service. Primarily useful in a client.
+func (e Endpoints) GetUser(ctx context.Context, id string) (User, error) {
+	request := getUserRequest{ID: id}
+	response, err := e.GetUserEndpoint(ctx, request)
 	if err != nil {
-		return URL{}, err
+		return User{}, err
 	}
-	resp := response.(getURLResponse)
-	return resp.URL, resp.Err
+	resp := response.(getUserResponse)
+	return resp.User, resp.Err
 }
 
-// GetURLs implements Service. Primarily useful in a client.
-func (e Endpoints) GetURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
-	request := getURLsRequest{Offset: offset, PageSize: pageSize}
-	response, err := e.GetURLsEndpoint(ctx, request)
+// GetUsers implements Service. Primarily useful in a client.
+func (e Endpoints) GetUsers(ctx context.Context, offset, pageSize int) ([]User, error) {
+	request := getUsersRequest{Offset: offset, PageSize: pageSize}
+	response, err := e.GetUsersEndpoint(ctx, request)
 	if err != nil {
-		return []URL{}, err
+		return []User{}, err
 	}
-	resp := response.(getURLsResponse)
-	return resp.URLs, resp.Err
+	resp := response.(getUsersResponse)
+	return resp.Users, resp.Err
 }
 
-// PutURL implements Service. Primarily useful in a client.
-func (e Endpoints) PutURL(ctx context.Context, id string, p URL) error {
-	request := putURLRequest{ID: id, URL: p}
-	response, err := e.PutURLEndpoint(ctx, request)
+// PutUser implements Service. Primarily useful in a client.
+func (e Endpoints) PutUser(ctx context.Context, id string, u User) error {
+	request := putUserRequest{ID: id, User: u}
+	response, err := e.PutUserEndpoint(ctx, request)
 	if err != nil {
 		return err
 	}
-	resp := response.(putURLResponse)
+	resp := response.(putUserResponse)
 	return resp.Err
 }
 
-// PatchURL implements Service. Primarily useful in a client.
-func (e Endpoints) PatchURL(ctx context.Context, id string, p URL) error {
-	request := patchURLRequest{ID: id, URL: p}
-	response, err := e.PatchURLEndpoint(ctx, request)
+// PatchUser implements Service. Primarily useful in a client.
+func (e Endpoints) PatchUser(ctx context.Context, id string, u User) error {
+	request := patchUserRequest{ID: id, User: u}
+	response, err := e.PatchUserEndpoint(ctx, request)
 	if err != nil {
 		return err
 	}
-	resp := response.(patchURLResponse)
+	resp := response.(patchUserResponse)
 	return resp.Err
 }
 
-// DeleteURL implements Service. Primarily useful in a client.
-func (e Endpoints) DeleteURL(ctx context.Context, id string) error {
-	request := deleteURLRequest{ID: id}
-	response, err := e.DeleteURLEndpoint(ctx, request)
+// DeleteUser implements Service. Primarily useful in a client.
+func (e Endpoints) DeleteUser(ctx context.Context, id string) error {
+	request := deleteUserRequest{ID: id}
+	response, err := e.DeleteUserEndpoint(ctx, request)
 	if err != nil {
 		return err
 	}
-	resp := response.(deleteURLResponse)
+	resp := response.(deleteUserResponse)
 	return resp.Err
 }
 
-// MakePostURLEndpoint returns an endpoint via the passed service.
+// MakePostUserEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakePostURLEndpoint(s Service) endpoint.Endpoint {
+func MakePostUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(postURLRequest)
-		e := s.PostURL(ctx, req.URL)
-		return postURLResponse{Err: e}, nil
+		req := request.(postUserRequest)
+		e := s.PostUser(ctx, req.User)
+		return postUserResponse{Err: e}, nil
 	}
 }
 
-// MakeGetURLEndpoint returns an endpoint via the passed service.
+// MakeGetUserEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakeGetURLEndpoint(s Service) endpoint.Endpoint {
+func MakeGetUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(getURLRequest)
-		p, e := s.GetURL(ctx, req.ID)
-		return getURLResponse{URL: p, Err: e}, nil
+		req := request.(getUserRequest)
+		u, e := s.GetUser(ctx, req.ID)
+		return getUserResponse{User: u, Err: e}, nil
 	}
 }
 
-// MakeGetURLsEndpoint returns an endpoint via the passed service.
+// MakeGetUsersEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakeGetURLsEndpoint(s Service) endpoint.Endpoint {
+func MakeGetUsersEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(getURLsRequest)
-		p, e := s.GetURLs(ctx, req.Offset, req.PageSize)
-		return getURLsResponse{URLs: p, Err: e}, nil
+		req := request.(getUsersRequest)
+		u, e := s.GetUsers(ctx, req.Offset, req.PageSize)
+		return getUsersResponse{Users: u, Err: e}, nil
 	}
 }
 
-// MakePutURLEndpoint returns an endpoint via the passed service.
+// MakePutUserEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakePutURLEndpoint(s Service) endpoint.Endpoint {
+func MakePutUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(putURLRequest)
-		e := s.PutURL(ctx, req.ID, req.URL)
-		return putURLResponse{Err: e}, nil
+		req := request.(putUserRequest)
+		e := s.PutUser(ctx, req.ID, req.User)
+		return putUserResponse{Err: e}, nil
 	}
 }
 
-// MakePatchURLEndpoint returns an endpoint via the passed service.
+// MakePatchUserEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakePatchURLEndpoint(s Service) endpoint.Endpoint {
+func MakePatchUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(patchURLRequest)
-		e := s.PatchURL(ctx, req.ID, req.URL)
-		return patchURLResponse{Err: e}, nil
+		req := request.(patchUserRequest)
+		e := s.PatchUser(ctx, req.ID, req.User)
+		return patchUserResponse{Err: e}, nil
 	}
 }
 
-// MakeDeleteURLEndpoint returns an endpoint via the passed service.
+// MakeDeleteUserEndpoint returns an endpoint via the passed service.
 // Primarily useful in a server.
-func MakeDeleteURLEndpoint(s Service) endpoint.Endpoint {
+func MakeDeleteUserEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(deleteURLRequest)
-		e := s.DeleteURL(ctx, req.ID)
-		return deleteURLResponse{Err: e}, nil
+		req := request.(deleteUserRequest)
+		e := s.DeleteUser(ctx, req.ID)
+		return deleteUserResponse{Err: e}, nil
 	}
 }
 
@@ -216,65 +216,65 @@ func MakeDeleteURLEndpoint(s Service) endpoint.Endpoint {
 // Response types that may contain business-logic errors implement that
 // interface.
 
-type postURLRequest struct {
-	URL URL
+type postUserRequest struct {
+	User User
 }
 
-type postURLResponse struct {
+type postUserResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r postURLResponse) error() error { return r.Err }
+func (r postUserResponse) error() error { return r.Err }
 
-type getURLRequest struct {
+type getUserRequest struct {
 	ID string
 }
 
-type getURLsRequest struct {
+type getUsersRequest struct {
 	Offset   int
 	PageSize int
 }
 
-type getURLResponse struct {
-	URL URL   `json:"data,omitempty"`
-	Err error `json:"error,omitempty"`
-}
-
-type getURLsResponse struct {
-	URLs []URL `json:"data,omitempty"`
+type getUserResponse struct {
+	User User  `json:"data,omitempty"`
 	Err  error `json:"error,omitempty"`
 }
 
-func (r getURLResponse) error() error { return r.Err }
-
-type putURLRequest struct {
-	ID  string
-	URL URL
+type getUsersResponse struct {
+	Users []User `json:"data,omitempty"`
+	Err   error  `json:"error,omitempty"`
 }
 
-type putURLResponse struct {
+func (r getUserResponse) error() error { return r.Err }
+
+type putUserRequest struct {
+	ID   string
+	User User
+}
+
+type putUserResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r putURLResponse) error() error { return nil }
+func (r putUserResponse) error() error { return nil }
 
-type patchURLRequest struct {
-	ID  string
-	URL URL
+type patchUserRequest struct {
+	ID   string
+	User User
 }
 
-type patchURLResponse struct {
+type patchUserResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r patchURLResponse) error() error { return r.Err }
+func (r patchUserResponse) error() error { return r.Err }
 
-type deleteURLRequest struct {
+type deleteUserRequest struct {
 	ID string
 }
 
-type deleteURLResponse struct {
+type deleteUserResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r deleteURLResponse) error() error { return r.Err }
+func (r deleteUserResponse) error() error { return r.Err }
