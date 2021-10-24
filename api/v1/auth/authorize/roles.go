@@ -5,7 +5,7 @@ import (
 
 	"github.com/go-chi/render"
 
-	"github.com/elga-io/redir/auth/jwt"
+	"github.com/elga-io/redir/api/v1/auth/jwt"
 )
 
 // RequiresRole middleware restricts access to accounts having role parameter in their jwt claims.

@@ -3,7 +3,7 @@ package jwt
 import (
 	"errors"
 
-	"github.com/dgrijalva/jwt-go"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // AppClaims represent the claims parsed from JWT access token.

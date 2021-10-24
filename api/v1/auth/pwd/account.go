@@ -8,7 +8,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/is"
 	"gorm.io/gorm"
 
-	"github.com/elga-io/redir/auth/jwt"
+	"github.com/elga-io/redir/api/v1/auth/jwt"
 )
 
 // Account represents an authenticated application user
@@ -18,13 +18,14 @@ type Account struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty"`
 	LastLogin time.Time `json:"last_login,omitempty"`
 
-	Email    string   `json:"email"`
-	Password string   `json:"-"`
-	Name     string   `json:"name"`
-	Active   bool     `sql:",notnull" json:"active"`
-	Roles    []string `gorm:",array" json:"roles,omitempty"`
+	Name     string      `json:"name"`
+	Email    string      `json:"email"`
+	Password string      `json:"-"`
+	Token    []jwt.Token `json:"token,omitempty"`
+	Active   *bool       `json:"active" gorm:"type:bool;default:true" example:"false"`
+	Roles    []string    `json:"roles" gorm:"array"`
 
-	Token []jwt.Token `json:"token,omitempty"`
+	UserID string `json:"user_id"`
 }
 
 // BeforeInsert hook executed before database insert operation.
@@ -52,16 +53,14 @@ func (a *Account) BeforeDelete(db gorm.DB) error {
 func (a *Account) Validate() error {
 	a.Email = strings.TrimSpace(a.Email)
 	a.Email = strings.ToLower(a.Email)
-	a.Name = strings.TrimSpace(a.Name)
 
 	return validation.ValidateStruct(a,
 		validation.Field(&a.Email, validation.Required, is.Email, is.LowerCase),
-		validation.Field(&a.Name, validation.Required, is.ASCII),
 	)
 }
 
 // CanLogin returns true if user is allowed to login.
-func (a *Account) CanLogin() bool {
+func (a *Account) CanLogin() *bool {
 	return a.Active
 }
 
@@ -75,6 +74,6 @@ func (a *Account) Claims() jwt.AppClaims {
 }
 
 // CheckPassword returns true if user is allowed to login.
-func (a *Account) CheckPassword() bool {
+func (a *Account) CheckPassword() *bool {
 	return a.Active
 }

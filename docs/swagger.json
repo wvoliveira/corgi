@@ -216,9 +216,229 @@
                     }
                 }
             }
+        },
+        "/user/v1/users": {
+            "get": {
+                "description": "Get details of all Users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get details of all Users",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Page number",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Quantity of items",
+                        "name": "page_size",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/user.User"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Add a new User",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Add a new User",
+                "parameters": [
+                    {
+                        "description": "User struct",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.PostUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
+        },
+        "/user/v1/users/{id}": {
+            "get": {
+                "description": "Get User by ID",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Get an User",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    },
+                    "404": {
+                        "description": ""
+                    }
+                }
+            },
+            "put": {
+                "description": "Change or create User item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Change or create User item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User struct",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.PostUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete User item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Delete User item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            },
+            "patch": {
+                "description": "Change User item",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "User"
+                ],
+                "summary": "Change User item",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User struct",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/user.PostUser"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": ""
+                    }
+                }
+            }
         }
     },
     "definitions": {
+        "jwt.Token": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "identifier": {
+                    "type": "string"
+                },
+                "mobile": {
+                    "type": "boolean"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
         "url.PostURL": {
             "type": "object",
             "properties": {
@@ -270,6 +490,68 @@
                 "url": {
                     "type": "string",
                     "example": "https://www.google.com"
+                }
+            }
+        },
+        "user.PostUser": {
+            "type": "object",
+            "properties": {
+                "keyword": {
+                    "type": "string",
+                    "example": "google"
+                },
+                "title": {
+                    "type": "string",
+                    "example": "Google Home"
+                },
+                "user": {
+                    "type": "string",
+                    "example": "https://www.google.com"
+                }
+            }
+        },
+        "user.User": {
+            "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "created_at": {
+                    "type": "string",
+                    "example": "2021-10-18T00:45:07.818344164-03:00"
+                },
+                "email": {
+                    "type": "string",
+                    "example": "oliveira@live.it"
+                },
+                "id": {
+                    "type": "string",
+                    "example": "eed7df28-5a16-46f0-b5bf-c26071a42ade"
+                },
+                "last_login": {
+                    "type": "string",
+                    "example": "2021-10-20T00:50:00.100059334-03:00"
+                },
+                "name": {
+                    "type": "string",
+                    "example": "Wellington Oliveira"
+                },
+                "roles": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "token": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/jwt.Token"
+                    }
+                },
+                "updated_at": {
+                    "type": "string",
+                    "example": "2021-10-18T00:49:06.160059334-03:00"
                 }
             }
         }

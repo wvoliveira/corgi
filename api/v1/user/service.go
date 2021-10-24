@@ -1,4 +1,4 @@
-package url
+package user
 
 import (
 	"context"
@@ -11,33 +11,36 @@ import (
 	"gorm.io/gorm"
 )
 
-// Service is a simple CRUD interface for URL struct.
+// Service is a simple CRUD interface for User struct.
 type Service interface {
-	PostURL(ctx context.Context, u URL) error
-	GetURL(ctx context.Context, id string) (URL, error)
-	GetURLs(ctx context.Context, offset, pageSize int) ([]URL, error)
-	PutURL(ctx context.Context, id string, u URL) error
-	PatchURL(ctx context.Context, id string, u URL) error
-	DeleteURL(ctx context.Context, id string) error
+	PostUser(ctx context.Context, u User) error
+	GetUser(ctx context.Context, id string) (User, error)
+	GetUsers(ctx context.Context, offset, pageSize int) ([]User, error)
+	PutUser(ctx context.Context, id string, u User) error
+	PatchUser(ctx context.Context, id string, u User) error
+	DeleteUser(ctx context.Context, id string) error
 }
 
-// URL represents a single struct for URL.
+// User represents a single struct for User.
 // ID should be globally unique.
-type URL struct {
+type User struct {
 	ID        string    `json:"id" gorm:"primaryKey;" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
-	Keyword   string    `json:"keyword" gorm:"index" example:"google"`
-	URL       string    `json:"url" example:"https://www.google.com"`
-	Title     string    `json:"title" example:"Google Home"`
-	Active    *bool     `json:"active" gorm:"type:bool;default:true" example:"false"`
-	OwnerID   string    `json:"owner_id" example:"5ca04a43-ff3c-4154-a8ad-02e2e906a847"`
-	CreatedAt time.Time `json:"created_at" example:"2021-10-18T00:45:07.818344164-03:00"`
-	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
+	CreatedAt time.Time `json:"created_at,omitempty" example:"2021-10-18T00:45:07.818344164-03:00"`
+	UpdatedAt time.Time `json:"updated_at,omitempty" example:"2021-10-18T00:49:06.160059334-03:00"`
+	LastLogin time.Time `json:"last_login,omitempty" example:"2021-10-20T00:50:00.100059334-03:00"`
+
+	Name     string   `json:"name" example:"Wellington Oliveira"`
+	Email    string   `json:"email" gorm:"index" example:"oliveira@live.it"`
+	Password string   `json:"-"`
+	Active   *bool    `json:"active" gorm:"type:bool;default:true" example:"false"`
+	Roles    []string `json:"roles" gorm:"array"`
+	Tags     []string `json:"tags" gorm:"array"`
 }
 
-type PostURL struct {
-	Keyword string `json:"keyword" gorm:"index" example:"google"`
-	URL     string `json:"url" example:"https://www.google.com"`
-	Title   string `json:"title" example:"Google Home"`
+// PostUser struct when response request
+type PostUser struct {
+	ID   string `json:"id"`
+	Name string `json:"keyword"`
 }
 
 //nolint
@@ -61,12 +64,12 @@ func NewDBService(db *gorm.DB, c *cache.Cache) Service {
 	}
 }
 
-func (s *dbService) PostURL(ctx context.Context, u URL) error {
-	if u.Keyword == "" || u.URL == "" || u.Title == "" || u.OwnerID == "" {
-		return errors.New("fields required: keyword, url, title and owner_id")
+func (s *dbService) PostUser(ctx context.Context, u User) error {
+	if u.Name == "" || u.Email == "" || u.Password == "" {
+		return errors.New("fields required: name, email and password")
 	}
 
-	result := s.db.Model(&u).Limit(1).Where("keyword=?", u.Keyword).Find(&u)
+	result := s.db.Model(&u).Limit(1).Where("email=?", u.Email).Find(&u)
 	if result.RowsAffected > 0 {
 		return ErrAlreadyExists // POST = create, don't overwrite
 	}
@@ -77,20 +80,20 @@ func (s *dbService) PostURL(ctx context.Context, u URL) error {
 		return err
 	}
 
-	// store new url in in memory cache
-	cacheKey := fmt.Sprintf("url_id:%s", u.ID)
+	// store new user in in memory cache
+	cacheKey := fmt.Sprintf("user_id:%s", u.ID)
 	s.c.Set(cacheKey, u, cache.DefaultExpiration)
 	return nil
 }
 
-func (s *dbService) GetURL(ctx context.Context, id string) (URL, error) {
-	u := URL{}
-	cacheKey := fmt.Sprintf("url_id:%s", id)
+func (s *dbService) GetUser(ctx context.Context, id string) (User, error) {
+	u := User{}
+	cacheKey := fmt.Sprintf("user_id:%s", id)
 
 	// check cache
 	foo, found := s.c.Get(cacheKey)
 	if found {
-		return foo.(URL), nil
+		return foo.(User), nil
 	}
 
 	// get in db
@@ -104,10 +107,10 @@ func (s *dbService) GetURL(ctx context.Context, id string) (URL, error) {
 	return u, nil
 }
 
-func (s *dbService) GetURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
-	var u []URL
+func (s *dbService) GetUsers(ctx context.Context, offset, pageSize int) ([]User, error) {
+	var u []User
 
-	// get url in db
+	// get user in db
 	result := s.db.Model(&u).Offset(offset).Limit(pageSize).Find(&u)
 	if result.Error != nil {
 		return u, result.Error
@@ -115,11 +118,11 @@ func (s *dbService) GetURLs(ctx context.Context, offset, pageSize int) ([]URL, e
 	return u, nil
 }
 
-func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
+func (s *dbService) PutUser(ctx context.Context, id string, u User) error {
 	// PUT = Update or create
-	var eu URL
+	var eu User
 	var result *gorm.DB
-	cacheKey := fmt.Sprintf("url_id:%s", id)
+	cacheKey := fmt.Sprintf("user_id:%s", id)
 
 	if !isValidUUID(id) {
 		return ErrInconsistentIDs
@@ -128,8 +131,8 @@ func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
 	result = s.db.Model(&u).Where("id = ?", id).First(&eu)
 
 	if result.RowsAffected == 0 {
-		if u.Keyword == "" || u.URL == "" || u.Title == "" || u.OwnerID == "" {
-			return errors.New("fields required: keyword, url, title and owner_id")
+		if u.Name == "" || u.Email == "" || u.Password == "" {
+			return errors.New("fields required: name, email and password")
 		}
 
 		if result = s.db.Model(&u).Create(&u); result.Error != nil {
@@ -137,23 +140,23 @@ func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
 		}
 	}
 
-	if u.Keyword != "" {
-		eu.Keyword = u.Keyword
+	if u.Name != "" {
+		eu.Name = u.Name
 	}
 
-	if u.URL != "" {
-		eu.URL = u.URL
+	if u.Email != "" {
+		eu.Email = u.Email
 	}
 
-	if u.Title != "" {
-		eu.Title = u.Title
+	if u.Password != "" {
+		eu.Password = u.Password
 	}
 
 	if u.Active != nil {
 		eu.Active = u.Active
 	}
 
-	if result = s.db.Model(&eu).Where("id = ?", id).Save(&eu); result.Error != nil {
+	if result = s.db.Model(&eu).Where("id=?", id).Save(&eu); result.Error != nil {
 		return result.Error
 	}
 
@@ -162,11 +165,11 @@ func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
 	return nil
 }
 
-func (s *dbService) PatchURL(ctx context.Context, id string, u URL) error {
+func (s *dbService) PatchUser(ctx context.Context, id string, u User) error {
 	// PATCH = update existing, don't create
-	var eu URL
+	var eu User
 	result := s.db.Model(&u).First(&eu, id)
-	cacheKey := fmt.Sprintf("url_id:%s", id)
+	cacheKey := fmt.Sprintf("user_id:%s", id)
 
 	if result.Error != nil {
 		return ErrNotFound
@@ -179,19 +182,19 @@ func (s *dbService) PatchURL(ctx context.Context, id string, u URL) error {
 	// We assume that it's not possible to PATCH the ID, and that it's not
 	// possible to PATCH any field to its zero value. That is, the zero value
 	// means not specified. The way around this is to use e.g. Name *string in
-	// the URL definition. But since this is just a demonstrative example,
+	// the User definition. But since this is just a demonstrative example,
 	// I'm leaving that out.
 
-	if u.Keyword != "" {
-		eu.Keyword = u.Keyword
+	if u.Name != "" {
+		eu.Name = u.Name
 	}
 
-	if u.URL != "" {
-		eu.URL = u.URL
+	if u.Email != "" {
+		eu.Email = u.Email
 	}
 
-	if u.Title != "" {
-		eu.Title = u.Title
+	if u.Password != "" {
+		eu.Password = u.Password
 	}
 
 	if u.Active != nil {
@@ -207,9 +210,9 @@ func (s *dbService) PatchURL(ctx context.Context, id string, u URL) error {
 	return nil
 }
 
-func (s *dbService) DeleteURL(ctx context.Context, id string) error {
-	u := URL{}
-	cacheKey := fmt.Sprintf("url_id:%s", id)
+func (s *dbService) DeleteUser(ctx context.Context, id string) error {
+	u := User{}
+	cacheKey := fmt.Sprintf("user_id:%s", id)
 
 	if result := s.db.Model(&u).Where("id = ?", id).First(&u); result.RowsAffected == 0 {
 		return ErrNotFound

@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/elga-io/redir/auth/jwt"
-	"github.com/elga-io/redir/email"
-	"github.com/elga-io/short/logging"
+	"github.com/dhax/go-base/email"
+	"github.com/dhax/go-base/logging"
+	"github.com/elga-io/redir/api/v1/auth/jwt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/render"
 	validation "github.com/go-ozzo/ozzo-validation"
@@ -47,7 +47,7 @@ type Resource struct {
 }
 
 // NewResource returns a configured authentication resource.
-func NewResource(authStore AuthStorer, mailer Mailer) (*Resource, error) {
+func NewResource(authStore AuthStorer) (*Resource, error) {
 	loginAuth, err := NewLoginTokenAuth()
 	if err != nil {
 		return nil, err
@@ -62,7 +62,6 @@ func NewResource(authStore AuthStorer, mailer Mailer) (*Resource, error) {
 		LoginAuth: loginAuth,
 		TokenAuth: tokenAuth,
 		Store:     authStore,
-		Mailer:    mailer,
 	}
 
 	resource.choresTicker()

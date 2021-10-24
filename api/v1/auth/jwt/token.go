@@ -3,8 +3,8 @@ package jwt
 import (
 	"time"
 
-	"github.com/dgrijalva/jwt-go"
-	"github.com/go-pg/pg/orm"
+	jwt "github.com/dgrijalva/jwt-go"
+	orm "gorm.io/gorm"
 )
 
 // Token holds refresh jwt information.
