@@ -8,7 +8,7 @@ import (
 	"github.com/go-ozzo/ozzo-validation/is"
 	"gorm.io/gorm"
 
-	"github.com/elga-io/redir/api/v1/auth/jwt"
+	jwt "github.com/dgrijalva/jwt-go"
 )
 
 // Account represents an authenticated application user
@@ -65,11 +65,11 @@ func (a *Account) CanLogin() *bool {
 }
 
 // Claims returns the account's claims to be signed
-func (a *Account) Claims() jwt.AppClaims {
-	return jwt.AppClaims{
-		ID:    a.ID,
-		Sub:   a.Name,
-		Roles: a.Roles,
+func (a *Account) Claims() jwt.MapClaims {
+	return jwt.MapClaims{
+		"ID":    a.ID,
+		"Sub":   a.Name,
+		"Roles": a.Roles,
 	}
 }
 

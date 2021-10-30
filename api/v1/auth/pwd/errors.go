@@ -9,8 +9,8 @@ import (
 
 // The list of error types presented to the end user as error message.
 var (
-	ErrInvalidLogin  = errors.New("invalid email or password address")
-	ErrUnknownLogin  = errors.New("invalid email or password address")
+	ErrInvalidLogin  = errors.New("invalid email or password")
+	ErrUnknownLogin  = errors.New("invalid email or password")
 	ErrLoginDisabled = errors.New("login for account disabled")
 	ErrLoginToken    = errors.New("invalid or expired login token")
 )

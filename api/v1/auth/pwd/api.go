@@ -8,16 +8,17 @@ import (
 	"strings"
 	"time"
 
-	"github.com/dhax/go-base/email"
-	"github.com/dhax/go-base/logging"
-	"github.com/elga-io/redir/api/v1/auth/jwt"
-	"github.com/go-chi/chi"
+	"encoding/json"
+
 	"github.com/go-chi/render"
+	"github.com/go-kit/log"
+	"github.com/gofrs/uuid"
+	"github.com/gorilla/mux"
+	"github.com/mssola/user_agent"
+
+	"github.com/elga-io/redir/api/v1/auth/jwt"
 	validation "github.com/go-ozzo/ozzo-validation"
 	"github.com/go-ozzo/ozzo-validation/is"
-	"github.com/gofrs/uuid"
-	"github.com/mssola/user_agent"
-	"github.com/sirupsen/logrus"
 )
 
 // AuthStorer defines database operations on accounts and tokens.
@@ -33,17 +34,12 @@ type AuthStorer interface {
 	PurgeExpiredToken() error
 }
 
-// Mailer defines methods to send account emails.
-type Mailer interface {
-	LoginToken(name, email string, c email.ContentLoginToken) error
-}
-
 // Resource implements passwordless account authentication against a database.
 type Resource struct {
 	LoginAuth *LoginTokenAuth
 	TokenAuth *jwt.TokenAuth
 	Store     AuthStorer
-	Mailer    Mailer
+	logger    log.Logger
 }
 
 // NewResource returns a configured authentication resource.
@@ -69,28 +65,23 @@ func NewResource(authStore AuthStorer) (*Resource, error) {
 	return resource, nil
 }
 
-// Router provides necessary routes for passwordless authentication flow.
-func (rs *Resource) Router() *chi.Mux {
-	r := chi.NewRouter()
-	r.Use(render.SetContentType(render.ContentTypeJSON))
-	r.Post("/login", rs.login)
-	r.Post("/token", rs.token)
-	r.Group(func(r chi.Router) {
-		r.Use(rs.TokenAuth.Verifier())
-		r.Use(jwt.AuthenticateRefreshJWT)
-		r.Post("/refresh", rs.refresh)
-		r.Post("/logout", rs.logout)
-	})
+// Router provides necessary routes for password authentication flow.
+func (rs *Resource) Router() *mux.Router {
+	r := mux.NewRouter()
+	r.HandleFunc("/login", rs.login).Methods("POST")
+	r.HandleFunc("/token", rs.token).Methods("POST")
+
+	s := r.NewRoute().Subrouter()
+	s.Use(rs.TokenAuth.Verifier())
+	s.Use(jwt.AuthenticateRefreshJWT)
+	s.HandleFunc("/refresh", rs.refresh).Methods("POST")
+	s.HandleFunc("/logout", rs.logout).Methods("POST")
 	return r
 }
 
-func log(r *http.Request) logrus.FieldLogger {
-	return logging.GetLogEntry(r)
-}
-
 type loginRequest struct {
-	Email    string
-	Password string
+	Email    string `json:"email" gorm:"email"`
+	Password string `json:"password" gorm:"password"`
 }
 
 func (body *loginRequest) Bind(r *http.Request) error {
@@ -104,23 +95,24 @@ func (body *loginRequest) Bind(r *http.Request) error {
 }
 
 func (rs *Resource) login(w http.ResponseWriter, r *http.Request) {
-	body := &loginRequest{}
+	lr := &loginRequest{}
 
-	if err := render.Bind(r, body); err != nil {
-		log(r).WithField("email", body.Email).Warn(err)
-		render.Render(w, r, ErrUnauthorized(ErrInvalidLogin))
-		return
-	}
-
-	acc, err := rs.Store.AuthAccount(body.Email, body.Password)
+	err := json.NewDecoder(r.Body).Decode(&lr)
 	if err != nil {
-		log(r).WithField("email", body.Email).Warn(err)
-		render.Render(w, r, ErrUnauthorized(ErrUnknownLogin))
+		rs.logger.Log("email", lr.Email, "warn", err)
+		fmt.Fprintln(w, ErrUnauthorized(ErrInvalidLogin))
 		return
 	}
 
-	if !acc.CanLogin() {
-		render.Render(w, r, ErrUnauthorized(ErrLoginDisabled))
+	acc, err := rs.Store.GetAccountByEmail(lr.Email)
+	if err != nil {
+		rs.logger.Log("email", lr.Email, "warn", err)
+		fmt.Fprintln(w, ErrUnauthorized(ErrUnknownLogin))
+		return
+	}
+
+	if !*acc.CanLogin() {
+		fmt.Fprintln(w, ErrUnauthorized(ErrLoginDisabled))
 		return
 	}
 
@@ -137,22 +129,22 @@ func (rs *Resource) login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := rs.Store.CreateOrUpdateToken(token); err != nil {
-		log(r).Error(err)
-		render.Render(w, r, ErrInternalServerError)
+		rs.logger.Log("method", "Store.CreateOrUpdateToken", "err", err)
+		fmt.Fprintln(w, ErrInternalServerError)
 		return
 	}
 
 	access, refresh, err := rs.TokenAuth.GenTokenPair(acc.Claims(), token.Claims())
 	if err != nil {
-		log(r).Error(err)
-		render.Render(w, r, ErrInternalServerError)
+		rs.logger.Log("method", "TokenAuth.GenTokenPair", "err", err)
+		fmt.Fprintln(w, ErrInternalServerError)
 		return
 	}
 
 	acc.LastLogin = time.Now()
 	if err := rs.Store.UpdateAccount(acc); err != nil {
-		log(r).Error(err)
-		render.Render(w, r, ErrInternalServerError)
+		rs.logger.Log("method", "Store.UpdateAccount", "err", err)
+		fmt.Fprintln(w, ErrInternalServerError)
 		return
 	}
 
@@ -184,28 +176,29 @@ func (body *tokenRequest) Bind(r *http.Request) error {
 }
 
 func (rs *Resource) token(w http.ResponseWriter, r *http.Request) {
-	body := &tokenRequest{}
-	if err := render.Bind(r, body); err != nil {
-		log(r).Warn(err)
-		render.Render(w, r, ErrUnauthorized(ErrLoginToken))
+	tr := &tokenRequest{}
+	err := json.NewDecoder(r.Body).Decode(&tr)
+	if err != nil {
+		rs.logger.Log("method", "NewDecoder", "warn", err)
+		fmt.Fprintln(w, ErrUnauthorized(ErrLoginToken))
 		return
 	}
 
-	id, err := rs.LoginAuth.GetAccountID(body.Token)
+	id, err := rs.LoginAuth.GetAccountID(tr.Token)
 	if err != nil {
-		render.Render(w, r, ErrUnauthorized(ErrLoginToken))
+		fmt.Fprintln(w, ErrUnauthorized(ErrLoginToken))
 		return
 	}
 
 	acc, err := rs.Store.GetAccount(id)
 	if err != nil {
 		// account deleted before login token expired
-		render.Render(w, r, ErrUnauthorized(ErrUnknownLogin))
+		fmt.Fprintln(w, ErrUnauthorized(ErrUnknownLogin))
 		return
 	}
 
-	if !acc.CanLogin() {
-		render.Render(w, r, ErrUnauthorized(ErrLoginDisabled))
+	if !*acc.CanLogin() {
+		fmt.Fprintln(w, ErrUnauthorized(ErrLoginDisabled))
 		return
 	}
 
@@ -222,22 +215,22 @@ func (rs *Resource) token(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := rs.Store.CreateOrUpdateToken(token); err != nil {
-		log(r).Error(err)
-		render.Render(w, r, ErrInternalServerError)
+		rs.logger.Log("method", "Store.CreateOrUpdateToken", "err", err)
+		fmt.Fprintln(w, ErrInternalServerError)
 		return
 	}
 
 	access, refresh, err := rs.TokenAuth.GenTokenPair(acc.Claims(), token.Claims())
 	if err != nil {
-		log(r).Error(err)
-		render.Render(w, r, ErrInternalServerError)
+		rs.logger.Log("method", "TokenAuth.GenTokenPair", "err", err)
+		fmt.Fprintln(w, ErrInternalServerError)
 		return
 	}
 
 	acc.LastLogin = time.Now()
 	if err := rs.Store.UpdateAccount(acc); err != nil {
-		log(r).Error(err)
-		render.Render(w, r, ErrInternalServerError)
+		rs.logger.Log("method", "Store.UpdateAccount", "err", err)
+		fmt.Fprintln(w, ErrInternalServerError)
 		return
 	}
 
@@ -268,7 +261,7 @@ func (rs *Resource) refresh(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if !acc.CanLogin() {
+	if !*acc.CanLogin() {
 		render.Render(w, r, ErrUnauthorized(ErrLoginDisabled))
 		return
 	}
@@ -279,20 +272,20 @@ func (rs *Resource) refresh(w http.ResponseWriter, r *http.Request) {
 
 	access, refresh, err := rs.TokenAuth.GenTokenPair(acc.Claims(), token.Claims())
 	if err != nil {
-		log(r).Error(err)
+		rs.logger.Log("method", "TokenAuth.GenTokenPair", "err", err)
 		render.Render(w, r, ErrInternalServerError)
 		return
 	}
 
 	if err := rs.Store.CreateOrUpdateToken(token); err != nil {
-		log(r).Error(err)
+		rs.logger.Log("method", "Store.CreateOrUpdateToken", "err", err)
 		render.Render(w, r, ErrInternalServerError)
 		return
 	}
 
 	acc.LastLogin = time.Now()
 	if err := rs.Store.UpdateAccount(acc); err != nil {
-		log(r).Error(err)
+		rs.logger.Log("method", "Store.UpdateAccount", "err", err)
 		render.Render(w, r, ErrInternalServerError)
 		return
 	}
