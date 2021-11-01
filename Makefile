@@ -10,17 +10,17 @@ build: build-nextjs
 
 .PHONY: url
 url:
-	go run ./url/cmd/url/main.go -http.addr :8080
+	go run ./api/v1/url/cmd/url/main.go -http.addr :8080
 
 url-swag:
-	swag init --parseInternal --dir "./" -g ./url/cmd/url/main.go -o url/docs
+	swag init --parseInternal --dir "./" -g ./api/v1/url/cmd/url/main.go -o api/v1/url/docs
 
 .PHONY: user
 user:
-	go run ./url/cmd/url/main.go -http.addr :8080
+	go run ./api/v1/url/cmd/url/main.go -http.addr :8080
 
 user-swag:
-	swag init --parseInternal --dir "./" -g ./user/cmd/user/main.go -o user/docs
+	swag init --parseInternal --dir "./" -g ./api/v1/user/cmd/user/main.go -o api/v1/user/docs
 
 main-swag:
 	swag init --parseInternal --dir "./" -g main.go -o docs

@@ -25,7 +25,7 @@ type loggingMiddleware struct {
 	logger log.Logger
 }
 
-func (mw loggingMiddleware) PostURL(ctx context.Context, p URL) (err error) {
+func (mw loggingMiddleware) PostURL(ctx context.Context, p URL) (u URL, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "PostURL", "id", p.ID, "took", time.Since(begin), "err", err)
 	}(time.Now())

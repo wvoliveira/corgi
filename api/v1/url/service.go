@@ -13,7 +13,7 @@ import (
 
 // Service is a simple CRUD interface for URL struct.
 type Service interface {
-	PostURL(ctx context.Context, u URL) error
+	PostURL(ctx context.Context, u URL) (URL, error)
 	GetURL(ctx context.Context, id string) (URL, error)
 	GetURLs(ctx context.Context, offset, pageSize int) ([]URL, error)
 	PutURL(ctx context.Context, id string, u URL) error
@@ -32,13 +32,6 @@ type URL struct {
 	OwnerID   string    `json:"owner_id" example:"5ca04a43-ff3c-4154-a8ad-02e2e906a847"`
 	CreatedAt time.Time `json:"created_at" example:"2021-10-18T00:45:07.818344164-03:00"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
-}
-
-// PostURL struct when create a URL
-type PostURL struct {
-	Keyword string `json:"keyword" gorm:"index" example:"google"`
-	URL     string `json:"url" example:"https://www.google.com"`
-	Title   string `json:"title" example:"Google Home"`
 }
 
 //nolint
@@ -62,26 +55,26 @@ func NewDBService(db *gorm.DB, c *cache.Cache) Service {
 	}
 }
 
-func (s *dbService) PostURL(ctx context.Context, u URL) error {
+func (s *dbService) PostURL(ctx context.Context, u URL) (URL, error) {
 	if u.Keyword == "" || u.URL == "" || u.Title == "" || u.OwnerID == "" {
-		return errors.New("fields required: keyword, url, title and owner_id")
+		return URL{}, errors.New("fields required: keyword, url, title and owner_id")
 	}
 
 	result := s.db.Model(&u).Limit(1).Where("keyword=?", u.Keyword).Find(&u)
 	if result.RowsAffected > 0 {
-		return ErrAlreadyExists // POST = create, don't overwrite
+		return URL{}, ErrAlreadyExists // POST = create, don't overwrite
 	}
 
 	u.ID = uuid.New().String()
 	err := s.db.Model(&u).Create(&u).Error
 	if err != nil {
-		return err
+		return URL{}, err
 	}
 
 	// store new url in in memory cache
 	cacheKey := fmt.Sprintf("url_id:%s", u.ID)
 	s.c.Set(cacheKey, u, cache.DefaultExpiration)
-	return nil
+	return u, nil
 }
 
 func (s *dbService) GetURL(ctx context.Context, id string) (URL, error) {

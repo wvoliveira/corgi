@@ -114,8 +114,8 @@ func (e Endpoints) DeleteURL(ctx context.Context, id string) error {
 func MakePostURLEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(postURLRequest)
-		e := s.PostURL(ctx, req.URL)
-		return postURLResponse{Err: e}, nil
+		u, e := s.PostURL(ctx, req.URL)
+		return postURLResponse{ID: u.ID, Keyword: u.Keyword, URL: u.URL, Title: u.Title, Err: e}, nil
 	}
 }
 
@@ -189,7 +189,11 @@ type postURLRequest struct {
 }
 
 type postURLResponse struct {
-	Err error `json:"err,omitempty"`
+	ID      string `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
+	Keyword string `json:"keyword" example:"google"`
+	URL     string `json:"url" example:"https://www.google.com"`
+	Title   string `json:"title" example:"Google Home"`
+	Err     error  `json:"err,omitempty"`
 }
 
 func (r postURLResponse) error() error { return r.Err }

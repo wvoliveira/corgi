@@ -3,13 +3,10 @@ package url
 // The URL is just over HTTP, so we just have a single transport.go.
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -106,7 +103,7 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 // @Tags URL
 // @Accept json
 // @Produce json
-// @Param data body url.PostURL true "URL struct"
+// @Param data body url.postURLResponse true "URL struct"
 // @Success 200
 // @Router /url/v1/urls [post]
 func decodePostURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -172,7 +169,7 @@ func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
-// @Param data body url.PostURL true "URL struct"
+// @Param data body url.postURLResponse true "URL struct"
 // @Success 200
 // @Router /url/v1/urls/{id} [put]
 func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -198,7 +195,7 @@ func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
-// @Param data body url.PostURL true "URL struct"
+// @Param data body url.postURLResponse true "URL struct"
 // @Success 200
 // @Router /url/v1/urls/{id} [patch]
 func decodePatchURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -235,86 +232,6 @@ func decodeDeleteURLRequest(_ context.Context, r *http.Request) (request interfa
 	return deleteURLRequest{ID: id}, nil
 }
 
-func encodePostURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("POST").Path("/urls/")
-	req.URL.Path = "/url/v1/urls"
-	return encodeRequest(ctx, req, request)
-}
-
-func encodeGetURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/urls/{id}")
-	r := request.(getURLRequest)
-	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/url/v1/urls/" + urlID
-	return encodeRequest(ctx, req, request)
-}
-
-func encodeGetURLsRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/urls")
-	req.URL.Path = "/url/v1/urls"
-	return encodeRequest(ctx, req, request)
-}
-
-func encodePutURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PUT").Path("/urls/{id}")
-	r := request.(putURLRequest)
-	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/url/v1/urls/" + urlID
-	return encodeRequest(ctx, req, request)
-}
-
-func encodePatchURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PATCH").Path("/urls/{id}")
-	r := request.(patchURLRequest)
-	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/url/v1/urls/" + urlID
-	return encodeRequest(ctx, req, request)
-}
-
-func encodeDeleteURLRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("DELETE").Path("/urls/{id}")
-	r := request.(deleteURLRequest)
-	urlID := url.QueryEscape(r.ID)
-	req.URL.Path = "/url/v1/urls/" + urlID
-	return encodeRequest(ctx, req, request)
-}
-
-func decodePostURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response postURLResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodeGetURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getURLResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodeGetURLsResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getURLsResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodePutURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response putURLResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodePatchURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response patchURLResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodeDeleteURLResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response deleteURLResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
 // errorer is implemented by all concrete response types that may contain
 // errors. It allows us to change the HTTP response code without needing to
 // trigger an endpoint (transport-level) error. For more information, read the
@@ -336,19 +253,6 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
-}
-
-// encodeRequest likewise JSON-encodes the request to the HTTP request body.
-// Don't use it directly as a transport/http.Client EncodeRequestFunc:
-// urlsvc endpoints require mutating the HTTP method and request path.
-func encodeRequest(_ context.Context, req *http.Request, request interface{}) error {
-	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(request)
-	if err != nil {
-		return err
-	}
-	req.Body = ioutil.NopCloser(&buf)
-	return nil
 }
 
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {

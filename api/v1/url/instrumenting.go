@@ -22,7 +22,7 @@ func NewInstrumentingService(counter metrics.Counter, latency metrics.Histogram,
 	}
 }
 
-func (s *instrumentingService) PostURL(ctx context.Context, u URL) error {
+func (s *instrumentingService) PostURL(ctx context.Context, u URL) (URL, error) {
 	defer func(begin time.Time) {
 		s.requestCount.With("method", "new").Add(1)
 		s.requestLatency.With("method", "new").Observe(time.Since(begin).Seconds())
