@@ -13,7 +13,7 @@ import (
 
 // Service is a simple CRUD interface for Profile struct.
 type Service interface {
-	PostProfile(ctx context.Context, u Profile) error
+	PostProfile(ctx context.Context, u Profile) (Profile, error)
 	GetProfile(ctx context.Context, id string) (Profile, error)
 	GetProfiles(ctx context.Context, offset, pageSize int) ([]Profile, error)
 	PutProfile(ctx context.Context, id string, u Profile) error
@@ -37,12 +37,6 @@ type Profile struct {
 	Tags     []string `json:"tags" gorm:"array"`
 }
 
-// PostProfile struct when response request
-type PostProfile struct {
-	ID   string `json:"id"`
-	Name string `json:"keyword"`
-}
-
 //nolint
 var (
 	ErrInconsistentIDs = errors.New("inconsistent IDs")
@@ -64,26 +58,26 @@ func NewDBService(db *gorm.DB, c *cache.Cache) Service {
 	}
 }
 
-func (s *dbService) PostProfile(ctx context.Context, u Profile) error {
-	if u.Name == "" || u.Email == "" || u.Password == "" {
-		return errors.New("fields required: name, email and password")
+func (s *dbService) PostProfile(ctx context.Context, p Profile) (Profile, error) {
+	if p.Name == "" || p.Email == "" || p.Password == "" {
+		return p, errors.New("fields required: name, email and password")
 	}
 
-	result := s.db.Model(&u).Limit(1).Where("email=?", u.Email).Find(&u)
+	result := s.db.Model(&p).Limit(1).Where("email=?", p.Email).Find(&p)
 	if result.RowsAffected > 0 {
-		return ErrAlreadyExists // POST = create, don't overwrite
+		return p, ErrAlreadyExists // POST = create, don't overwrite
 	}
 
-	u.ID = uuid.New().String()
-	err := s.db.Model(&u).Create(&u).Error
+	p.ID = uuid.New().String()
+	err := s.db.Model(&p).Create(&p).Error
 	if err != nil {
-		return err
+		return p, err
 	}
 
 	// store new profile in in memory cache
-	cacheKey := fmt.Sprintf("profile_id:%s", u.ID)
-	s.c.Set(cacheKey, u, cache.DefaultExpiration)
-	return nil
+	cacheKey := fmt.Sprintf("profile_id:%s", p.ID)
+	s.c.Set(cacheKey, p, cache.DefaultExpiration)
+	return p, nil
 }
 
 func (s *dbService) GetProfile(ctx context.Context, id string) (Profile, error) {

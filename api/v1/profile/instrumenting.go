@@ -22,7 +22,7 @@ func NewInstrumentingService(counter metrics.Counter, latency metrics.Histogram,
 	}
 }
 
-func (s *instrumentingService) PostProfile(ctx context.Context, u Profile) error {
+func (s *instrumentingService) PostProfile(ctx context.Context, u Profile) (Profile, error) {
 	defer func(begin time.Time) {
 		s.requestCount.With("method", "new").Add(1)
 		s.requestLatency.With("method", "new").Observe(time.Since(begin).Seconds())

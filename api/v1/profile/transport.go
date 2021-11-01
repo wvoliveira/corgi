@@ -3,13 +3,10 @@ package profile
 // The "profile" is just over HTTP, so we just have a single transport.go.
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
 	"net/http"
-	"net/url"
 	"strconv"
 	"time"
 
@@ -235,86 +232,6 @@ func decodeDeleteProfileRequest(_ context.Context, r *http.Request) (request int
 	return deleteProfileRequest{ID: id}, nil
 }
 
-func encodePostProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("POST").Path("/profiles/")
-	req.URL.Path = "/profile/v1/profiles"
-	return encodeRequest(ctx, req, request)
-}
-
-func encodeGetProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/profiles/{id}")
-	r := request.(getProfileRequest)
-	profileID := url.QueryEscape(r.ID)
-	req.URL.Path = "/profile/v1/profiles/" + profileID
-	return encodeRequest(ctx, req, request)
-}
-
-func encodeGetProfilesRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("GET").Path("/profiles")
-	req.URL.Path = "/profile/v1/profiles"
-	return encodeRequest(ctx, req, request)
-}
-
-func encodePutProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PUT").Path("/profiles/{id}")
-	r := request.(putProfileRequest)
-	profileID := url.QueryEscape(r.ID)
-	req.URL.Path = "/profile/v1/profiles/" + profileID
-	return encodeRequest(ctx, req, request)
-}
-
-func encodePatchProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("PATCH").Path("/profiles/{id}")
-	r := request.(patchProfileRequest)
-	profileID := url.QueryEscape(r.ID)
-	req.URL.Path = "/profile/v1/profiles/" + profileID
-	return encodeRequest(ctx, req, request)
-}
-
-func encodeDeleteProfileRequest(ctx context.Context, req *http.Request, request interface{}) error {
-	// r.Methods("DELETE").Path("/profiles/{id}")
-	r := request.(deleteProfileRequest)
-	profileID := url.QueryEscape(r.ID)
-	req.URL.Path = "/profile/v1/profiles/" + profileID
-	return encodeRequest(ctx, req, request)
-}
-
-func decodePostProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response postProfileResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodeGetProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getProfileResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodeGetProfilesResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response getProfilesResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodePutProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response putProfileResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodePatchProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response patchProfileResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
-func decodeDeleteProfileResponse(_ context.Context, resp *http.Response) (interface{}, error) {
-	var response deleteProfileResponse
-	err := json.NewDecoder(resp.Body).Decode(&response)
-	return response, err
-}
-
 // errorer is implemented by all concrete response types that may contain
 // errors. It allows us to change the HTTP response code without needing to
 // trigger an endpoint (transport-level) error. For more information, read the
@@ -336,19 +253,6 @@ func encodeResponse(ctx context.Context, w http.ResponseWriter, response interfa
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
-}
-
-// encodeRequest likewise JSON-encodes the request to the HTTP request body.
-// Don't use it directly as a transport/http.Client EncodeRequestFunc:
-// profilesvc endpoints require mutating the HTTP method and request path.
-func encodeRequest(_ context.Context, req *http.Request, request interface{}) error {
-	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(request)
-	if err != nil {
-		return err
-	}
-	req.Body = ioutil.NopCloser(&buf)
-	return nil
 }
 
 func encodeError(_ context.Context, err error, w http.ResponseWriter) {

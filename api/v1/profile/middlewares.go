@@ -25,7 +25,7 @@ type loggingMiddleware struct {
 	logger log.Logger
 }
 
-func (mw loggingMiddleware) PostProfile(ctx context.Context, p Profile) (err error) {
+func (mw loggingMiddleware) PostProfile(ctx context.Context, p Profile) (_ Profile, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "PostProfile", "id", p.ID, "took", time.Since(begin), "err", err)
 	}(time.Now())

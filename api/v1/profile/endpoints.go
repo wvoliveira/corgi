@@ -2,11 +2,8 @@ package profile
 
 import (
 	"context"
-	"net/url"
-	"strings"
 
 	"github.com/go-kit/kit/endpoint"
-	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 // Endpoints collects all of the endpoints that compose a Profile service. It's
@@ -44,35 +41,6 @@ func MakeServerEndpoints(s Service) Endpoints {
 		PatchProfileEndpoint:  MakePatchProfileEndpoint(s),
 		DeleteProfileEndpoint: MakeDeleteProfileEndpoint(s),
 	}
-}
-
-// MakeClientEndpoints returns an Endpoints struct where each endpoint invokes
-// the corresponding method on the remote instance, via a transport/http.Client.
-// Useful in a Profilesvc client.
-func MakeClientEndpoints(instance string) (Endpoints, error) {
-	if !strings.HasPrefix(instance, "http") {
-		instance = "http://" + instance
-	}
-	tgt, err := url.Parse(instance)
-	if err != nil {
-		return Endpoints{}, err
-	}
-	tgt.Path = ""
-
-	options := []httptransport.ClientOption{}
-
-	// Note that the request encoders need to modify the request Profile, changing
-	// the path. That's fine: we simply need to provide specific encoders for
-	// each endpoint.
-
-	return Endpoints{
-		PostProfileEndpoint:   httptransport.NewClient("POST", tgt, encodePostProfileRequest, decodePostProfileResponse, options...).Endpoint(),
-		GetProfileEndpoint:    httptransport.NewClient("GET", tgt, encodeGetProfileRequest, decodeGetProfileResponse, options...).Endpoint(),
-		GetProfilesEndpoint:   httptransport.NewClient("GET", tgt, encodeGetProfilesRequest, decodeGetProfilesResponse, options...).Endpoint(),
-		PutProfileEndpoint:    httptransport.NewClient("PUT", tgt, encodePutProfileRequest, decodePutProfileResponse, options...).Endpoint(),
-		PatchProfileEndpoint:  httptransport.NewClient("PATCH", tgt, encodePatchProfileRequest, decodePatchProfileResponse, options...).Endpoint(),
-		DeleteProfileEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteProfileRequest, decodeDeleteProfileResponse, options...).Endpoint(),
-	}, nil
 }
 
 // PostProfile implements Service. Primarily useful in a client.
@@ -146,8 +114,8 @@ func (e Endpoints) DeleteProfile(ctx context.Context, id string) error {
 func MakePostProfileEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(postProfileRequest)
-		e := s.PostProfile(ctx, req.Profile)
-		return postProfileResponse{Err: e}, nil
+		p, e := s.PostProfile(ctx, req.Profile)
+		return postProfileResponse{ID: p.ID, Name: p.Name, Err: e}, nil
 	}
 }
 
@@ -221,7 +189,9 @@ type postProfileRequest struct {
 }
 
 type postProfileResponse struct {
-	Err error `json:"err,omitempty"`
+	ID   string `json:"id"`
+	Name string `json:"keyword"`
+	Err  error  `json:"err,omitempty"`
 }
 
 func (r postProfileResponse) error() error { return r.Err }
