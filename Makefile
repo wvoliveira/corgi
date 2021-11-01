@@ -9,6 +9,13 @@ build: build-nextjs
 	go build .
 
 .PHONY: url
+auth-pwd:
+	go run ./api/v1/auth/pwd/cmd/pwd/main.go -http.addr :8080
+
+auth-pwd-swag:
+	swag init --parseInternal --dir "./" -g ./api/v1/auth/pwd/cmd/pwd/main.go -o api/v1/auth/pwd/docs
+
+.PHONY: url
 url:
 	go run ./api/v1/url/cmd/url/main.go -http.addr :8080
 
