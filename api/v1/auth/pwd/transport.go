@@ -39,7 +39,7 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	signInPwdHandler := kithttp.NewServer(
 		e.SignInPwdEndpoint,
 		decodeSignInPwdRequest,
-		encodeResponse,
+		encodeSignInPwdResponse,
 		options...,
 	)
 
@@ -105,6 +105,29 @@ func decodeSignUpPwdRequest(_ context.Context, r *http.Request) (request interfa
 // big comment in endpoints.go.
 type errorer interface {
 	error() error
+}
+
+func encodeSignInPwdResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+	if e, ok := response.(errorer); ok && e.error() != nil {
+		// Not a Go kit transport error, but a business-logic error.
+		// Provide those as HTTP errors.
+		encodeError(ctx, e.error(), w)
+		return nil
+	}
+
+	// Get session_token from context
+	v, _ := ctx.Value("session_token").(string)
+
+	// Finally, we set the client cookie for "session_token" as the session token we just generated
+	// we also set an expiry time of 120 seconds, the same as the cache
+	http.SetCookie(w, &http.Cookie{
+		Name:    "session_token",
+		Value:   v,
+		Expires: time.Now().Add(300 * time.Second),
+	})
+
+	w.Header().Set("Content-Type", "application/json; charset=utf-8")
+	return json.NewEncoder(w).Encode(response)
 }
 
 // encodeResponse is the common method to encode all response types to the

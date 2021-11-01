@@ -80,6 +80,15 @@ func (s *dbService) SignInPwd(ctx context.Context, p Pwd) error {
 		return ErrUnauthorized
 	}
 
+	// Set the token in the cache, along with the user whom it represents
+	// The token has an expiry time of 300 seconds
+	sessionToken := uuid.New().String()
+	cacheSessionKey := fmt.Sprintf("pwd_session_email:%s", p.Email)
+	s.c.Set(cacheSessionKey, sessionToken, cache.DefaultExpiration)
+
+	//nolint
+	ctx = context.WithValue(ctx, "session_token", sessionToken)
+
 	// store new pwd in in memory cache
 	// cacheKey := fmt.Sprintf("pwd_id:%s", p.ID)
 	// s.c.Set(cacheKey, p, cache.DefaultExpiration)
