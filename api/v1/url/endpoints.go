@@ -2,11 +2,8 @@ package url
 
 import (
 	"context"
-	"net/url"
-	"strings"
 
 	"github.com/go-kit/kit/endpoint"
-	httptransport "github.com/go-kit/kit/transport/http"
 )
 
 // Endpoints collects all of the endpoints that compose a URL service. It's
@@ -44,35 +41,6 @@ func MakeServerEndpoints(s Service) Endpoints {
 		PatchURLEndpoint:  MakePatchURLEndpoint(s),
 		DeleteURLEndpoint: MakeDeleteURLEndpoint(s),
 	}
-}
-
-// MakeClientEndpoints returns an Endpoints struct where each endpoint invokes
-// the corresponding method on the remote instance, via a transport/http.Client.
-// Useful in a URLsvc client.
-func MakeClientEndpoints(instance string) (Endpoints, error) {
-	if !strings.HasPrefix(instance, "http") {
-		instance = "http://" + instance
-	}
-	tgt, err := url.Parse(instance)
-	if err != nil {
-		return Endpoints{}, err
-	}
-	tgt.Path = ""
-
-	options := []httptransport.ClientOption{}
-
-	// Note that the request encoders need to modify the request URL, changing
-	// the path. That's fine: we simply need to provide specific encoders for
-	// each endpoint.
-
-	return Endpoints{
-		PostURLEndpoint:   httptransport.NewClient("POST", tgt, encodePostURLRequest, decodePostURLResponse, options...).Endpoint(),
-		GetURLEndpoint:    httptransport.NewClient("GET", tgt, encodeGetURLRequest, decodeGetURLResponse, options...).Endpoint(),
-		GetURLsEndpoint:   httptransport.NewClient("GET", tgt, encodeGetURLsRequest, decodeGetURLsResponse, options...).Endpoint(),
-		PutURLEndpoint:    httptransport.NewClient("PUT", tgt, encodePutURLRequest, decodePutURLResponse, options...).Endpoint(),
-		PatchURLEndpoint:  httptransport.NewClient("PATCH", tgt, encodePatchURLRequest, decodePatchURLResponse, options...).Endpoint(),
-		DeleteURLEndpoint: httptransport.NewClient("DELETE", tgt, encodeDeleteURLRequest, decodeDeleteURLResponse, options...).Endpoint(),
-	}, nil
 }
 
 // PostURL implements Service. Primarily useful in a client.

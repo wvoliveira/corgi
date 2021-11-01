@@ -25,8 +25,8 @@ import (
 	"github.com/elga-io/redir/api/v1/url"
 	_ "github.com/elga-io/redir/api/v1/url/docs"
 
-	"github.com/elga-io/redir/api/v1/user"
-	_ "github.com/elga-io/redir/api/v1/user/docs"
+	"github.com/elga-io/redir/api/v1/profile"
+	_ "github.com/elga-io/redir/api/v1/profile/docs"
 )
 
 //go:embed ui/dist
@@ -109,19 +109,19 @@ func main() {
 	)
 
 	// User service
-	var use user.Service
-	use = user.NewDBService(db, c)
-	use = user.LoggingMiddleware(logger)(use)
-	use = user.NewInstrumentingService(
+	var use profile.Service
+	use = profile.NewDBService(db, c)
+	use = profile.LoggingMiddleware(logger)(use)
+	use = profile.NewInstrumentingService(
 		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 			Namespace: "api",
-			Subsystem: "user_service",
+			Subsystem: "profile_service",
 			Name:      "request_count",
 			Help:      "Number of requests received.",
 		}, fieldKeys),
 		kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
 			Namespace: "api",
-			Subsystem: "user_service",
+			Subsystem: "profile_service",
 			Name:      "request_latency_microseconds",
 			Help:      "Total duration of requests in microseconds.",
 		}, fieldKeys),
@@ -132,7 +132,7 @@ func main() {
 	mux := http.NewServeMux()
 
 	mux.Handle("/url/v1/", url.MakeHTTPHandler(us, httpLogger))
-	mux.Handle("/user/v1/", user.MakeHTTPHandler(use, httpLogger))
+	mux.Handle("/profile/v1/", profile.MakeHTTPHandler(use, httpLogger))
 	mux.Handle("/", ui)
 
 	http.Handle("/", accessControl(mux))

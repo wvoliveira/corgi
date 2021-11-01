@@ -34,6 +34,7 @@ type URL struct {
 	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
 }
 
+// PostURL struct when create a URL
 type PostURL struct {
 	Keyword string `json:"keyword" gorm:"index" example:"google"`
 	URL     string `json:"url" example:"https://www.google.com"`
@@ -121,7 +122,9 @@ func (s *dbService) PutURL(ctx context.Context, id string, u URL) error {
 	var result *gorm.DB
 	cacheKey := fmt.Sprintf("url_id:%s", id)
 
-	if !isValidUUID(id) {
+	_, err := uuid.Parse(id)
+
+	if err != nil {
 		return ErrInconsistentIDs
 	}
 

@@ -1,4 +1,4 @@
-package user
+package profile
 
 import (
 	"context"
@@ -22,29 +22,29 @@ func NewInstrumentingService(counter metrics.Counter, latency metrics.Histogram,
 	}
 }
 
-func (s *instrumentingService) PostUser(ctx context.Context, u User) error {
+func (s *instrumentingService) PostProfile(ctx context.Context, u Profile) error {
 	defer func(begin time.Time) {
 		s.requestCount.With("method", "new").Add(1)
 		s.requestLatency.With("method", "new").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return s.Service.PostUser(ctx, u)
+	return s.Service.PostProfile(ctx, u)
 }
 
-func (s *instrumentingService) GetUser(ctx context.Context, id string) (User, error) {
+func (s *instrumentingService) GetProfile(ctx context.Context, id string) (Profile, error) {
 	defer func(begin time.Time) {
 		s.requestCount.With("method", "load").Add(1)
 		s.requestLatency.With("method", "load").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return s.Service.GetUser(ctx, id)
+	return s.Service.GetProfile(ctx, id)
 }
 
-func (s *instrumentingService) GetUsers(ctx context.Context, offset, pageSize int) ([]User, error) {
+func (s *instrumentingService) GetProfiles(ctx context.Context, offset, pageSize int) ([]Profile, error) {
 	defer func(begin time.Time) {
-		s.requestCount.With("method", "list_users").Add(1)
-		s.requestLatency.With("method", "list_users").Observe(time.Since(begin).Seconds())
+		s.requestCount.With("method", "list_profiles").Add(1)
+		s.requestLatency.With("method", "list_profiles").Observe(time.Since(begin).Seconds())
 	}(time.Now())
 
-	return s.Service.GetUsers(ctx, offset, pageSize)
+	return s.Service.GetProfiles(ctx, offset, pageSize)
 }
