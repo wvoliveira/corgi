@@ -14,7 +14,7 @@ import (
 
 // Service is a simple CRUD interface for Pwd struct.
 type Service interface {
-	SignInPwd(ctx context.Context, u Pwd) error
+	SignInPwd(ctx context.Context, u Pwd) (Pwd, error)
 	SignUpPwd(ctx context.Context, u Pwd) error
 }
 
@@ -28,6 +28,8 @@ type Pwd struct {
 
 	Email    string `json:"email" gorm:"index" example:"oliveira@live.it"`
 	Password string `json:"password"`
+
+	SessionToken string `json:"-"`
 }
 
 //nolint
@@ -53,12 +55,12 @@ func NewDBService(db *gorm.DB, c *cache.Cache) Service {
 	}
 }
 
-func (s *dbService) SignInPwd(ctx context.Context, p Pwd) error {
+func (s *dbService) SignInPwd(ctx context.Context, p Pwd) (Pwd, error) {
 	storedPwd := Pwd{}
 	cacheKey := fmt.Sprintf("pwd_email:%s", p.Email)
 
 	if p.Email == "" || p.Password == "" {
-		return ErrFieldsRequired
+		return p, ErrFieldsRequired
 	}
 
 	// check cache
@@ -70,14 +72,14 @@ func (s *dbService) SignInPwd(ctx context.Context, p Pwd) error {
 	if !found {
 		result := s.db.Model(&storedPwd).Limit(1).Where("email=?", p.Email).Find(&storedPwd)
 		if result.RowsAffected == 0 {
-			return ErrUnauthorized
+			return p, ErrUnauthorized
 		}
 	}
 
 	// Compare the stored hashed password, with the hashed version of the password that was received
 	if err := bcrypt.CompareHashAndPassword([]byte(storedPwd.Password), []byte(p.Password)); err != nil {
 		// If the two passwords don't match, return a 401 status
-		return ErrUnauthorized
+		return p, ErrUnauthorized
 	}
 
 	// Set the token in the cache, along with the user whom it represents
@@ -86,13 +88,13 @@ func (s *dbService) SignInPwd(ctx context.Context, p Pwd) error {
 	cacheSessionKey := fmt.Sprintf("pwd_session_email:%s", p.Email)
 	s.c.Set(cacheSessionKey, sessionToken, cache.DefaultExpiration)
 
-	//nolint
-	ctx = context.WithValue(ctx, "session_token", sessionToken)
+	// set session token to Pwd object
+	p.SessionToken = sessionToken
 
 	// store new pwd in in memory cache
 	// cacheKey := fmt.Sprintf("pwd_id:%s", p.ID)
 	// s.c.Set(cacheKey, p, cache.DefaultExpiration)
-	return nil
+	return p, nil
 }
 
 func (s *dbService) SignUpPwd(ctx context.Context, p Pwd) error {

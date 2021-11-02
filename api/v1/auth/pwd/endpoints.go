@@ -62,8 +62,8 @@ func (e Endpoints) SignUpPwd(ctx context.Context, p Pwd) error {
 func MakeSignInPwdEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(signInPwdRequest)
-		e := s.SignInPwd(ctx, req.Pwd)
-		return signInPwdResponse{Err: e}, nil
+		p, e := s.SignInPwd(ctx, req.Pwd)
+		return signInPwdResponse{SessionToken: p.SessionToken, Err: e}, nil
 	}
 }
 
@@ -101,7 +101,8 @@ type signUpPwdRequest struct {
 }
 
 type signInPwdResponse struct {
-	Err error `json:"err,omitempty"`
+	SessionToken string `json:"-"`
+	Err          error  `json:"err,omitempty"`
 }
 
 type signUpPwdResponse struct {

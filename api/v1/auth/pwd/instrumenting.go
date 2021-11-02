@@ -22,7 +22,7 @@ func NewInstrumentingService(counter metrics.Counter, latency metrics.Histogram,
 	}
 }
 
-func (s *instrumentingService) SignInPwd(ctx context.Context, u Pwd) error {
+func (s *instrumentingService) SignInPwd(ctx context.Context, u Pwd) (Pwd, error) {
 	defer func(begin time.Time) {
 		s.requestCount.With("method", "new").Add(1)
 		s.requestLatency.With("method", "new").Observe(time.Since(begin).Seconds())

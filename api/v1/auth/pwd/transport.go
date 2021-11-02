@@ -115,14 +115,22 @@ func encodeSignInPwdResponse(ctx context.Context, w http.ResponseWriter, respons
 		return nil
 	}
 
-	// Get session_token from context
-	v, _ := ctx.Value("session_token").(string)
+	var sessionToken string
+
+	// Get session_token
+	e, ok := response.(signInPwdResponse)
+	if ok && e.error() != nil {
+		encodeError(ctx, e.error(), w)
+		return nil
+	}
+
+	sessionToken = e.SessionToken
 
 	// Finally, we set the client cookie for "session_token" as the session token we just generated
 	// we also set an expiry time of 120 seconds, the same as the cache
 	http.SetCookie(w, &http.Cookie{
 		Name:    "session_token",
-		Value:   v,
+		Value:   sessionToken,
 		Expires: time.Now().Add(300 * time.Second),
 	})
 

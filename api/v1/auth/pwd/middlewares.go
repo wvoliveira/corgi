@@ -25,7 +25,7 @@ type loggingMiddleware struct {
 	logger log.Logger
 }
 
-func (mw loggingMiddleware) SignInPwd(ctx context.Context, p Pwd) (err error) {
+func (mw loggingMiddleware) SignInPwd(ctx context.Context, p Pwd) (_ Pwd, err error) {
 	defer func(begin time.Time) {
 		mw.logger.Log("method", "SignInPwd", "id", p.ID, "took", time.Since(begin), "err", err)
 	}(time.Now())
