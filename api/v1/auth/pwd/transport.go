@@ -17,7 +17,6 @@ import (
 	"github.com/go-kit/log"
 
 	"github.com/heptiolabs/healthcheck"
-	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 var (
@@ -59,9 +58,6 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 
 	r.HandleFunc("/auth/pwd/v1/health/ready", health.ReadyEndpoint)
 	r.HandleFunc("/auth/pwd/v1/health/live", health.LiveEndpoint)
-
-	r.PathPrefix("/auth/pwd/v1/swagger").Handler(httpSwagger.WrapHandler)
-
 	return r
 }
 
