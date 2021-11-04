@@ -103,13 +103,13 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 // @Tags URL
 // @Accept json
 // @Produce json
-// @Param data body url.postURLResponse true "URL struct"
+// @Param data body url.postURLRequest true "URL struct"
 // @Success 200
 // @Router /url/v1/urls [post]
-func decodePostURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodePostURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	var req postURLRequest
-	if e := json.NewDecoder(r.Body).Decode(&req.URL); e != nil {
-		return nil, e
+	if err := json.NewDecoder(r.Body).Decode(&req.URL); err != nil {
+		return nil, err
 	}
 	return req, nil
 }
@@ -124,7 +124,7 @@ func decodePostURLRequest(_ context.Context, r *http.Request) (request interface
 // @Success 200
 // @Failure 404
 // @Router /url/v1/urls/{id} [get]
-func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeGetURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
@@ -143,7 +143,7 @@ func decodeGetURLRequest(_ context.Context, r *http.Request) (request interface{
 // @Param page_size query int false "Quantity of items"
 // @Success 200 {object} []URL
 // @Router /url/v1/urls [get]
-func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeGetURLsRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page == 0 {
@@ -169,10 +169,10 @@ func decodeGetURLsRequest(_ context.Context, r *http.Request) (request interface
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
-// @Param data body url.postURLResponse true "URL struct"
+// @Param data body url.postURLRequest true "URL struct"
 // @Success 200
 // @Router /url/v1/urls/{id} [put]
-func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodePutURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
@@ -195,10 +195,10 @@ func decodePutURLRequest(_ context.Context, r *http.Request) (request interface{
 // @Accept json
 // @Produce json
 // @Param id path string true "URL ID"
-// @Param data body url.postURLResponse true "URL struct"
+// @Param data body url.postURLRequest true "URL struct"
 // @Success 200
 // @Router /url/v1/urls/{id} [patch]
-func decodePatchURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodePatchURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
@@ -223,7 +223,7 @@ func decodePatchURLRequest(_ context.Context, r *http.Request) (request interfac
 // @Param id path string true "URL ID"
 // @Success 200
 // @Router /url/v1/urls/{id} [delete]
-func decodeDeleteURLRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeDeleteURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {

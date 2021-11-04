@@ -1,28 +1,60 @@
 basePath: /
 definitions:
-  jwt.Token:
+  profile.Profile:
     properties:
+      active:
+        example: false
+        type: boolean
       created_at:
+        example: "2021-10-18T00:45:07.818344164-03:00"
+        type: string
+      email:
+        example: oliveira@live.it
         type: string
       id:
-        type: integer
-      identifier:
+        example: eed7df28-5a16-46f0-b5bf-c26071a42ade
         type: string
-      mobile:
-        type: boolean
+      last_login:
+        example: "2021-10-20T00:50:00.100059334-03:00"
+        type: string
+      name:
+        example: Wellington Oliveira
+        type: string
+      roles:
+        items:
+          type: string
+        type: array
+      tags:
+        items:
+          type: string
+        type: array
       updated_at:
+        example: "2021-10-18T00:49:06.160059334-03:00"
         type: string
     type: object
-  url.PostURL:
+  profile.postProfileRequest:
     properties:
-      keyword:
-        example: google
+      profile:
+        $ref: '#/definitions/profile.Profile'
+    type: object
+  pwd.signInPwdRequest:
+    properties:
+      created_at:
+        example: "2021-10-18T00:45:07.818344164-03:00"
         type: string
-      title:
-        example: Google Home
+      email:
+        example: oliveira@live.it
         type: string
-      url:
-        example: https://www.google.com
+      id:
+        example: eed7df28-5a16-46f0-b5bf-c26071a42ade
+        type: string
+      last_login:
+        example: "2021-10-20T00:50:00.100059334-03:00"
+        type: string
+      password:
+        type: string
+      updated_at:
+        example: "2021-10-18T00:49:06.160059334-03:00"
         type: string
     type: object
   url.URL:
@@ -52,49 +84,10 @@ definitions:
         example: https://www.google.com
         type: string
     type: object
-  user.PostUser:
+  url.postURLRequest:
     properties:
-      keyword:
-        example: google
-        type: string
-      title:
-        example: Google Home
-        type: string
-      user:
-        example: https://www.google.com
-        type: string
-    type: object
-  user.User:
-    properties:
-      active:
-        example: false
-        type: boolean
-      created_at:
-        example: "2021-10-18T00:45:07.818344164-03:00"
-        type: string
-      email:
-        example: oliveira@live.it
-        type: string
-      id:
-        example: eed7df28-5a16-46f0-b5bf-c26071a42ade
-        type: string
-      last_login:
-        example: "2021-10-20T00:50:00.100059334-03:00"
-        type: string
-      name:
-        example: Wellington Oliveira
-        type: string
-      roles:
-        items:
-          type: string
-        type: array
-      token:
-        items:
-          $ref: '#/definitions/jwt.Token'
-        type: array
-      updated_at:
-        example: "2021-10-18T00:49:06.160059334-03:00"
-        type: string
+      url:
+        $ref: '#/definitions/url.URL'
     type: object
 host: localhost:8080
 info:
@@ -109,6 +102,178 @@ info:
   title: URL API
   version: 0.0.1
 paths:
+  /auth/pwd/v1/signin:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate the user
+      parameters:
+      - description: Pwd struct
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/pwd.signInPwdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Authenticate the user
+      tags:
+      - Pwd
+  /auth/pwd/v1/signup:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user
+      parameters:
+      - description: Pwd struct
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/pwd.signInPwdRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Create a new user
+      tags:
+      - Pwd
+  /profile/v1/profiles:
+    get:
+      consumes:
+      - application/json
+      description: Get details of all Profiles
+      parameters:
+      - description: Page number
+        in: query
+        name: page
+        type: integer
+      - description: Quantity of items
+        in: query
+        name: page_size
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/profile.Profile'
+            type: array
+      summary: Get details of all Profiles
+      tags:
+      - Profile
+    post:
+      consumes:
+      - application/json
+      description: Add a new Profile
+      parameters:
+      - description: Profile struct
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/profile.postProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Add a new Profile
+      tags:
+      - Profile
+  /profile/v1/profiles/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete Profile item
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Delete Profile item
+      tags:
+      - Profile
+    get:
+      consumes:
+      - application/json
+      description: Get Profile by ID
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+        "404":
+          description: ""
+      summary: Get an Profile
+      tags:
+      - Profile
+    patch:
+      consumes:
+      - application/json
+      description: Change Profile item
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Profile struct
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/profile.postProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Change Profile item
+      tags:
+      - Profile
+    put:
+      consumes:
+      - application/json
+      description: Change or create Profile item
+      parameters:
+      - description: Profile ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Profile struct
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/profile.postProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: ""
+      summary: Change or create Profile item
+      tags:
+      - Profile
   /url/v1/urls:
     get:
       consumes:
@@ -145,7 +310,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/url.PostURL'
+          $ref: '#/definitions/url.postURLRequest'
       produces:
       - application/json
       responses:
@@ -208,7 +373,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/url.PostURL'
+          $ref: '#/definitions/url.postURLRequest'
       produces:
       - application/json
       responses:
@@ -232,7 +397,7 @@ paths:
         name: data
         required: true
         schema:
-          $ref: '#/definitions/url.PostURL'
+          $ref: '#/definitions/url.postURLRequest'
       produces:
       - application/json
       responses:
@@ -241,136 +406,4 @@ paths:
       summary: Change or create URL item
       tags:
       - URL
-  /user/v1/users:
-    get:
-      consumes:
-      - application/json
-      description: Get details of all Users
-      parameters:
-      - description: Page number
-        in: query
-        name: page
-        type: integer
-      - description: Quantity of items
-        in: query
-        name: page_size
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            items:
-              $ref: '#/definitions/user.User'
-            type: array
-      summary: Get details of all Users
-      tags:
-      - User
-    post:
-      consumes:
-      - application/json
-      description: Add a new User
-      parameters:
-      - description: User struct
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/user.PostUser'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      summary: Add a new User
-      tags:
-      - User
-  /user/v1/users/{id}:
-    delete:
-      consumes:
-      - application/json
-      description: Delete User item
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      summary: Delete User item
-      tags:
-      - User
-    get:
-      consumes:
-      - application/json
-      description: Get User by ID
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-        "404":
-          description: ""
-      summary: Get an User
-      tags:
-      - User
-    patch:
-      consumes:
-      - application/json
-      description: Change User item
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: User struct
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/user.PostUser'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      summary: Change User item
-      tags:
-      - User
-    put:
-      consumes:
-      - application/json
-      description: Change or create User item
-      parameters:
-      - description: User ID
-        in: path
-        name: id
-        required: true
-        type: string
-      - description: User struct
-        in: body
-        name: data
-        required: true
-        schema:
-          $ref: '#/definitions/user.PostUser'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: ""
-      summary: Change or create User item
-      tags:
-      - User
 swagger: "2.0"

@@ -21,16 +21,17 @@ import (
 
 	"github.com/patrickmn/go-cache"
 
-	"github.com/elga-io/redir/api/v1/profile"
+	"github.com/elga-io/redir/api/v1/auth/pwd"
+	_ "github.com/elga-io/redir/api/v1/auth/pwd/docs"
 )
 
 func initialMigration(db *gorm.DB) {
-	db.AutoMigrate(&profile.Profile{})
+	db.AutoMigrate(&pwd.Pwd{})
 }
 
-// @title Profile API
+// @title Pwd API
 // @version 0.0.1
-// @description Micro-serice for managing Profiles
+// @description Micro-serice for managing Pwds
 // @termsOfService http://elga.io/terms
 // @contact.name API Support
 // @contact.email support@elga.io
@@ -63,11 +64,11 @@ func main() {
 
 	fieldKeys := []string{"method"}
 
-	// Profile service
-	var us profile.Service
-	us = profile.NewDBService(db, c)
-	us = profile.LoggingMiddleware(logger)(us)
-	us = profile.NewInstrumentingService(
+	// Pwd service
+	var us pwd.Service
+	us = pwd.NewDBService(db, c)
+	us = pwd.LoggingMiddleware(logger)(us)
+	us = pwd.NewInstrumentingService(
 		kitprometheus.NewCounterFrom(stdprometheus.CounterOpts{
 			Namespace: "api",
 			Subsystem: "url_service",
@@ -91,7 +92,7 @@ func main() {
 	httpLogger := log.With(logger, "component", "http")
 	mux := http.NewServeMux()
 
-	mux.Handle("/url/v1/", profile.MakeHTTPHandler(us, httpLogger))
+	mux.Handle("/auth/pwd/v1/", pwd.MakeHTTPHandler(us, httpLogger))
 
 	http.Handle("/", accessControl(mux))
 	http.Handle("/metrics", promhttp.Handler())
