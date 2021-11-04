@@ -1,0 +1,4 @@
+.git
+Dockerfile
+gorm.db
+Makefile

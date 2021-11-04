@@ -23,10 +23,8 @@ import (
 	"github.com/patrickmn/go-cache"
 
 	"github.com/elga-io/redir/api/v1/url"
-	_ "github.com/elga-io/redir/api/v1/url/docs"
 
 	"github.com/elga-io/redir/api/v1/profile"
-	_ "github.com/elga-io/redir/api/v1/profile/docs"
 )
 
 //go:embed ui/dist
