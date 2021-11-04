@@ -27,13 +27,6 @@ import (
 	"gorm.io/gorm"
 
 	"github.com/patrickmn/go-cache"
-<<<<<<< HEAD
-
-	"github.com/elga-io/redir/api/v1/url"
-
-	"github.com/elga-io/redir/api/v1/profile"
-=======
->>>>>>> 8cd592ca5fd5013b08aa926b7922f5f1a4e70ef5
 )
 
 //go:embed ui/dist
