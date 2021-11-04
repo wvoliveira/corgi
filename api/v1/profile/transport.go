@@ -103,7 +103,7 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 // @Tags Profile
 // @Accept json
 // @Produce json
-// @Param data body profile.PostProfile true "Profile struct"
+// @Param data body profile.postProfileRequest true "Profile struct"
 // @Success 200
 // @Router /profile/v1/profiles [post]
 func decodePostProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -169,7 +169,7 @@ func decodeGetProfilesRequest(_ context.Context, r *http.Request) (request inter
 // @Accept json
 // @Produce json
 // @Param id path string true "Profile ID"
-// @Param data body profile.PostProfile true "Profile struct"
+// @Param data body profile.postProfileRequest true "Profile struct"
 // @Success 200
 // @Router /profile/v1/profiles/{id} [put]
 func decodePutProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
@@ -195,7 +195,7 @@ func decodePutProfileRequest(_ context.Context, r *http.Request) (request interf
 // @Accept json
 // @Produce json
 // @Param id path string true "Profile ID"
-// @Param data body profile.PostProfile true "Profile struct"
+// @Param data body profile.postProfileRequest true "Profile struct"
 // @Success 200
 // @Router /profile/v1/profiles/{id} [patch]
 func decodePatchProfileRequest(_ context.Context, r *http.Request) (request interface{}, err error) {

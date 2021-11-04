@@ -71,9 +71,9 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 // @Tags Pwd
 // @Accept json
 // @Produce json
-// @Param data body pwd.postPwdRequest true "Pwd struct"
+// @Param data body pwd.signInPwdRequest true "Pwd struct"
 // @Success 200
-// @Router /pwd/v1/pwds [post]
+// @Router /auth/pwd/v1/signin [post]
 func decodeSignInPwdRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req signInPwdRequest
 	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
@@ -88,9 +88,9 @@ func decodeSignInPwdRequest(_ context.Context, r *http.Request) (request interfa
 // @Tags Pwd
 // @Accept json
 // @Produce json
-// @Param data body pwd.postPwdRequest true "Pwd struct"
+// @Param data body pwd.signInPwdRequest true "Pwd struct"
 // @Success 200
-// @Router /pwd/v1/pwds [post]
+// @Router /auth/pwd/v1/signup [post]
 func decodeSignUpPwdRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
 	var req signUpPwdRequest
 	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {

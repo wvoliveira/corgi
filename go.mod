@@ -14,7 +14,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/swaggo/http-swagger v1.1.2
-	github.com/swaggo/swag v1.7.3
+	github.com/swaggo/swag v1.7.4
 	gorm.io/gorm v1.21.15
 )
 
