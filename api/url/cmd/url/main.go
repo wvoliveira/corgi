@@ -21,7 +21,7 @@ import (
 
 	"github.com/patrickmn/go-cache"
 
-	"github.com/elga-io/redir/api/v1/url"
+	"github.com/elga-io/redir/api/url"
 )
 
 func initialMigration(db *gorm.DB) {
