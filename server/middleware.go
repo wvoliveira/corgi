@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-kit/kit/endpoint"
 	"github.com/go-kit/log"
 )
 
@@ -29,6 +30,35 @@ func AccessControl(h http.Handler) http.Handler {
 
 // Middleware describes a service (as opposed to endpoint) middleware.
 type Middleware func(Service) Service
+
+/*
+  Auth middleware.
+*/
+
+type ctxRequestKey struct{}
+
+func putRequestInCtx(ctx context.Context, r *http.Request) context.Context {
+	return context.WithValue(ctx, ctxRequestKey{}, r)
+}
+
+// AuthMiddleware returns a Basic Authentication middleware for a particular user and password.
+func AuthMiddleware() endpoint.Middleware {
+
+	return func(next endpoint.Endpoint) endpoint.Endpoint {
+		return func(ctx context.Context, request interface{}) (interface{}, error) {
+
+			r := ctx.Value(ctxRequestKey{}).(*http.Request)
+			session, _ := store.Get(r, "session")
+
+			_, ok := session.Values["account_id"]
+			if !ok {
+				return nil, ErrUnauthorized
+			}
+
+			return next(ctx, request)
+		}
+	}
+}
 
 /*
   Logging Middleware.

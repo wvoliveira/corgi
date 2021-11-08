@@ -99,7 +99,7 @@ func MakeSignInEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(signInRequest)
 		p, e := s.SignIn(ctx, Account{Email: req.Email, Password: req.Password})
-		return signInResponse{SessionToken: p.SessionToken, Err: e}, nil
+		return signInResponse{Session: p.Session, Err: e}, nil
 	}
 }
 

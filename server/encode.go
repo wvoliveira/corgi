@@ -4,8 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"time"
 )
+
+/*
+  Encode for awnser requests.
+*/
 
 func encodeSignInResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
 	if e, ok := response.(errorer); ok && e.error() != nil {
@@ -17,26 +20,19 @@ func encodeSignInResponse(ctx context.Context, w http.ResponseWriter, response i
 		return nil
 	}
 
-	var sessionToken string
-
 	// Get session_token
 	e, ok := response.(signInResponse)
 	if ok && e.error() != nil {
 		encodeError(ctx, e.error(), w)
 		return nil
 	}
+	session := e.Session
 
-	sessionToken = e.SessionToken
+	// Get request from context (via middleware).
+	r := ctx.Value(ctxRequestKey{}).(*http.Request)
 
-	/*
-		Finally, we set the client cookie for "session_token" as the session token we just generated
-		we also set an expiry time of 120 seconds, the same as the cache.
-	*/
-	http.SetCookie(w, &http.Cookie{
-		Name:    "session_token",
-		Value:   sessionToken,
-		Expires: time.Now().Add(300 * time.Second),
-	})
+	// Save it before we write to the response/return from the handler.
+	_ = session.Save(r, w)
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)

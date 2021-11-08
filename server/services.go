@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
@@ -71,14 +72,21 @@ func (s *service) SignIn(ctx context.Context, p Account) (Account, error) {
 		return p, ErrUnauthorized
 	}
 
-	// Set the token in the cache, along with the user whom it represents
-	// The token has an expiry time of 300 seconds
-	sessionToken := uuid.New().String()
-	cacheSessionKey := fmt.Sprintf("pwd_session_account:%s", p)
-	s.cache.Set(cacheSessionKey, sessionToken, cache.DefaultExpiration)
+	// Get request from context.
+	r := ctx.Value(ctxRequestKey{}).(*http.Request)
+
+	// Get session from request.
+	session, _ := store.Get(r, "session")
+	session.Values["account_id"] = storedAccount.ID
+
+	// Set session to Account struct session.
+	p.Session = session
+
+	cacheSessionKey := fmt.Sprintf("pwd_session_account:%s", p.ID)
+	s.cache.Set(cacheSessionKey, session, cache.DefaultExpiration)
 
 	// set session token to Account object
-	p.SessionToken = sessionToken
+	p.Session = session
 
 	// store new pwd in in memory cache
 	// cacheKey := fmt.Sprintf("pwd_id:%s", p.ID)

@@ -25,6 +25,7 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	options := []kithttp.ServerOption{
 		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
 		kithttp.ServerErrorEncoder(encodeError),
+		kithttp.ServerBefore(putRequestInCtx),
 	}
 
 	/*
@@ -49,42 +50,42 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	*/
 
 	addAccountHandler := kithttp.NewServer(
-		e.AddAccountEndpoint,
+		AuthMiddleware()(e.AddAccountEndpoint),
 		decodeAddAccountRequest,
 		encodeResponse,
 		options...,
 	)
 
 	findAccountByIDHandler := kithttp.NewServer(
-		e.FindAccountByIDEndpoint,
+		AuthMiddleware()(e.FindAccountByIDEndpoint),
 		decodeFindAccountByIDRequest,
 		encodeResponse,
 		options...,
 	)
 
 	findAccountsHandler := kithttp.NewServer(
-		e.FindAccountsEndpoint,
+		AuthMiddleware()(e.FindAccountsEndpoint),
 		decodeFindAccountsRequest,
 		encodeResponse,
 		options...,
 	)
 
 	updateOrCreateAccountHandler := kithttp.NewServer(
-		e.UpdateOrCreateAccountEndpoint,
+		AuthMiddleware()(e.UpdateOrCreateAccountEndpoint),
 		decodeUpdateOrCreateAccountRequest,
 		encodeResponse,
 		options...,
 	)
 
 	updateAccountHandler := kithttp.NewServer(
-		e.UpdateAccountEndpoint,
+		AuthMiddleware()(e.UpdateAccountEndpoint),
 		decodeUpdateAccountRequest,
 		encodeResponse,
 		options...,
 	)
 
 	deleteAccountHandler := kithttp.NewServer(
-		e.DeleteAccountEndpoint,
+		AuthMiddleware()(e.DeleteAccountEndpoint),
 		decodeDeleteAccountRequest,
 		encodeResponse,
 		options...,
@@ -95,42 +96,42 @@ func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
 	*/
 
 	addURLHandler := kithttp.NewServer(
-		e.AddURLEndpoint,
+		AuthMiddleware()(e.AddURLEndpoint),
 		decodeAddURLRequest,
 		encodeResponse,
 		options...,
 	)
 
 	findURLByIDHandler := kithttp.NewServer(
-		e.FindURLByIDEndpoint,
+		AuthMiddleware()(e.FindURLByIDEndpoint),
 		decodeFindURLByIDRequest,
 		encodeResponse,
 		options...,
 	)
 
 	findURLsHandler := kithttp.NewServer(
-		e.FindURLsEndpoint,
+		AuthMiddleware()(e.FindURLsEndpoint),
 		decodeFindURLsRequest,
 		encodeResponse,
 		options...,
 	)
 
 	updateOrCreateURLHandler := kithttp.NewServer(
-		e.UpdateOrCreateURLEndpoint,
+		AuthMiddleware()(e.UpdateOrCreateURLEndpoint),
 		decodeUpdateOrCreateURLRequest,
 		encodeResponse,
 		options...,
 	)
 
 	updateURLHandler := kithttp.NewServer(
-		e.UpdateURLEndpoint,
+		AuthMiddleware()(e.UpdateURLEndpoint),
 		decodeUpdateURLRequest,
 		encodeResponse,
 		options...,
 	)
 
 	deleteURLHandler := kithttp.NewServer(
-		e.DeleteURLEndpoint,
+		AuthMiddleware()(e.DeleteURLEndpoint),
 		decodeDeleteURLRequest,
 		encodeResponse,
 		options...,

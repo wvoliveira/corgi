@@ -51,6 +51,8 @@ func codeFrom(err error) int {
 		return http.StatusNotFound
 	case ErrAlreadyExists, ErrInconsistentIDs:
 		return http.StatusBadRequest
+	case ErrUnauthorized:
+		return http.StatusUnauthorized
 	default:
 		return http.StatusInternalServerError
 	}

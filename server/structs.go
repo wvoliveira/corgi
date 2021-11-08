@@ -1,6 +1,10 @@
 package server
 
-import "time"
+import (
+	"time"
+
+	"github.com/gorilla/sessions"
+)
 
 /*
 	Account represents a single struct for Account.
@@ -16,7 +20,7 @@ type Account struct {
 	Password string `json:"-" example:"supersecret"`
 	Tags     string `json:"tags"`
 
-	SessionToken string `json:"-"`
+	Session *sessions.Session `json:"-" gorm:"-"`
 }
 
 /*
@@ -61,8 +65,8 @@ type signInRequest struct {
 }
 
 type signInResponse struct {
-	SessionToken string `json:"-"`
-	Err          error  `json:"err,omitempty"`
+	Session *sessions.Session `json:"-"`
+	Err     error             `json:"err,omitempty"`
 }
 
 func (r signInResponse) error() error { return r.Err }
