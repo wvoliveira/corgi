@@ -73,7 +73,7 @@ func MakeServerEndpoints(s Service) Endpoints {
 
 // SignIn encode and decode.
 func (e Endpoints) SignIn(ctx context.Context, a Account) error {
-	request := signInRequest{Account: a}
+	request := signInRequest{Email: a.Email, Password: a.Password}
 	response, err := e.SignInEndpoint(ctx, request)
 	if err != nil {
 		return err
@@ -84,7 +84,7 @@ func (e Endpoints) SignIn(ctx context.Context, a Account) error {
 
 // SignUP encode and decode.
 func (e Endpoints) SignUP(ctx context.Context, a Account) error {
-	request := signUpRequest{Account: a}
+	request := signUpRequest{Email: a.Email, Password: a.Password}
 	response, err := e.SignUpEndpoint(ctx, request)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func (e Endpoints) SignUP(ctx context.Context, a Account) error {
 func MakeSignInEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(signInRequest)
-		p, e := s.SignIn(ctx, req.Account)
+		p, e := s.SignIn(ctx, Account{Email: req.Email, Password: req.Password})
 		return signInResponse{SessionToken: p.SessionToken, Err: e}, nil
 	}
 }
@@ -108,7 +108,7 @@ func MakeSignInEndpoint(s Service) endpoint.Endpoint {
 func MakeSignUpEndpoint(s Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
 		req := request.(signUpRequest)
-		e := s.SignUp(ctx, req.Account)
+		e := s.SignUp(ctx, Account{Email: req.Email, Password: req.Password})
 		return signUpResponse{Err: e}, nil
 	}
 }

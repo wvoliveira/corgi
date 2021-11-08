@@ -56,7 +56,8 @@ type URL struct {
 */
 
 type signInRequest struct {
-	Account
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type signInResponse struct {
@@ -71,7 +72,8 @@ func (r signInResponse) error() error { return r.Err }
 */
 
 type signUpRequest struct {
-	Account
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 type signUpResponse struct {

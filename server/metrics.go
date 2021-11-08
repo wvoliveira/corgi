@@ -35,14 +35,14 @@ func newMetricsAuth(s Service) Service {
 		Subsystem: "auth_service",
 		Name:      "request_count",
 		Help:      "Number of requests received.",
-	}, []string{})
+	}, []string{"method"})
 
 	latency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
 		Namespace: "api",
 		Subsystem: "auth_service",
 		Name:      "request_latency_microseconds",
 		Help:      "Total duration of requests in microseconds.",
-	}, []string{})
+	}, []string{"method"})
 
 	return &instrumentingAuth{
 		requestCount:   counter,
@@ -87,14 +87,14 @@ func newMetricsAccount(s Service) Service {
 		Subsystem: "account_service",
 		Name:      "request_count",
 		Help:      "Number of requests received.",
-	}, []string{})
+	}, []string{"method"})
 
 	latency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
 		Namespace: "api",
 		Subsystem: "account_service",
 		Name:      "request_latency_microseconds",
 		Help:      "Total duration of requests in microseconds.",
-	}, []string{})
+	}, []string{"method"})
 
 	return &instrumentingAccount{
 		requestCount:   counter,
@@ -175,14 +175,14 @@ func newMetricsURL(s Service) Service {
 		Subsystem: "url_service",
 		Name:      "request_count",
 		Help:      "Number of requests received.",
-	}, []string{})
+	}, []string{"method"})
 
 	latency := kitprometheus.NewSummaryFrom(stdprometheus.SummaryOpts{
 		Namespace: "api",
 		Subsystem: "url_service",
 		Name:      "request_latency_microseconds",
 		Help:      "Total duration of requests in microseconds.",
-	}, []string{})
+	}, []string{"method"})
 
 	return &instrumentingURL{
 		requestCount:   counter,
