@@ -14,7 +14,7 @@ var (
 	ErrNotFound        = errors.New("not found")
 
 	ErrFieldsRequired      = errors.New("fields required: email and password")
-	ErrInternalServerError = errors.New("Internal server error")
+	ErrInternalServerError = errors.New("internal server error")
 	ErrUnauthorized        = errors.New("Unauthorized")
 
 	/*

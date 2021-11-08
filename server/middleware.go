@@ -8,23 +8,9 @@ import (
 	"github.com/go-kit/log"
 )
 
-// Middleware describes a service (as opposed to endpoint) middleware.
-type Middleware func(Service) Service
-
-// LoggingMiddleware middleware for all services
-func LoggingMiddleware(logger log.Logger) Middleware {
-	return func(next Service) Service {
-		return &loggingMiddleware{
-			next:   next,
-			logger: logger,
-		}
-	}
-}
-
-type loggingMiddleware struct {
-	next   Service
-	logger log.Logger
-}
+/*
+  Access control for Web UI.
+*/
 
 // AccessControl set common headers for web UI.
 func AccessControl(h http.Handler) http.Handler {
@@ -39,6 +25,28 @@ func AccessControl(h http.Handler) http.Handler {
 
 		h.ServeHTTP(w, r)
 	})
+}
+
+// Middleware describes a service (as opposed to endpoint) middleware.
+type Middleware func(Service) Service
+
+/*
+  Logging Middleware.
+*/
+
+// LoggingMiddleware middleware for all services.
+func LoggingMiddleware(logger log.Logger) Middleware {
+	return func(next Service) Service {
+		return &loggingMiddleware{
+			next:   next,
+			logger: logger,
+		}
+	}
+}
+
+type loggingMiddleware struct {
+	next   Service
+	logger log.Logger
 }
 
 func (mw loggingMiddleware) SignIn(ctx context.Context, p Account) (_ Account, err error) {
