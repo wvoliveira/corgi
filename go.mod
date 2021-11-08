@@ -12,6 +12,7 @@ require gorm.io/driver/sqlite v1.1.6
 require (
 	github.com/go-kit/log v0.2.0
 	github.com/google/uuid v1.3.0
+	github.com/gorilla/sessions v1.2.1
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/swaggo/http-swagger v1.1.2
 	github.com/swaggo/swag v1.7.4
@@ -21,7 +22,6 @@ require (
 require (
 	github.com/google/go-cmp v0.5.6 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
-	github.com/gorilla/sessions v1.2.1 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
