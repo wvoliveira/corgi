@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
@@ -72,21 +71,8 @@ func (s *service) SignIn(ctx context.Context, p Account) (Account, error) {
 		return p, ErrUnauthorized
 	}
 
-	// Get request from context.
-	r := ctx.Value(ctxRequestKey{}).(*http.Request)
-
-	// Get session from request.
-	session, _ := store.Get(r, "session")
-	session.Values["account_id"] = storedAccount.ID
-
-	// Set session to Account struct session.
-	p.Session = session
-
 	cacheSessionKey := fmt.Sprintf("pwd_session_account:%s", p.ID)
-	s.cache.Set(cacheSessionKey, session, cache.DefaultExpiration)
-
-	// set session token to Account object
-	p.Session = session
+	s.cache.Set(cacheSessionKey, p.Session, cache.DefaultExpiration)
 
 	// store new pwd in in memory cache
 	// cacheKey := fmt.Sprintf("pwd_id:%s", p.ID)
@@ -262,26 +248,49 @@ func (s *service) DeleteAccount(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) AddURL(ctx context.Context, u URL) (URL, error) {
-	if u.Keyword == "" || u.URL == "" || u.Title == "" || u.OwnerID == "" {
-		return URL{}, errors.New("fields required: keyword, url, title and owner_id")
+func (s *service) AddURL(ctx context.Context, reqURL URL) (URL, error) {
+	var url URL
+	var account Account
+
+	// Get account from context.
+	if account := ctx.Value(Account{}); account != nil {
+		account = account.(Account)
 	}
 
-	result := s.db.Model(&u).Limit(1).Where("keyword=?", u.Keyword).Find(&u)
+	// Check if valid account object.
+	if account.ID == "" {
+		return url, errors.New("need account for associate URL")
+	}
+
+	// Check if necessary fields was sended.
+	if reqURL.Keyword == "" || reqURL.URL == "" || reqURL.Title == "" {
+		return url, errors.New("fields required: keyword, url, title and owner_id")
+	}
+
+	result := s.db.Model(&reqURL).Limit(1).Where("keyword=?", reqURL.Keyword).Find(&reqURL)
 	if result.RowsAffected > 0 {
-		return URL{}, ErrAlreadyExists // POST = create, don't overwrite
+		return url, ErrAlreadyExists // POST = create, don't overwrite
 	}
 
-	u.ID = uuid.New().String()
-	err := s.db.Model(&u).Create(&u).Error
-	if err != nil {
-		return URL{}, err
+	reqURL.ID = uuid.New().String()
+	reqURL.Account = account
+
+	// Create a transaction.
+	o := s.db.Create(&reqURL)
+	if o.Error != nil {
+		return url, o.Error
+	}
+
+	// Save database insert.
+	o = s.db.Save(&reqURL)
+	if o.Error != nil {
+		return url, o.Error
 	}
 
 	// Store new URL in memory cache.
-	cacheKey := fmt.Sprintf("url_id:%s", u.ID)
-	s.cache.Set(cacheKey, u, cache.DefaultExpiration)
-	return u, nil
+	cacheKey := fmt.Sprintf("url_id:%s", reqURL.ID)
+	s.cache.Set(cacheKey, reqURL, cache.DefaultExpiration)
+	return reqURL, nil
 }
 
 func (s *service) FindURLByID(ctx context.Context, id string) (URL, error) {
@@ -306,14 +315,21 @@ func (s *service) FindURLByID(ctx context.Context, id string) (URL, error) {
 }
 
 func (s *service) FindURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
-	var u []URL
+	var urls []URL
+	var account Account
 
-	// get url in db
-	result := s.db.Model(&u).Offset(offset).Limit(pageSize).Find(&u)
-	if result.Error != nil {
-		return u, result.Error
+	// Get account from context.
+	if account := ctx.Value(Account{}); account != nil {
+		account = account.(Account)
 	}
-	return u, nil
+
+	// Get URLs in database.
+	result := s.db.Model(&urls).Where("account_id=?", account.ID).Offset(offset).Limit(pageSize).Find(&urls)
+
+	if result.Error != nil {
+		return urls, result.Error
+	}
+	return urls, nil
 }
 
 /*
@@ -333,7 +349,7 @@ func (s *service) UpdateOrCreateURL(ctx context.Context, id string, reqURL URL) 
 	result = s.db.Model(&reqURL).Where("id = ?", id).First(&dbURL)
 
 	if result.RowsAffected == 0 {
-		if reqURL.Keyword == "" || reqURL.URL == "" || reqURL.Title == "" || reqURL.OwnerID == "" {
+		if reqURL.Keyword == "" || reqURL.URL == "" || reqURL.Title == "" || reqURL.AccountID == "" {
 			return errors.New("fields required: keyword, url, title and owner_id")
 		}
 

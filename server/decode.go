@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func decodeSignInRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeSignInRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
 	var req signInRequest
 	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
 		return nil, e

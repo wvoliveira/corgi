@@ -46,15 +46,7 @@ func AuthMiddleware() endpoint.Middleware {
 
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
-
-			r := ctx.Value(ctxRequestKey{}).(*http.Request)
-			session, _ := store.Get(r, "session")
-
-			_, ok := session.Values["account_id"]
-			if !ok {
-				return nil, ErrUnauthorized
-			}
-
+			// TODO: set session.
 			return next(ctx, request)
 		}
 	}

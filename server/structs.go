@@ -32,8 +32,9 @@ type URL struct {
 	Keyword   string    `json:"keyword" gorm:"index" example:"google"`
 	URL       string    `json:"url" example:"https://www.google.com"`
 	Title     string    `json:"title" example:"Google Home"`
-	Active    *bool     `json:"active" gorm:"type:bool;default:false" example:"false"`
-	OwnerID   string    `json:"owner_id" example:"5ca04a43-ff3c-4154-a8ad-02e2e906a847"`
+	Active    *bool     `json:"active" gorm:"type:bool;default:true" example:"false"`
+	AccountID string    `json:"-"`
+	Account   Account   `json:"-"`
 	CreatedAt time.Time `json:"created_at" example:"2021-10-18T00:45:07.818344164-03:00"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
 }
@@ -60,8 +61,9 @@ type URL struct {
 */
 
 type signInRequest struct {
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Email    string            `json:"email"`
+	Password string            `json:"password"`
+	Session  *sessions.Session `json:"-"`
 }
 
 type signInResponse struct {
