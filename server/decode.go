@@ -14,6 +14,9 @@ func decodeSignInRequest(ctx context.Context, r *http.Request) (request interfac
 	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
 		return nil, e
 	}
+
+	c, _ := r.Cookie("session-auth")
+	req.Session = c.Value
 	return req, nil
 }
 

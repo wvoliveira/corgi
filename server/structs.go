@@ -2,8 +2,6 @@ package server
 
 import (
 	"time"
-
-	"github.com/gorilla/sessions"
 )
 
 /*
@@ -20,7 +18,7 @@ type Account struct {
 	Password string `json:"-" example:"supersecret"`
 	Tags     string `json:"tags"`
 
-	Session *sessions.Session `json:"-" gorm:"-"`
+	Session string `json:"-" gorm:"-"`
 }
 
 /*
@@ -61,14 +59,14 @@ type URL struct {
 */
 
 type signInRequest struct {
-	Email    string            `json:"email"`
-	Password string            `json:"password"`
-	Session  *sessions.Session `json:"-"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Session  string `json:"-"`
 }
 
 type signInResponse struct {
-	Session *sessions.Session `json:"-"`
-	Err     error             `json:"err,omitempty"`
+	Session string `json:"-"`
+	Err     error  `json:"err,omitempty"`
 }
 
 func (r signInResponse) error() error { return r.Err }

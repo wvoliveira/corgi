@@ -71,8 +71,11 @@ func (s *service) SignIn(ctx context.Context, p Account) (Account, error) {
 		return p, ErrUnauthorized
 	}
 
-	cacheSessionKey := fmt.Sprintf("pwd_session_account:%s", p.ID)
-	s.cache.Set(cacheSessionKey, p.Session, cache.DefaultExpiration)
+	// Session key is session value.
+	cacheSessionKey := fmt.Sprintf("session:%s", p.Session)
+
+	// Save account object in cache with session name.
+	s.cache.Set(cacheSessionKey, p, cache.DefaultExpiration)
 
 	// store new pwd in in memory cache
 	// cacheKey := fmt.Sprintf("pwd_id:%s", p.ID)

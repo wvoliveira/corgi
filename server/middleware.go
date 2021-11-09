@@ -35,18 +35,29 @@ type Middleware func(Service) Service
   Auth middleware.
 */
 
-type ctxRequestKey struct{}
+type ctxSession struct{}
 
 func putRequestInCtx(ctx context.Context, r *http.Request) context.Context {
-	return context.WithValue(ctx, ctxRequestKey{}, r)
+	return context.WithValue(ctx, ctxSession{}, r)
 }
 
-// AuthMiddleware returns a Basic Authentication middleware for a particular user and password.
+// AuthMiddleware check if cookies contains account object.
 func AuthMiddleware() endpoint.Middleware {
 
 	return func(next endpoint.Endpoint) endpoint.Endpoint {
 		return func(ctx context.Context, request interface{}) (interface{}, error) {
-			// TODO: set session.
+
+			// Get request from context.
+			r := ctx.Value(ctxSession{}).(*http.Request)
+
+			// Get session from request.
+			cookie, err := r.Cookie("session-auth")
+			if err != nil {
+				return nil, ErrUnauthorized
+			}
+
+			ctx = context.WithValue(ctx, ctxSession{}, cookie)
+
 			return next(ctx, request)
 		}
 	}

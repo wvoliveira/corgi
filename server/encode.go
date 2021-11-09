@@ -19,6 +19,17 @@ func encodeSignInResponse(ctx context.Context, w http.ResponseWriter, response i
 		encodeError(ctx, e.error(), w)
 		return nil
 	}
+
+	r := ctx.Value(ctxSession{}).(*http.Request)
+	session, err := store.Get(r, "session-auth")
+
+	if err != nil {
+		err := session.Save(r, w)
+		if err != nil {
+			return err
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	return json.NewEncoder(w).Encode(response)
 }
