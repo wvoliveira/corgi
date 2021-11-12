@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -9,43 +8,45 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func decodeSignInRequest(ctx context.Context, r *http.Request) (request interface{}, err error) {
-	var req signInRequest
-	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
-		return nil, e
-	}
+/*
+	Auth decodes.
+*/
 
-	c, _ := r.Cookie("session-auth")
-	req.Session = c.Value
-	return req, nil
-}
-
-func decodeSignUpRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req signUpRequest
-	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
-		return nil, e
+func decodeSignInRequest(r *http.Request) (req signInRequest, err error) {
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return req, err
 	}
 	return req, nil
 }
 
-func decodeAddAccountRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req addAccountRequest
-	if e := json.NewDecoder(r.Body).Decode(&req.Account); e != nil {
-		return nil, e
+func decodeSignUpRequest(r *http.Request) (req signUpRequest, err error) {
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return req, err
 	}
 	return req, nil
 }
 
-func decodeFindAccountByIDRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+/*
+	Account decodes.
+*/
+
+func decodeAddAccountRequest(r *http.Request) (req addAccountRequest, err error) {
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return req, err
+	}
+	return req, nil
+}
+
+func decodeFindAccountByIDRequest(r *http.Request) (req findAccountByIDRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	return findAccountByIDRequest{ID: id}, nil
 }
 
-func decodeFindAccountsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeFindAccountsRequest(r *http.Request) (req findAccountsRequest, err error) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page == 0 {
@@ -64,31 +65,33 @@ func decodeFindAccountsRequest(_ context.Context, r *http.Request) (request inte
 	return findAccountsRequest{Offset: offset, PageSize: pageSize}, nil
 }
 
-func decodeUpdateOrCreateAccountRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeUpdateOrCreateAccountRequest(r *http.Request) (req updateOrCreateAccountRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
+
 	var account Account
 	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		return nil, err
+		return req, err
 	}
+
 	return updateOrCreateAccountRequest{
 		ID:      id,
 		Account: account,
 	}, nil
 }
 
-func decodeUpdateAccountRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeUpdateAccountRequest(r *http.Request) (req updateAccountRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	var account Account
 	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		return nil, err
+		return req, err
 	}
 	return updateAccountRequest{
 		ID:      id,
@@ -96,33 +99,36 @@ func decodeUpdateAccountRequest(_ context.Context, r *http.Request) (request int
 	}, nil
 }
 
-func decodeDeleteAccountRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeDeleteAccountRequest(r *http.Request) (req deleteAccountRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	return deleteAccountRequest{ID: id}, nil
 }
 
-func decodeAddURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req addURLRequest
-	if err := json.NewDecoder(r.Body).Decode(&req.URL); err != nil {
-		return nil, err
+/*
+	URL decodes.
+*/
+
+func decodeAddURLRequest(r *http.Request) (req addURLRequest, err error) {
+	if err = json.NewDecoder(r.Body).Decode(&req.URL); err != nil {
+		return req, err
 	}
 	return req, nil
 }
 
-func decodeFindURLByIDRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeFindURLByIDRequest(r *http.Request) (req findURLByIDRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	return findURLByIDRequest{ID: id}, nil
 }
 
-func decodeFindURLsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeFindURLsRequest(r *http.Request) (req findURLsRequest, err error) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page == 0 {
@@ -141,15 +147,15 @@ func decodeFindURLsRequest(_ context.Context, r *http.Request) (interface{}, err
 	return findURLsRequest{Offset: offset, PageSize: pageSize}, nil
 }
 
-func decodeUpdateOrCreateURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateOrCreateURLRequest(r *http.Request) (req updateOrCreateURLRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	var url URL
 	if err := json.NewDecoder(r.Body).Decode(&url); err != nil {
-		return nil, err
+		return req, err
 	}
 	return updateOrCreateURLRequest{
 		ID:  id,
@@ -157,15 +163,15 @@ func decodeUpdateOrCreateURLRequest(_ context.Context, r *http.Request) (interfa
 	}, nil
 }
 
-func decodeUpdateURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateURLRequest(r *http.Request) (req updateURLRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	var url URL
 	if err := json.NewDecoder(r.Body).Decode(&url); err != nil {
-		return nil, err
+		return req, err
 	}
 	return updateURLRequest{
 		ID:  id,
@@ -173,11 +179,11 @@ func decodeUpdateURLRequest(_ context.Context, r *http.Request) (interface{}, er
 	}, nil
 }
 
-func decodeDeleteURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeDeleteURLRequest(r *http.Request) (req deleteURLRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	return deleteURLRequest{ID: id}, nil
 }

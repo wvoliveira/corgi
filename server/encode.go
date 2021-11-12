@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 )
@@ -10,24 +9,14 @@ import (
   Encode for awnser requests.
 */
 
-func encodeSignInResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+func encodeSignInResponse(w http.ResponseWriter, response interface{}) error {
 	if e, ok := response.(errorer); ok && e.error() != nil {
 		/*
 			Not a Go kit transport error, but a business-logic error.
 			Provide those as HTTP errors.
 		*/
-		encodeError(ctx, e.error(), w)
+		encodeError(e.error(), w)
 		return nil
-	}
-
-	r := ctx.Value(ctxSession{}).(*http.Request)
-	session, err := store.Get(r, "session-auth")
-
-	if err != nil {
-		err := session.Save(r, w)
-		if err != nil {
-			return err
-		}
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
@@ -40,13 +29,13 @@ func encodeSignInResponse(ctx context.Context, w http.ResponseWriter, response i
 	reason to provide anything more specific. It's certainly possible to
 	specialize on a per-response (per-method) basis.
 */
-func encodeResponse(ctx context.Context, w http.ResponseWriter, response interface{}) error {
+func encodeResponse(w http.ResponseWriter, response interface{}) error {
 	if e, ok := response.(errorer); ok && e.error() != nil {
 		/*
 			Not a Go kit transport error, but a business-logic error.
 			Provide those as HTTP errors.
 		*/
-		encodeError(ctx, e.error(), w)
+		encodeError(e.error(), w)
 		return nil
 	}
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

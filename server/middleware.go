@@ -1,12 +1,12 @@
 package server
 
 import (
-	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
-	"time"
 
-	"github.com/go-kit/kit/endpoint"
-	"github.com/go-kit/log"
+	"github.com/golang-jwt/jwt"
 )
 
 /*
@@ -28,154 +28,44 @@ func AccessControl(h http.Handler) http.Handler {
 	})
 }
 
-// Middleware describes a service (as opposed to endpoint) middleware.
-type Middleware func(Service) Service
+func IsAuthorized(handler http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
 
-/*
-  Auth middleware.
-*/
+		if r.Header["Token"] == nil {
+			err := errors.New("no token found")
+			json.NewEncoder(w).Encode(err)
+			return
+		}
 
-type ctxSession struct{}
+		var mySigningKey = []byte(secretKey)
 
-func putRequestInCtx(ctx context.Context, r *http.Request) context.Context {
-	return context.WithValue(ctx, ctxSession{}, r)
-}
-
-// AuthMiddleware check if cookies contains account object.
-func AuthMiddleware() endpoint.Middleware {
-
-	return func(next endpoint.Endpoint) endpoint.Endpoint {
-		return func(ctx context.Context, request interface{}) (interface{}, error) {
-
-			// Get request from context.
-			r := ctx.Value(ctxSession{}).(*http.Request)
-
-			// Get session from request.
-			cookie, err := r.Cookie("session-auth")
-			if err != nil {
-				return nil, ErrUnauthorized
+		token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
+			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+				return nil, fmt.Errorf("There was an error in parsing token.")
 			}
+			return mySigningKey, nil
+		})
 
-			ctx = context.WithValue(ctx, ctxSession{}, cookie)
-
-			return next(ctx, request)
+		if err != nil {
+			err = errors.New("your token has been expired")
+			json.NewEncoder(w).Encode(err)
+			return
 		}
-	}
-}
 
-/*
-  Logging Middleware.
-*/
+		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+			if claims["role"] == "admin" {
+				r.Header.Set("Role", "admin")
+				handler.ServeHTTP(w, r)
+				return
 
-// LoggingMiddleware middleware for all services.
-func LoggingMiddleware(logger log.Logger) Middleware {
-	return func(next Service) Service {
-		return &loggingMiddleware{
-			next:   next,
-			logger: logger,
+			} else if claims["role"] == "user" {
+				r.Header.Set("Role", "user")
+				handler.ServeHTTP(w, r)
+				return
+
+			}
 		}
+		err = errors.New("not authorized")
+		json.NewEncoder(w).Encode(err)
 	}
-}
-
-type loggingMiddleware struct {
-	next   Service
-	logger log.Logger
-}
-
-func (mw loggingMiddleware) SignIn(ctx context.Context, p Account) (_ Account, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "SignInAccount", "id", p.ID, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.SignIn(ctx, p)
-}
-
-func (mw loggingMiddleware) SignUp(ctx context.Context, p Account) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "SignUpAccount", "id", p.ID, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.SignUp(ctx, p)
-}
-
-func (mw loggingMiddleware) AddAccount(ctx context.Context, p Account) (_ Account, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "PostAccount", "id", p.ID, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.AddAccount(ctx, p)
-}
-
-func (mw loggingMiddleware) FindAccountByID(ctx context.Context, id string) (p Account, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetAccount", "id", id, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.FindAccountByID(ctx, id)
-}
-
-func (mw loggingMiddleware) FindAccounts(ctx context.Context, offset, pageSize int) (p []Account, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetAccounts", "offset", offset, "page_size", pageSize, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.FindAccounts(ctx, offset, pageSize)
-}
-
-func (mw loggingMiddleware) UpdateOrCreateAccount(ctx context.Context, id string, p Account) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "PutAccount", "id", id, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.UpdateOrCreateAccount(ctx, id, p)
-}
-
-func (mw loggingMiddleware) UpdateAccount(ctx context.Context, id string, p Account) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "PatchAccount", "id", id, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.UpdateAccount(ctx, id, p)
-}
-
-func (mw loggingMiddleware) DeleteAccount(ctx context.Context, id string) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "DeleteAccount", "id", id, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.DeleteAccount(ctx, id)
-}
-
-func (mw loggingMiddleware) AddURL(ctx context.Context, u URL) (_ URL, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "PostURL", "id", u.ID, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.AddURL(ctx, u)
-}
-
-func (mw loggingMiddleware) FindURLByID(ctx context.Context, id string) (p URL, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetURL", "id", id, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.FindURLByID(ctx, id)
-}
-
-func (mw loggingMiddleware) FindURLs(ctx context.Context, offset, pageSize int) (p []URL, err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "GetURLs", "offset", offset, "page_size", pageSize, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.FindURLs(ctx, offset, pageSize)
-}
-
-func (mw loggingMiddleware) UpdateOrCreateURL(ctx context.Context, id string, p URL) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "PutURL", "id", id, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.UpdateOrCreateURL(ctx, id, p)
-}
-
-func (mw loggingMiddleware) UpdateURL(ctx context.Context, id string, p URL) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "PatchURL", "id", id, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.UpdateURL(ctx, id, p)
-}
-
-func (mw loggingMiddleware) DeleteURL(ctx context.Context, id string) (err error) {
-	defer func(begin time.Time) {
-		mw.logger.Log("method", "DeleteURL", "id", id, "took", time.Since(begin), "err", err)
-	}(time.Now())
-	return mw.next.DeleteURL(ctx, id)
 }

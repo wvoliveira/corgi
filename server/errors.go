@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -34,7 +33,7 @@ type errorer interface {
 	error() error
 }
 
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+func encodeError(err error, w http.ResponseWriter) {
 	if err == nil {
 		panic("encodeError with nil error")
 	}

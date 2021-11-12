@@ -7,5 +7,6 @@ import (
 )
 
 var (
-	store = sessions.NewCookieStore([]byte(os.Getenv("REDIR_SESSION_KEY")))
+	store     = sessions.NewCookieStore([]byte(os.Getenv("REDIR_SESSION_KEY")))
+	secretKey = os.Getenv("REDIR_SECRET_KEY")
 )

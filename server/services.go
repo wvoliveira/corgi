@@ -4,32 +4,14 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/patrickmn/go-cache"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
-
-// Service is a simple CRUD interface for Account struct.
-type Service interface {
-	SignIn(ctx context.Context, u Account) (Account, error)
-	SignUp(ctx context.Context, u Account) error
-
-	AddAccount(ctx context.Context, u Account) (Account, error)
-	FindAccountByID(ctx context.Context, id string) (Account, error)
-	FindAccounts(ctx context.Context, offset, pageSize int) ([]Account, error)
-	UpdateOrCreateAccount(ctx context.Context, id string, u Account) error
-	UpdateAccount(ctx context.Context, id string, u Account) error
-	DeleteAccount(ctx context.Context, id string) error
-
-	AddURL(ctx context.Context, u URL) (URL, error)
-	FindURLByID(ctx context.Context, id string) (URL, error)
-	FindURLs(ctx context.Context, offset, pageSize int) ([]URL, error)
-	UpdateOrCreateURL(ctx context.Context, id string, u URL) error
-	UpdateURL(ctx context.Context, id string, u URL) error
-	DeleteURL(ctx context.Context, id string) error
-}
 
 type service struct {
 	db    *gorm.DB
@@ -37,14 +19,14 @@ type service struct {
 }
 
 // NewService create a new service with database and cache.
-func NewService(db *gorm.DB, c *cache.Cache) Service {
-	return &service{
+func NewService(db *gorm.DB, c *cache.Cache) service {
+	return service{
 		db:    db,
 		cache: c,
 	}
 }
 
-func (s *service) SignIn(ctx context.Context, p Account) (Account, error) {
+func (s service) SignIn(p Account) (Account, error) {
 	storedAccount := Account{}
 	cacheKey := fmt.Sprintf("pwd_email:%s", p.Email)
 
@@ -71,19 +53,16 @@ func (s *service) SignIn(ctx context.Context, p Account) (Account, error) {
 		return p, ErrUnauthorized
 	}
 
-	// Session key is session value.
-	cacheSessionKey := fmt.Sprintf("session:%s", p.Session)
+	tokenHash, err := generateJWT(p.Email, p.Role)
+	if err != nil {
+		return p, err
+	}
+	p.Token = tokenHash
 
-	// Save account object in cache with session name.
-	s.cache.Set(cacheSessionKey, p, cache.DefaultExpiration)
-
-	// store new pwd in in memory cache
-	// cacheKey := fmt.Sprintf("pwd_id:%s", p.ID)
-	// s.cache.Set(cacheKey, p, cache.DefaultExpiration)
 	return p, nil
 }
 
-func (s *service) SignUp(ctx context.Context, p Account) error {
+func (s service) SignUp(p Account) error {
 	if p.Email == "" || p.Password == "" {
 		return ErrFieldsRequired
 	}
@@ -117,7 +96,7 @@ func (s *service) SignUp(ctx context.Context, p Account) error {
 /*
 	Create a new account.
 */
-func (s *service) AddAccount(ctx context.Context, p Account) (Account, error) {
+func (s service) AddAccount(p Account) (Account, error) {
 	if p.Email == "" || p.Password == "" {
 		return p, errors.New("fields required: email and password")
 	}
@@ -142,7 +121,7 @@ func (s *service) AddAccount(ctx context.Context, p Account) (Account, error) {
 /*
 	Get account by ID.
 */
-func (s *service) FindAccountByID(ctx context.Context, id string) (Account, error) {
+func (s service) FindAccountByID(id string) (Account, error) {
 	u := Account{}
 	cacheKey := fmt.Sprintf("account_id:%s", id)
 
@@ -166,7 +145,7 @@ func (s *service) FindAccountByID(ctx context.Context, id string) (Account, erro
 /*
 	Get a list of accounts.
 */
-func (s *service) FindAccounts(ctx context.Context, offset, pageSize int) ([]Account, error) {
+func (s service) FindAccounts(offset, pageSize int) ([]Account, error) {
 	var u []Account
 
 	// get account in db
@@ -180,7 +159,7 @@ func (s *service) FindAccounts(ctx context.Context, offset, pageSize int) ([]Acc
 /*
 	Update or create a new account.
 */
-func (s *service) UpdateOrCreateAccount(ctx context.Context, id string, reqAccount Account) error {
+func (s service) UpdateOrCreateAccount(id string, reqAccount Account) error {
 	var dbAccount Account
 	var result *gorm.DB
 
@@ -213,7 +192,7 @@ func (s *service) UpdateOrCreateAccount(ctx context.Context, id string, reqAccou
 /*
 	Updates a account that already exists. Do not create.
 */
-func (s *service) UpdateAccount(ctx context.Context, id string, reqAccount Account) error {
+func (s service) UpdateAccount(id string, reqAccount Account) error {
 	var dbAccount Account
 
 	result := s.db.Model(&reqAccount).First(&dbAccount, id)
@@ -234,7 +213,7 @@ func (s *service) UpdateAccount(ctx context.Context, id string, reqAccount Accou
 /*
 	Delete account by ID.
 */
-func (s *service) DeleteAccount(ctx context.Context, id string) error {
+func (s service) DeleteAccount(id string) error {
 	u := Account{}
 	cacheKey := fmt.Sprintf("account_id:%s", id)
 
@@ -251,7 +230,7 @@ func (s *service) DeleteAccount(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *service) AddURL(ctx context.Context, reqURL URL) (URL, error) {
+func (s service) AddURL(ctx context.Context, reqURL URL) (URL, error) {
 	var url URL
 	var account Account
 
@@ -296,7 +275,7 @@ func (s *service) AddURL(ctx context.Context, reqURL URL) (URL, error) {
 	return reqURL, nil
 }
 
-func (s *service) FindURLByID(ctx context.Context, id string) (URL, error) {
+func (s service) FindURLByID(ctx context.Context, id string) (URL, error) {
 	u := URL{}
 	cacheKey := fmt.Sprintf("url_id:%s", id)
 
@@ -317,7 +296,7 @@ func (s *service) FindURLByID(ctx context.Context, id string) (URL, error) {
 	return u, nil
 }
 
-func (s *service) FindURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
+func (s service) FindURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
 	var urls []URL
 	var account Account
 
@@ -338,7 +317,7 @@ func (s *service) FindURLs(ctx context.Context, offset, pageSize int) ([]URL, er
 /*
 	Update or create a new URL.
 */
-func (s *service) UpdateOrCreateURL(ctx context.Context, id string, reqURL URL) error {
+func (s service) UpdateOrCreateURL(ctx context.Context, id string, reqURL URL) error {
 	var dbURL URL
 	var result *gorm.DB
 	cacheKey := fmt.Sprintf("url_id:%s", id)
@@ -372,7 +351,7 @@ func (s *service) UpdateOrCreateURL(ctx context.Context, id string, reqURL URL) 
 /*
 	Updates a URL that already exists. Do not create.
 */
-func (s *service) UpdateURL(ctx context.Context, id string, reqURL URL) error {
+func (s service) UpdateURL(ctx context.Context, id string, reqURL URL) error {
 	var dbURL URL
 
 	result := s.db.Model(&reqURL).First(&dbURL, id)
@@ -397,7 +376,7 @@ func (s *service) UpdateURL(ctx context.Context, id string, reqURL URL) error {
 /*
 	Delete a URL by ID.
 */
-func (s *service) DeleteURL(ctx context.Context, id string) error {
+func (s service) DeleteURL(ctx context.Context, id string) error {
 	u := URL{}
 	cacheKey := fmt.Sprintf("url_id:%s", id)
 
@@ -411,4 +390,23 @@ func (s *service) DeleteURL(ctx context.Context, id string) error {
 
 	s.cache.Delete(cacheKey)
 	return nil
+}
+
+func generateJWT(email, role string) (string, error) {
+	var mySigningKey = []byte(secretKey)
+	token := jwt.New(jwt.SigningMethodHS256)
+	claims := token.Claims.(jwt.MapClaims)
+
+	claims["authorized"] = true
+	claims["email"] = email
+	claims["role"] = role
+	claims["exp"] = time.Now().Add(time.Minute * 30).Unix()
+
+	tokenHash, err := token.SignedString(mySigningKey)
+	if err != nil {
+		errors.New("error to generate JWT: " + err.Error())
+		return "", err
+	}
+
+	return tokenHash, nil
 }

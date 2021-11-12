@@ -14,11 +14,13 @@ type Account struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty" example:"2021-10-18T00:49:06.160059334-03:00"`
 	LastLogin time.Time `json:"last_login,omitempty" example:"2021-10-20T00:50:00.100059334-03:00"`
 
+	Name     string `json:"name"`
 	Email    string `json:"email" example:"oliveira@live.it"`
-	Password string `json:"-" example:"supersecret"`
-	Tags     string `json:"tags"`
+	Password string `json:"-"`
 
-	Session string `json:"-" gorm:"-"`
+	Role  string `json:"role"`
+	Tags  string `json:"tags"`
+	Token string `json:"token"`
 }
 
 /*
@@ -61,12 +63,11 @@ type URL struct {
 type signInRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
-	Session  string `json:"-"`
 }
 
 type signInResponse struct {
-	Session string `json:"-"`
-	Err     error  `json:"err,omitempty"`
+	Token string `json:"token"`
+	Err   error  `json:"err,omitempty"`
 }
 
 func (r signInResponse) error() error { return r.Err }
@@ -76,6 +77,7 @@ func (r signInResponse) error() error { return r.Err }
 */
 
 type signUpRequest struct {
+	Name     string `json:"email"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -184,7 +186,9 @@ func (r deleteURLResponse) error() error { return r.Err }
 */
 
 type addAccountRequest struct {
-	Account Account
+	Name     string `json:"name"`
+	Email    string `json:"email" example:"oliveira@live.it"`
+	Password string `json:"-"`
 }
 
 type addAccountResponse struct {
