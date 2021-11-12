@@ -11,6 +11,7 @@ var (
 	ErrInconsistentIDs = errors.New("inconsistent IDs")
 	ErrAlreadyExists   = errors.New("already exists")
 	ErrNotFound        = errors.New("not found")
+	ErrOnlyAdmin       = errors.New("only admin can do it")
 
 	ErrFieldsRequired      = errors.New("fields required: email and password")
 	ErrInternalServerError = errors.New("internal server error")

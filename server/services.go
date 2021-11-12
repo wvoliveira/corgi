@@ -31,16 +31,18 @@ func (s Service) SignIn(p Account) (Account, error) {
 	sa := Account{}
 	cacheKey := fmt.Sprintf("pwd_email:%s", p.Email)
 
+	// Check if e-mail and password was sended.
 	if p.Email == "" || p.Password == "" {
 		return p, ErrFieldsRequired
 	}
 
-	// check cache
+	// Check memory cache.
 	foo, found := s.cache.Get(cacheKey)
 	if found {
 		sa = foo.(Account)
 	}
 
+	// If not found in cache memory, search in database (more slowly).
 	if !found {
 		result := s.db.Model(&sa).Limit(1).Where("email=?", p.Email).Find(&sa)
 		if result.RowsAffected == 0 {
@@ -53,43 +55,64 @@ func (s Service) SignIn(p Account) (Account, error) {
 		return p, ErrUnauthorized
 	}
 
-	tokenHash, err := generateJWT(s.secret, sa.ID, sa.Email, sa.Role)
+	// Generate JWT with specific claims.
+	tokenHash, err := generateJWT(s.secret, sa)
 	if err != nil {
 		return sa, err
 	}
+
+	// Set token account with JWT.
 	sa.Token = tokenHash
+
+	// Store the account in cache.
+	s.cache.Set(cacheKey, sa, cache.DefaultExpiration)
 
 	return sa, nil
 }
 
 func (s Service) SignUp(p Account) error {
+	// Check if e-mail and password was sended.
+	// TODO: check e-mail pattern.
 	if p.Email == "" || p.Password == "" {
 		return ErrFieldsRequired
 	}
 
-	result := s.db.Model(&p).Limit(1).Where("email=?", p.Email).Find(&p)
-	if result.RowsAffected > 0 {
-		return ErrAlreadyExists // POST = create, don't overwrite
+	// Key for save account in cache.
+	cacheKey := fmt.Sprintf("account_email:%s", p.Email)
+
+	// Check if account is into the cache.
+	_, found := s.cache.Get(cacheKey)
+	if found {
+		return ErrAlreadyExists
 	}
 
-	// Salt and hash the password using the bcrypt algorithm
-	// The second argument is the cost of hashing, which we arbitrarily set as 8 (this value can be more or less, depending on the computing power you wish to utilize)
+	// Yeah, I don't using 'else' statement.
+	// Dont overwrite account.
+	if !found {
+		result := s.db.Model(&p).Limit(1).Where("email=?", p.Email).Find(&p)
+		if result.RowsAffected > 0 {
+			return ErrAlreadyExists
+		}
+	}
+
+	// Salt and hash the password using the bcrypt algorithm.
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(p.Password), 8)
 	if err != nil {
 		return ErrInternalServerError
 	}
 
+	// Create a random ID and default role for new user.
 	p.ID = uuid.New().String()
 	p.Role = "user"
 	p.Password = string(hashedPassword)
 
+	// Create a new account.
 	err = s.db.Model(&p).Create(&p).Error
 	if err != nil {
 		return err
 	}
 
-	// store new pwd in in memory cache
-	cacheKey := fmt.Sprintf("pwd_email:%s", p.Email)
+	// Store the new account in cache.
 	s.cache.Set(cacheKey, p, cache.DefaultExpiration)
 	return nil
 }
@@ -98,33 +121,48 @@ func (s Service) SignUp(p Account) error {
 	Create a new account.
 */
 
-func (s Service) AddAccount(p Account) (Account, error) {
-	if p.Email == "" || p.Password == "" {
-		return p, errors.New("fields required: email and password")
+func (s Service) AddAccount(auth Account, payload Account) (Account, error) {
+	// Only admin can create a new account without signup process.
+	// TODO: create more roles without hardcoded.
+	if auth.Role != "admin" {
+		return auth, ErrOnlyAdmin
 	}
 
-	result := s.db.Model(&p).Limit(1).Where("email=?", p.Email).Find(&p)
+	// Check fields in payload.
+	if payload.Email == "" || payload.Password == "" {
+		return payload, ErrFieldsRequired
+	}
+
+	// Check if account exists. Don't overwrite.
+	result := s.db.Model(&payload).Limit(1).Where("email=?", payload.Email).Find(&payload)
 	if result.RowsAffected > 0 {
-		return p, ErrAlreadyExists // POST = create, don't overwrite
+		return payload, ErrAlreadyExists
 	}
 
-	p.ID = uuid.New().String()
-	err := s.db.Model(&p).Create(&p).Error
+	// Set a random ID and create account.
+	payload.ID = uuid.New().String()
+	err := s.db.Model(&payload).Create(&payload).Error
 	if err != nil {
-		return p, err
+		return payload, err
 	}
 
-	// store new account in in memory cache
-	cacheKey := fmt.Sprintf("account_id:%s", p.ID)
-	s.cache.Set(cacheKey, p, cache.DefaultExpiration)
-	return p, nil
+	// Store new account in memory cache.
+	cacheKey := fmt.Sprintf("account_id:%s", payload.ID)
+	s.cache.Set(cacheKey, payload, cache.DefaultExpiration)
+	return payload, nil
 }
 
 /*
 	Get account by ID.
 */
 
-func (s Service) FindAccountByID(id string) (Account, error) {
+func (s Service) FindAccountByID(auth Account, id string) (acc Account, err error) {
+	// Only admin can view another accounts.
+	// TODO: create more roles without hardcoded.
+	if auth.Role != "admin" && auth.ID != id {
+		return auth, ErrOnlyAdmin
+	}
+
 	u := Account{}
 	cacheKey := fmt.Sprintf("account_id:%s", id)
 
@@ -149,7 +187,7 @@ func (s Service) FindAccountByID(id string) (Account, error) {
 	Get a list of accounts.
 */
 
-func (s Service) FindAccounts(offset, pageSize int) ([]Account, error) {
+func (s Service) FindAccounts(auth Account, offset, pageSize int) ([]Account, error) {
 	var u []Account
 
 	// get account in db
@@ -164,7 +202,7 @@ func (s Service) FindAccounts(offset, pageSize int) ([]Account, error) {
 	Update or create a new account.
 */
 
-func (s Service) UpdateOrCreateAccount(id string, reqAccount Account) error {
+func (s Service) UpdateOrCreateAccount(auth Account, id string, reqAccount Account) error {
 	var dbAccount Account
 	var result *gorm.DB
 
@@ -198,7 +236,7 @@ func (s Service) UpdateOrCreateAccount(id string, reqAccount Account) error {
 	Updates a account that already exists. Do not create.
 */
 
-func (s Service) UpdateAccount(id string, reqAccount Account) error {
+func (s Service) UpdateAccount(auth Account, id string, reqAccount Account) error {
 	var dbAccount Account
 
 	result := s.db.Model(&reqAccount).First(&dbAccount, id)
@@ -220,7 +258,7 @@ func (s Service) UpdateAccount(id string, reqAccount Account) error {
 	Delete account by ID.
 */
 
-func (s Service) DeleteAccount(id string) error {
+func (s Service) DeleteAccount(auth Account, id string) error {
 	u := Account{}
 	cacheKey := fmt.Sprintf("account_id:%s", id)
 
@@ -382,15 +420,15 @@ func (s Service) DeleteURL(account Account, id string) error {
 	return nil
 }
 
-func generateJWT(secretKey, id, email, role string) (string, error) {
+func generateJWT(secretKey string, a Account) (string, error) {
 	var mySigningKey = []byte(secretKey)
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
 	claims["authorized"] = true
-	claims["id"] = id
-	claims["email"] = email
-	claims["role"] = role
+	claims["id"] = a.ID
+	claims["email"] = a.Email
+	claims["role"] = a.Role
 	claims["exp"] = time.Now().Add(time.Minute * 30).Unix()
 
 	tokenHash, err := token.SignedString(mySigningKey)

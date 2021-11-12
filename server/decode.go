@@ -30,23 +30,27 @@ func decodeSignUpRequest(r *http.Request) (req signUpRequest, err error) {
 	Account decodes.
 */
 
-func decodeAddAccountRequest(r *http.Request) (req addAccountRequest, err error) {
+func decodeAddAccountRequest(r *http.Request) (acc Account, req addAccountRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return req, err
+		return
 	}
-	return req, nil
+	return
 }
 
-func decodeFindAccountByIDRequest(r *http.Request) (req findAccountByIDRequest, err error) {
+func decodeFindAccountByIDRequest(r *http.Request) (acc Account, req findAccountByIDRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return req, ErrBadRouting
+		return acc, req, ErrBadRouting
 	}
-	return findAccountByIDRequest{ID: id}, nil
+	req.ID = id
+	return acc, req, nil
 }
 
-func decodeFindAccountsRequest(r *http.Request) (req findAccountsRequest, err error) {
+func decodeFindAccountsRequest(r *http.Request) (acc Account, req findAccountsRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page == 0 {
@@ -60,52 +64,55 @@ func decodeFindAccountsRequest(r *http.Request) (req findAccountsRequest, err er
 	case pageSize <= 0:
 		pageSize = 10
 	}
-
 	offset := (page - 1) * pageSize
-	return findAccountsRequest{Offset: offset, PageSize: pageSize}, nil
+
+	req.Offset = offset
+	req.PageSize = offset
+	return acc, req, nil
 }
 
-func decodeUpdateOrCreateAccountRequest(r *http.Request) (req updateOrCreateAccountRequest, err error) {
+func decodeUpdateOrCreateAccountRequest(r *http.Request) (acc Account, req updateOrCreateAccountRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return req, ErrBadRouting
+		return acc, req, ErrBadRouting
 	}
 
-	var account Account
-	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		return req, err
+	var accountPayload Account
+	if err := json.NewDecoder(r.Body).Decode(&accountPayload); err != nil {
+		return acc, req, err
 	}
-
-	return updateOrCreateAccountRequest{
-		ID:      id,
-		Account: account,
-	}, nil
+	req.ID = id
+	req.Account = accountPayload
+	return acc, req, nil
 }
 
-func decodeUpdateAccountRequest(r *http.Request) (req updateAccountRequest, err error) {
+func decodeUpdateAccountRequest(r *http.Request) (acc Account, req updateAccountRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return req, ErrBadRouting
+		return acc, req, ErrBadRouting
 	}
-	var account Account
-	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		return req, err
+	var accountPayload Account
+	if err := json.NewDecoder(r.Body).Decode(&accountPayload); err != nil {
+		return acc, req, err
 	}
-	return updateAccountRequest{
-		ID:      id,
-		Account: account,
-	}, nil
+	req.ID = id
+	req.Account = accountPayload
+	return acc, req, nil
 }
 
-func decodeDeleteAccountRequest(r *http.Request) (req deleteAccountRequest, err error) {
+func decodeDeleteAccountRequest(r *http.Request) (acc Account, req deleteAccountRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return req, ErrBadRouting
+		return acc, req, ErrBadRouting
 	}
-	return deleteAccountRequest{ID: id}, nil
+	req.ID = id
+	return acc, req, nil
 }
 
 /*

@@ -105,14 +105,14 @@ type handlersAccount struct {
 
 func (h handlersAccount) AddAccount(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	de, err := decodeAddAccountRequest(r)
+	auth, payload, err := decodeAddAccountRequest(r)
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Business logic.
-	account, err := h.s.AddAccount(Account{Email: de.Email, Password: de.Password})
+	account, err := h.s.AddAccount(auth, Account{Email: payload.Email, Password: payload.Password})
 	if err != nil {
 		encodeError(err, w)
 		return
@@ -125,14 +125,14 @@ func (h handlersAccount) AddAccount(w http.ResponseWriter, r *http.Request) {
 
 func (h handlersAccount) FindAccountByID(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	de, err := decodeFindAccountByIDRequest(r)
+	auth, payload, err := decodeFindAccountByIDRequest(r)
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Business logic.
-	account, err := h.s.FindAccountByID(de.ID)
+	account, err := h.s.FindAccountByID(auth, payload.ID)
 	if err != nil {
 		encodeError(err, w)
 		return
@@ -146,14 +146,14 @@ func (h handlersAccount) FindAccountByID(w http.ResponseWriter, r *http.Request)
 
 func (h handlersAccount) FindAccounts(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	de, err := decodeFindAccountsRequest(r)
+	auth, payload, err := decodeFindAccountsRequest(r)
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Business logic.
-	accounts, err := h.s.FindAccounts(de.Offset, de.PageSize)
+	accounts, err := h.s.FindAccounts(auth, payload.Offset, payload.PageSize)
 	if err != nil {
 		encodeError(err, w)
 		return
@@ -166,14 +166,14 @@ func (h handlersAccount) FindAccounts(w http.ResponseWriter, r *http.Request) {
 
 func (h handlersAccount) UpdateOrCreateAccount(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	de, err := decodeUpdateOrCreateAccountRequest(r)
+	auth, payload, err := decodeUpdateOrCreateAccountRequest(r)
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Business logic.
-	err = h.s.UpdateOrCreateAccount(de.ID, de.Account)
+	err = h.s.UpdateOrCreateAccount(auth, payload.ID, payload.Account)
 	if err != nil {
 		encodeError(err, w)
 		return
@@ -186,14 +186,14 @@ func (h handlersAccount) UpdateOrCreateAccount(w http.ResponseWriter, r *http.Re
 
 func (h handlersAccount) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	de, err := decodeUpdateAccountRequest(r)
+	auth, payload, err := decodeUpdateAccountRequest(r)
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Business logic.
-	err = h.s.UpdateAccount(de.ID, de.Account)
+	err = h.s.UpdateAccount(auth, payload.ID, payload.Account)
 	if err != nil {
 		encodeError(err, w)
 		return
@@ -206,14 +206,14 @@ func (h handlersAccount) UpdateAccount(w http.ResponseWriter, r *http.Request) {
 
 func (h handlersAccount) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	de, err := decodeDeleteAccountRequest(r)
+	auth, payload, err := decodeDeleteAccountRequest(r)
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Business logic.
-	err = h.s.DeleteAccount(de.ID)
+	err = h.s.DeleteAccount(auth, payload.ID)
 	if err != nil {
 		encodeError(err, w)
 		return
