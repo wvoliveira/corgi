@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 	"strconv"
@@ -9,40 +8,45 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func decodeSignInRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req signInRequest
-	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
-		return nil, e
+/*
+	Auth decodes.
+*/
+
+func decodeSignInRequest(r *http.Request) (req signInRequest, err error) {
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return req, err
 	}
 	return req, nil
 }
 
-func decodeSignUpRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req signUpRequest
-	if e := json.NewDecoder(r.Body).Decode(&req); e != nil {
-		return nil, e
+func decodeSignUpRequest(r *http.Request) (req signUpRequest, err error) {
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return req, err
 	}
 	return req, nil
 }
 
-func decodeAddAccountRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
-	var req addAccountRequest
-	if e := json.NewDecoder(r.Body).Decode(&req.Account); e != nil {
-		return nil, e
+/*
+	Account decodes.
+*/
+
+func decodeAddAccountRequest(r *http.Request) (req addAccountRequest, err error) {
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return req, err
 	}
 	return req, nil
 }
 
-func decodeFindAccountByIDRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeFindAccountByIDRequest(r *http.Request) (req findAccountByIDRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	return findAccountByIDRequest{ID: id}, nil
 }
 
-func decodeFindAccountsRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeFindAccountsRequest(r *http.Request) (req findAccountsRequest, err error) {
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
 	if page == 0 {
@@ -61,31 +65,33 @@ func decodeFindAccountsRequest(_ context.Context, r *http.Request) (request inte
 	return findAccountsRequest{Offset: offset, PageSize: pageSize}, nil
 }
 
-func decodeUpdateOrCreateAccountRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeUpdateOrCreateAccountRequest(r *http.Request) (req updateOrCreateAccountRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
+
 	var account Account
 	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		return nil, err
+		return req, err
 	}
+
 	return updateOrCreateAccountRequest{
 		ID:      id,
 		Account: account,
 	}, nil
 }
 
-func decodeUpdateAccountRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeUpdateAccountRequest(r *http.Request) (req updateAccountRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	var account Account
 	if err := json.NewDecoder(r.Body).Decode(&account); err != nil {
-		return nil, err
+		return req, err
 	}
 	return updateAccountRequest{
 		ID:      id,
@@ -93,35 +99,43 @@ func decodeUpdateAccountRequest(_ context.Context, r *http.Request) (request int
 	}, nil
 }
 
-func decodeDeleteAccountRequest(_ context.Context, r *http.Request) (request interface{}, err error) {
+func decodeDeleteAccountRequest(r *http.Request) (req deleteAccountRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return req, ErrBadRouting
 	}
 	return deleteAccountRequest{ID: id}, nil
 }
 
-func decodeAddURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	var req addURLRequest
-	if err := json.NewDecoder(r.Body).Decode(&req.URL); err != nil {
-		return nil, err
+/*
+	URL decodes.
+*/
+
+func decodeAddURLRequest(r *http.Request) (acc Account, req addURLRequest, err error) {
+	acc = getAccountFromHeaders(r)
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return acc, req, err
 	}
-	return req, nil
+	return acc, req, nil
 }
 
-func decodeFindURLByIDRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeFindURLByIDRequest(r *http.Request) (acc Account, req findURLByIDRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	vars := mux.Vars(r)
+
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return acc, req, ErrBadRouting
 	}
-	return findURLByIDRequest{ID: id}, nil
+	return acc, findURLByIDRequest{ID: id}, nil
 }
 
-func decodeFindURLsRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeFindURLsRequest(r *http.Request) (acc Account, req findURLsRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	q := r.URL.Query()
 	page, _ := strconv.Atoi(q.Get("page"))
+
 	if page == 0 {
 		page = 1
 	}
@@ -133,48 +147,58 @@ func decodeFindURLsRequest(_ context.Context, r *http.Request) (interface{}, err
 	case pageSize <= 0:
 		pageSize = 10
 	}
-
 	offset := (page - 1) * pageSize
-	return findURLsRequest{Offset: offset, PageSize: pageSize}, nil
+
+	req.PageSize = pageSize
+	req.Offset = offset
+
+	return
 }
 
-func decodeUpdateOrCreateURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeUpdateOrCreateURLRequest(r *http.Request) (acc Account, req updateOrCreateURLRequest, err error) {
+	acc = getAccountFromHeaders(r)
+	vars := mux.Vars(r)
+
+	id, ok := vars["id"]
+	if !ok {
+		return acc, req, ErrBadRouting
+	}
+	req.ID = id
+
+	if err := json.NewDecoder(r.Body).Decode(&req.URL); err != nil {
+		return acc, req, err
+	}
+
+	return
+}
+
+func decodeUpdateURLRequest(r *http.Request) (acc Account, req updateURLRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return
 	}
-	var url URL
-	if err := json.NewDecoder(r.Body).Decode(&url); err != nil {
-		return nil, err
+	req.ID = id
+
+	if err = json.NewDecoder(r.Body).Decode(&req.URL); err != nil {
+		return
 	}
-	return updateOrCreateURLRequest{
-		ID:  id,
-		URL: url,
-	}, nil
+	return
 }
 
-func decodeUpdateURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
+func decodeDeleteURLRequest(r *http.Request) (acc Account, req deleteURLRequest, err error) {
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
-		return nil, ErrBadRouting
+		return
 	}
-	var url URL
-	if err := json.NewDecoder(r.Body).Decode(&url); err != nil {
-		return nil, err
-	}
-	return updateURLRequest{
-		ID:  id,
-		URL: url,
-	}, nil
+	req.ID = id
+	return
 }
 
-func decodeDeleteURLRequest(_ context.Context, r *http.Request) (interface{}, error) {
-	vars := mux.Vars(r)
-	id, ok := vars["id"]
-	if !ok {
-		return nil, ErrBadRouting
-	}
-	return deleteURLRequest{ID: id}, nil
+func getAccountFromHeaders(r *http.Request) (a Account) {
+	a.ID = r.Header.Get("AccountID")
+	a.Email = r.Header.Get("AccountEmail")
+	a.Role = r.Header.Get("AccountRole")
+	return
 }

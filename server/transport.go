@@ -3,175 +3,351 @@ package server
 // The "account" is just over HTTP, so we just have a single transport.go.
 
 import (
+	"encoding/json"
 	"net/http"
-	"time"
 
 	"github.com/gorilla/mux"
-
-	"github.com/go-kit/kit/transport"
-	kithttp "github.com/go-kit/kit/transport/http"
-	"github.com/go-kit/log"
-
-	"github.com/heptiolabs/healthcheck"
 )
 
 /*
-MakeHTTPHandler mounts all of the service endpoints into an http.Handler.
-Useful in a "account" service.
+	MakeHTTPHandler mounts all of the service endpoints into an http.Handler.
 */
-func MakeHTTPHandler(s Service, logger log.Logger) http.Handler {
+func MakeHTTPHandler(s Service) http.Handler {
 	r := mux.NewRouter()
-	e := MakeServerEndpoints(s)
-	options := []kithttp.ServerOption{
-		kithttp.ServerErrorHandler(transport.NewLogErrorHandler(logger)),
-		kithttp.ServerErrorEncoder(encodeError),
-	}
 
-	/*
-		Auth handlers.
-	*/
-	signInHandler := kithttp.NewServer(
-		e.SignInEndpoint,
-		decodeSignInRequest,
-		encodeSignInResponse,
-		options...,
-	)
-
-	signUpHandler := kithttp.NewServer(
-		e.SignUpEndpoint,
-		decodeSignUpRequest,
-		encodeResponse,
-		options...,
-	)
-
-	/*
-		Account handlers.
-	*/
-
-	addAccountHandler := kithttp.NewServer(
-		e.AddAccountEndpoint,
-		decodeAddAccountRequest,
-		encodeResponse,
-		options...,
-	)
-
-	findAccountByIDHandler := kithttp.NewServer(
-		e.FindAccountByIDEndpoint,
-		decodeFindAccountByIDRequest,
-		encodeResponse,
-		options...,
-	)
-
-	findAccountsHandler := kithttp.NewServer(
-		e.FindAccountsEndpoint,
-		decodeFindAccountsRequest,
-		encodeResponse,
-		options...,
-	)
-
-	updateOrCreateAccountHandler := kithttp.NewServer(
-		e.UpdateOrCreateAccountEndpoint,
-		decodeUpdateOrCreateAccountRequest,
-		encodeResponse,
-		options...,
-	)
-
-	updateAccountHandler := kithttp.NewServer(
-		e.UpdateAccountEndpoint,
-		decodeUpdateAccountRequest,
-		encodeResponse,
-		options...,
-	)
-
-	deleteAccountHandler := kithttp.NewServer(
-		e.DeleteAccountEndpoint,
-		decodeDeleteAccountRequest,
-		encodeResponse,
-		options...,
-	)
-
-	/*
-		URL handlers.
-	*/
-
-	addURLHandler := kithttp.NewServer(
-		e.AddURLEndpoint,
-		decodeAddURLRequest,
-		encodeResponse,
-		options...,
-	)
-
-	findURLByIDHandler := kithttp.NewServer(
-		e.FindURLByIDEndpoint,
-		decodeFindURLByIDRequest,
-		encodeResponse,
-		options...,
-	)
-
-	findURLsHandler := kithttp.NewServer(
-		e.FindURLsEndpoint,
-		decodeFindURLsRequest,
-		encodeResponse,
-		options...,
-	)
-
-	updateOrCreateURLHandler := kithttp.NewServer(
-		e.UpdateOrCreateURLEndpoint,
-		decodeUpdateOrCreateURLRequest,
-		encodeResponse,
-		options...,
-	)
-
-	updateURLHandler := kithttp.NewServer(
-		e.UpdateURLEndpoint,
-		decodeUpdateURLRequest,
-		encodeResponse,
-		options...,
-	)
-
-	deleteURLHandler := kithttp.NewServer(
-		e.DeleteURLEndpoint,
-		decodeDeleteURLRequest,
-		encodeResponse,
-		options...,
-	)
-
-	/*
-		Health check functions and endpoints.
-		TODO: separate by service.
-	*/
-	health := healthcheck.NewHandler()
-	health.AddLivenessCheck("goroutine-threshold", healthcheck.GoroutineCountCheck(100))
-	health.AddReadinessCheck("upstream-dep-dns", healthcheck.DNSResolveCheck("localhost", 50*time.Millisecond))
-
-	r.HandleFunc("/health/ready", health.ReadyEndpoint)
-	r.HandleFunc("/health/live", health.LiveEndpoint)
+	hau := handlersAuth{s}
+	hac := handlersAccount{s}
+	hur := handlersURL{s}
 
 	/*
 		Auth with password endpoints and methods.
 	*/
-	r.Handle("/api/v1/signin", signInHandler).Methods("POST")
-	r.Handle("/api/v1/signup", signUpHandler).Methods("POST")
+	r.HandleFunc("/api/v1/signin", hau.SignIn).Methods("POST")
+	r.HandleFunc("/api/v1/signup", hau.SignUp).Methods("POST")
 
 	/*
 		Account endpoints and methods.
 	*/
-	r.Handle("/api/v1/accounts", addAccountHandler).Methods("POST")
-	r.Handle("/api/v1/accounts/{id}", findAccountByIDHandler).Methods("GET")
-	r.Handle("/api/v1/accounts", findAccountsHandler).Methods("GET")
-	r.Handle("/api/v1/accounts/{id}", updateOrCreateAccountHandler).Methods("PUT")
-	r.Handle("/api/v1/accounts/{id}", updateAccountHandler).Methods("PATCH")
-	r.Handle("/api/v1/accounts/{id}", deleteAccountHandler).Methods("DELETE")
+	r.HandleFunc("/api/v1/accounts", IsAuthorized(hac.AddAccount)).Methods("POST")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.FindAccountByID)).Methods("GET")
+	r.HandleFunc("/api/v1/accounts", IsAuthorized(hac.FindAccounts)).Methods("GET")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.UpdateOrCreateAccount)).Methods("PUT")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.UpdateAccount)).Methods("PATCH")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.DeleteAccount)).Methods("DELETE")
 
 	/*
 		URL endpoints and methods.
 	*/
-	r.Handle("/api/v1/urls", addURLHandler).Methods("POST")
-	r.Handle("/api/v1/urls/{id}", findURLByIDHandler).Methods("GET")
-	r.Handle("/api/v1/urls", findURLsHandler).Methods("GET")
-	r.Handle("/api/v1/urls/{id}", updateOrCreateURLHandler).Methods("PUT")
-	r.Handle("/api/v1/urls/{id}", updateURLHandler).Methods("PATCH")
-	r.Handle("/api/v1/urls/{id}", deleteURLHandler).Methods("DELETE")
+	r.HandleFunc("/api/v1/urls", IsAuthorized(hur.AddURL)).Methods("POST")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.FindURLByID)).Methods("GET")
+	r.HandleFunc("/api/v1/urls", IsAuthorized(hur.FindURLs)).Methods("GET")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.UpdateOrCreateURL)).Methods("PUT")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.UpdateURL)).Methods("PATCH")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.DeleteURL)).Methods("DELETE")
 
 	return r
+}
+
+/*
+	Auth handlers.
+*/
+type handlersAuth struct {
+	s Service
+}
+
+func (h handlersAuth) SignIn(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	dr, err := decodeSignInRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	account, err := h.s.SignIn(Account{Email: dr.Email, Password: dr.Password})
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := signInResponse{Token: account.Token, Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersAuth) SignUp(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	dr, err := decodeSignUpRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	err = h.s.SignUp(Account{Name: dr.Name, Email: dr.Email, Password: dr.Password})
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := signUpResponse{Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+/*
+	Account handlers.
+*/
+
+type handlersAccount struct {
+	s Service
+}
+
+func (h handlersAccount) AddAccount(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	de, err := decodeAddAccountRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	account, err := h.s.AddAccount(Account{Email: de.Email, Password: de.Password})
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := addAccountResponse{ID: account.ID, Email: account.Email, Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersAccount) FindAccountByID(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	de, err := decodeFindAccountByIDRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	account, err := h.s.FindAccountByID(de.ID)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := findAccountByIDResponse{Account: account, Err: err}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(sr)
+}
+
+func (h handlersAccount) FindAccounts(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	de, err := decodeFindAccountsRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	accounts, err := h.s.FindAccounts(de.Offset, de.PageSize)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := findAccountsResponse{Accounts: accounts, Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersAccount) UpdateOrCreateAccount(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	de, err := decodeUpdateOrCreateAccountRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	err = h.s.UpdateOrCreateAccount(de.ID, de.Account)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateOrCreateAccountResponse{Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersAccount) UpdateAccount(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	de, err := decodeUpdateAccountRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	err = h.s.UpdateAccount(de.ID, de.Account)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateAccountResponse{Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersAccount) DeleteAccount(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	de, err := decodeDeleteAccountRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	err = h.s.DeleteAccount(de.ID)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := deleteAccountResponse{Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+/*
+	URL handlers.
+*/
+
+type handlersURL struct {
+	s Service
+}
+
+func (h handlersURL) AddURL(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeAddURLRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	url, err := h.s.AddURL(deAccount, URL{Keyword: deURL.Keyword, URL: deURL.URL, Title: deURL.Title})
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := addURLResponse{Keyword: url.Keyword, URL: url.URL, Title: url.Title, Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersURL) FindURLByID(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeFindURLByIDRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	url, err := h.s.FindURLByID(deAccount, deURL.ID)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := findURLByIDResponse{URL: url, Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersURL) FindURLs(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeFindURLsRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	urls, err := h.s.FindURLs(deAccount, deURL.Offset, deURL.PageSize)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := findURLsResponse{URLs: urls, Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersURL) UpdateOrCreateURL(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeUpdateOrCreateURLRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	err = h.s.UpdateOrCreateURL(deAccount, deURL.ID, deURL.URL)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateOrCreateURLResponse{Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersURL) UpdateURL(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeUpdateURLRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	err = h.s.UpdateURL(deAccount, deURL.ID, deURL.URL)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateURLResponse{Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersURL) DeleteURL(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeDeleteURLRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	err = h.s.DeleteURL(deAccount, deURL.ID)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := deleteURLResponse{Err: err}
+	_ = encodeResponse(w, sr)
 }

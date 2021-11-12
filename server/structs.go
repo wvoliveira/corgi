@@ -1,6 +1,8 @@
 package server
 
-import "time"
+import (
+	"time"
+)
 
 /*
 	Account represents a single struct for Account.
@@ -12,11 +14,13 @@ type Account struct {
 	UpdatedAt time.Time `json:"updated_at,omitempty" example:"2021-10-18T00:49:06.160059334-03:00"`
 	LastLogin time.Time `json:"last_login,omitempty" example:"2021-10-20T00:50:00.100059334-03:00"`
 
+	Name     string `json:"name"`
 	Email    string `json:"email" example:"oliveira@live.it"`
-	Password string `json:"-" example:"supersecret"`
-	Tags     string `json:"tags"`
+	Password string `json:"-"`
 
-	SessionToken string `json:"-"`
+	Role  string `json:"role"`
+	Tags  string `json:"tags"`
+	Token string `json:"token"`
 }
 
 /*
@@ -28,8 +32,9 @@ type URL struct {
 	Keyword   string    `json:"keyword" gorm:"index" example:"google"`
 	URL       string    `json:"url" example:"https://www.google.com"`
 	Title     string    `json:"title" example:"Google Home"`
-	Active    *bool     `json:"active" gorm:"type:bool;default:false" example:"false"`
-	OwnerID   string    `json:"owner_id" example:"5ca04a43-ff3c-4154-a8ad-02e2e906a847"`
+	Active    *bool     `json:"active" gorm:"type:bool;default:true" example:"false"`
+	AccountID string    `json:"-"`
+	Account   Account   `json:"-"`
 	CreatedAt time.Time `json:"created_at" example:"2021-10-18T00:45:07.818344164-03:00"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
 }
@@ -61,8 +66,8 @@ type signInRequest struct {
 }
 
 type signInResponse struct {
-	SessionToken string `json:"-"`
-	Err          error  `json:"err,omitempty"`
+	Token string `json:"token"`
+	Err   error  `json:"err,omitempty"`
 }
 
 func (r signInResponse) error() error { return r.Err }
@@ -72,6 +77,7 @@ func (r signInResponse) error() error { return r.Err }
 */
 
 type signUpRequest struct {
+	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -87,7 +93,9 @@ func (r signUpResponse) error() error { return r.Err }
 */
 
 type addURLRequest struct {
-	URL URL
+	Keyword string `json:"keyword"`
+	URL     string `json:"url"`
+	Title   string `json:"title"`
 }
 
 type addURLResponse struct {
@@ -180,7 +188,9 @@ func (r deleteURLResponse) error() error { return r.Err }
 */
 
 type addAccountRequest struct {
-	Account Account
+	Name     string `json:"name"`
+	Email    string `json:"email" example:"oliveira@live.it"`
+	Password string `json:"-"`
 }
 
 type addAccountResponse struct {

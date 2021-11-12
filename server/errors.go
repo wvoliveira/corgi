@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -14,8 +13,12 @@ var (
 	ErrNotFound        = errors.New("not found")
 
 	ErrFieldsRequired      = errors.New("fields required: email and password")
-	ErrInternalServerError = errors.New("Internal server error")
-	ErrUnauthorized        = errors.New("Unauthorized")
+	ErrInternalServerError = errors.New("internal server error")
+	ErrUnauthorized        = errors.New("unauthorized")
+
+	ErrNoTokenFound = errors.New("no token found")
+	ErrParseToken   = errors.New("there was an error in parsing token")
+	ErrTokenExpired = errors.New("your token has been expired")
 
 	/*
 		ErrBadRouting is returned when an expected path variable is missing.
@@ -34,7 +37,7 @@ type errorer interface {
 	error() error
 }
 
-func encodeError(_ context.Context, err error, w http.ResponseWriter) {
+func encodeError(err error, w http.ResponseWriter) {
 	if err == nil {
 		panic("encodeError with nil error")
 	}
@@ -51,6 +54,8 @@ func codeFrom(err error) int {
 		return http.StatusNotFound
 	case ErrAlreadyExists, ErrInconsistentIDs:
 		return http.StatusBadRequest
+	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:
+		return http.StatusUnauthorized
 	default:
 		return http.StatusInternalServerError
 	}
