@@ -248,7 +248,7 @@ func (h handlersURL) AddURL(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Encode object to answer request (response).
-	sr := addURLResponse{Keyword: url.Keyword, URL: url.URL, Title: url.Title, Err: err}
+	sr := addURLResponse{ID: url.ID, Keyword: url.Keyword, URL: url.URL, Title: url.Title, Err: err}
 	_ = encodeResponse(w, sr)
 }
 

@@ -26,7 +26,7 @@ func NewService(db *gorm.DB, c *cache.Cache) Service {
 }
 
 func (s Service) SignIn(p Account) (Account, error) {
-	storedAccount := Account{}
+	sa := Account{}
 	cacheKey := fmt.Sprintf("pwd_email:%s", p.Email)
 
 	if p.Email == "" || p.Password == "" {
@@ -36,29 +36,29 @@ func (s Service) SignIn(p Account) (Account, error) {
 	// check cache
 	foo, found := s.cache.Get(cacheKey)
 	if found {
-		storedAccount = foo.(Account)
+		sa = foo.(Account)
 	}
 
 	if !found {
-		result := s.db.Model(&storedAccount).Limit(1).Where("email=?", p.Email).Find(&storedAccount)
+		result := s.db.Model(&sa).Limit(1).Where("email=?", p.Email).Find(&sa)
 		if result.RowsAffected == 0 {
 			return p, ErrUnauthorized
 		}
 	}
 
 	// Compare the stored hashed password, with the hashed version of the password that was received
-	if err := bcrypt.CompareHashAndPassword([]byte(storedAccount.Password), []byte(p.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(sa.Password), []byte(p.Password)); err != nil {
 		// If the two passwords don't match, return a 401 status
 		return p, ErrUnauthorized
 	}
 
-	tokenHash, err := generateJWT(p.ID, p.Email, p.Role)
+	tokenHash, err := generateJWT(sa.ID, sa.Email, sa.Role)
 	if err != nil {
-		return p, err
+		return sa, err
 	}
-	p.Token = tokenHash
+	sa.Token = tokenHash
 
-	return p, nil
+	return sa, nil
 }
 
 func (s Service) SignUp(p Account) error {
