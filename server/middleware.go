@@ -26,7 +26,7 @@ func AccessControl(h http.Handler) http.Handler {
 }
 
 // IsAuthorized check if auth ok and set claims in request header.
-func IsAuthorized(h http.HandlerFunc) http.HandlerFunc {
+func IsAuthorized(secretKey string, h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Header["Token"] == nil {

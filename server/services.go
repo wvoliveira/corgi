@@ -13,15 +13,17 @@ import (
 )
 
 type Service struct {
-	db    *gorm.DB
-	cache *cache.Cache
+	db     *gorm.DB
+	cache  *cache.Cache
+	secret string
 }
 
 // NewService create a new service with database and cache.
-func NewService(db *gorm.DB, c *cache.Cache) Service {
+func NewService(secretKey string, db *gorm.DB, c *cache.Cache) Service {
 	return Service{
-		db:    db,
-		cache: c,
+		db:     db,
+		cache:  c,
+		secret: secretKey,
 	}
 }
 
@@ -48,11 +50,10 @@ func (s Service) SignIn(p Account) (Account, error) {
 
 	// Compare the stored hashed password, with the hashed version of the password that was received
 	if err := bcrypt.CompareHashAndPassword([]byte(sa.Password), []byte(p.Password)); err != nil {
-		// If the two passwords don't match, return a 401 status
 		return p, ErrUnauthorized
 	}
 
-	tokenHash, err := generateJWT(sa.ID, sa.Email, sa.Role)
+	tokenHash, err := generateJWT(s.secret, sa.ID, sa.Email, sa.Role)
 	if err != nil {
 		return sa, err
 	}
@@ -381,7 +382,7 @@ func (s Service) DeleteURL(account Account, id string) error {
 	return nil
 }
 
-func generateJWT(id, email, role string) (string, error) {
+func generateJWT(secretKey, id, email, role string) (string, error) {
 	var mySigningKey = []byte(secretKey)
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)

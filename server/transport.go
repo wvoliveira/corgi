@@ -28,22 +28,22 @@ func MakeHTTPHandler(s Service) http.Handler {
 	/*
 		Account endpoints and methods.
 	*/
-	r.HandleFunc("/api/v1/accounts", IsAuthorized(hac.AddAccount)).Methods("POST")
-	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.FindAccountByID)).Methods("GET")
-	r.HandleFunc("/api/v1/accounts", IsAuthorized(hac.FindAccounts)).Methods("GET")
-	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.UpdateOrCreateAccount)).Methods("PUT")
-	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.UpdateAccount)).Methods("PATCH")
-	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.DeleteAccount)).Methods("DELETE")
+	r.HandleFunc("/api/v1/accounts", IsAuthorized(s.secret, hac.AddAccount)).Methods("POST")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(s.secret, hac.FindAccountByID)).Methods("GET")
+	r.HandleFunc("/api/v1/accounts", IsAuthorized(s.secret, hac.FindAccounts)).Methods("GET")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(s.secret, hac.UpdateOrCreateAccount)).Methods("PUT")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(s.secret, hac.UpdateAccount)).Methods("PATCH")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(s.secret, hac.DeleteAccount)).Methods("DELETE")
 
 	/*
 		URL endpoints and methods.
 	*/
-	r.HandleFunc("/api/v1/urls", IsAuthorized(hur.AddURL)).Methods("POST")
-	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.FindURLByID)).Methods("GET")
-	r.HandleFunc("/api/v1/urls", IsAuthorized(hur.FindURLs)).Methods("GET")
-	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.UpdateOrCreateURL)).Methods("PUT")
-	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.UpdateURL)).Methods("PATCH")
-	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.DeleteURL)).Methods("DELETE")
+	r.HandleFunc("/api/v1/urls", IsAuthorized(s.secret, hur.AddURL)).Methods("POST")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(s.secret, hur.FindURLByID)).Methods("GET")
+	r.HandleFunc("/api/v1/urls", IsAuthorized(s.secret, hur.FindURLs)).Methods("GET")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(s.secret, hur.UpdateOrCreateURL)).Methods("PUT")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(s.secret, hur.UpdateURL)).Methods("PATCH")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(s.secret, hur.DeleteURL)).Methods("DELETE")
 
 	return r
 }

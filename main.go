@@ -32,6 +32,8 @@ var nextFS embed.FS
 const (
 	defaultPort   = "8080"
 	defaultDBFile = "gorm.db"
+
+	defaultSecretKey = "SUPER_SECRET_KEY"
 )
 
 // @title URL API
@@ -48,9 +50,11 @@ func main() {
 	var (
 		addr = envString("REDIR_PORT", defaultPort)
 		dbf  = envString("REDIR_DB", defaultDBFile)
+		ssk  = envString("REDIR_SECRET_KEY", defaultSecretKey)
 
-		httpAddr = flag.String("http.addr", ":"+addr, "HTTP listen address")
-		dbFile   = flag.String("db.file", dbf, "Database file")
+		httpAddr  = flag.String("http.addr", ":"+addr, "HTTP listen address")
+		dbFile    = flag.String("db.file", dbf, "Database file")
+		secretKey = flag.String("secret.key", ssk, "Secret key for encrypt and decrypt JWT")
 	)
 	flag.Parse()
 
@@ -67,7 +71,7 @@ func main() {
 
 	// Create all services: auth, account and URL.
 	var service server.Service
-	service = server.NewService(database, cache)
+	service = server.NewService(*secretKey, database, cache)
 
 	// Register APIs endpoint.
 	mux := http.NewServeMux()
