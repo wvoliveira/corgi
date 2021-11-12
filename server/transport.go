@@ -3,50 +3,47 @@ package server
 // The "account" is just over HTTP, so we just have a single transport.go.
 
 import (
-	"context"
 	"encoding/json"
 	"net/http"
 
 	"github.com/gorilla/mux"
-
-	"github.com/go-kit/kit/endpoint"
-	"github.com/go-kit/log"
 )
 
 /*
 	MakeHTTPHandler mounts all of the service endpoints into an http.Handler.
 */
-func MakeHTTPHandler(s service, logger log.Logger) http.Handler {
+func MakeHTTPHandler(s Service) http.Handler {
 	r := mux.NewRouter()
 
-	hAu := handlersAuth{s}
-	hAc := handlersAccount{s}
+	hau := handlersAuth{s}
+	hac := handlersAccount{s}
+	hur := handlersURL{s}
 
 	/*
 		Auth with password endpoints and methods.
 	*/
-	r.HandleFunc("/api/v1/signin", hAu.signIn).Methods("POST")
-	r.HandleFunc("/api/v1/signup", hAu.signUp).Methods("POST")
+	r.HandleFunc("/api/v1/signin", hau.SignIn).Methods("POST")
+	r.HandleFunc("/api/v1/signup", hau.SignUp).Methods("POST")
 
 	/*
 		Account endpoints and methods.
 	*/
-	r.Handle("/api/v1/accounts", addAccountHandler).Methods("POST")
-	r.Handle("/api/v1/accounts/{id}", findAccountByIDHandler).Methods("GET")
-	r.Handle("/api/v1/accounts", findAccountsHandler).Methods("GET")
-	r.Handle("/api/v1/accounts/{id}", updateOrCreateAccountHandler).Methods("PUT")
-	r.Handle("/api/v1/accounts/{id}", updateAccountHandler).Methods("PATCH")
-	r.Handle("/api/v1/accounts/{id}", deleteAccountHandler).Methods("DELETE")
+	r.HandleFunc("/api/v1/accounts", IsAuthorized(hac.AddAccount)).Methods("POST")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.FindAccountByID)).Methods("GET")
+	r.HandleFunc("/api/v1/accounts", IsAuthorized(hac.FindAccounts)).Methods("GET")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.UpdateOrCreateAccount)).Methods("PUT")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.UpdateAccount)).Methods("PATCH")
+	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(hac.DeleteAccount)).Methods("DELETE")
 
 	/*
 		URL endpoints and methods.
 	*/
-	r.Handle("/api/v1/urls", addURLHandler).Methods("POST")
-	r.Handle("/api/v1/urls/{id}", findURLByIDHandler).Methods("GET")
-	r.Handle("/api/v1/urls", findURLsHandler).Methods("GET")
-	r.Handle("/api/v1/urls/{id}", updateOrCreateURLHandler).Methods("PUT")
-	r.Handle("/api/v1/urls/{id}", updateURLHandler).Methods("PATCH")
-	r.Handle("/api/v1/urls/{id}", deleteURLHandler).Methods("DELETE")
+	r.HandleFunc("/api/v1/urls", IsAuthorized(hur.AddURL)).Methods("POST")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.FindURLByID)).Methods("GET")
+	r.HandleFunc("/api/v1/urls", IsAuthorized(hur.FindURLs)).Methods("GET")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.UpdateOrCreateURL)).Methods("PUT")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.UpdateURL)).Methods("PATCH")
+	r.HandleFunc("/api/v1/urls/{id}", IsAuthorized(hur.DeleteURL)).Methods("DELETE")
 
 	return r
 }
@@ -55,10 +52,10 @@ func MakeHTTPHandler(s service, logger log.Logger) http.Handler {
 	Auth handlers.
 */
 type handlersAuth struct {
-	s service
+	s Service
 }
 
-func (h handlersAuth) signIn(w http.ResponseWriter, r *http.Request) {
+func (h handlersAuth) SignIn(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
 	dr, err := decodeSignInRequest(r)
 	if err != nil {
@@ -75,11 +72,10 @@ func (h handlersAuth) signIn(w http.ResponseWriter, r *http.Request) {
 
 	// Encode object to answer request (response).
 	sr := signInResponse{Token: account.Token, Err: err}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(sr)
+	_ = encodeResponse(w, sr)
 }
 
-func (h handlersAuth) signUp(w http.ResponseWriter, r *http.Request) {
+func (h handlersAuth) SignUp(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
 	dr, err := decodeSignUpRequest(r)
 	if err != nil {
@@ -96,15 +92,15 @@ func (h handlersAuth) signUp(w http.ResponseWriter, r *http.Request) {
 
 	// Encode object to answer request (response).
 	sr := signUpResponse{Err: err}
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(sr)
+	_ = encodeResponse(w, sr)
 }
 
 /*
 	Account handlers.
 */
+
 type handlersAccount struct {
-	s service
+	s Service
 }
 
 func (h handlersAccount) AddAccount(w http.ResponseWriter, r *http.Request) {
@@ -124,191 +120,234 @@ func (h handlersAccount) AddAccount(w http.ResponseWriter, r *http.Request) {
 
 	// Encode object to answer request (response).
 	sr := addAccountResponse{ID: account.ID, Email: account.Email, Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersAccount) FindAccountByID(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	de, err := decodeFindAccountByIDRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	account, err := h.s.FindAccountByID(de.ID)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := findAccountByIDResponse{Account: account, Err: err}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(sr)
 }
 
-// FindAccountByID implements Service. Primarily useful in a client.
-func (h handlersAccount) FindAccountByID(w http.ResponseWriter, r *http.Request) {
-	request := findAccountByIDRequest{ID: id}
-	response, err := e.FindAccountByIDEndpoint(ctx, request)
-	if err != nil {
-		return Account{}, err
-	}
-	resp := response.(findAccountByIDResponse)
-	return resp.Account, resp.Err
-}
-
-// FindAccounts implements Service. Primarily useful in a client.
 func (h handlersAccount) FindAccounts(w http.ResponseWriter, r *http.Request) {
-	request := findAccountsRequest{Offset: offset, PageSize: pageSize}
-	response, err := e.FindAccountsEndpoint(ctx, request)
+	// Decode request to request object.
+	de, err := decodeFindAccountsRequest(r)
 	if err != nil {
-		return []Account{}, err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(findAccountsResponse)
-	return resp.Accounts, resp.Err
+
+	// Business logic.
+	accounts, err := h.s.FindAccounts(de.Offset, de.PageSize)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := findAccountsResponse{Accounts: accounts, Err: err}
+	_ = encodeResponse(w, sr)
 }
 
-// UpdateOrCreateAccount implements Service. Primarily useful in a client.
 func (h handlersAccount) UpdateOrCreateAccount(w http.ResponseWriter, r *http.Request) {
-	request := updateOrCreateAccountRequest{ID: id, Account: p}
-	response, err := e.UpdateOrCreateAccountEndpoint(ctx, request)
+	// Decode request to request object.
+	de, err := decodeUpdateOrCreateAccountRequest(r)
 	if err != nil {
-		return err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(updateOrCreateAccountResponse)
-	return resp.Err
+
+	// Business logic.
+	err = h.s.UpdateOrCreateAccount(de.ID, de.Account)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateOrCreateAccountResponse{Err: err}
+	_ = encodeResponse(w, sr)
 }
 
-// UpdateAccount implements Service. Primarily useful in a client.
 func (h handlersAccount) UpdateAccount(w http.ResponseWriter, r *http.Request) {
-	request := updateAccountRequest{ID: id, Account: p}
-	response, err := e.UpdateAccountEndpoint(ctx, request)
+	// Decode request to request object.
+	de, err := decodeUpdateAccountRequest(r)
 	if err != nil {
-		return err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(updateAccountResponse)
-	return resp.Err
+
+	// Business logic.
+	err = h.s.UpdateAccount(de.ID, de.Account)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateAccountResponse{Err: err}
+	_ = encodeResponse(w, sr)
 }
 
-// DeleteAccount implements Service. Primarily useful in a client.
 func (h handlersAccount) DeleteAccount(w http.ResponseWriter, r *http.Request) {
-	request := deleteAccountRequest{ID: id}
-	response, err := e.DeleteAccountEndpoint(ctx, request)
+	// Decode request to request object.
+	de, err := decodeDeleteAccountRequest(r)
 	if err != nil {
-		return err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(deleteAccountResponse)
-	return resp.Err
+
+	// Business logic.
+	err = h.s.DeleteAccount(de.ID)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := deleteAccountResponse{Err: err}
+	_ = encodeResponse(w, sr)
 }
 
 /*
-	URL enconde and decode.
+	URL handlers.
 */
 
-// AddURL implements Service. Primarily useful in a client.
-func (e Endpoints) AddURL(ctx context.Context, p URL) error {
-	request := addURLRequest{URL: p}
-	response, err := e.AddURLEndpoint(ctx, request)
+type handlersURL struct {
+	s Service
+}
+
+func (h handlersURL) AddURL(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeAddURLRequest(r)
 	if err != nil {
-		return err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(addURLResponse)
-	return resp.Err
-}
 
-// FindURLByID implements Service. Primarily useful in a client.
-func (e Endpoints) FindURLByID(ctx context.Context, id string) (URL, error) {
-	request := findURLByIDRequest{ID: id}
-	response, err := e.FindURLByIDEndpoint(ctx, request)
+	// Business logic.
+	url, err := h.s.AddURL(deAccount, URL{Keyword: deURL.Keyword, URL: deURL.URL, Title: deURL.Title})
 	if err != nil {
-		return URL{}, err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(findURLByIDResponse)
-	return resp.URL, resp.Err
+
+	// Encode object to answer request (response).
+	sr := addURLResponse{Keyword: url.Keyword, URL: url.URL, Title: url.Title, Err: err}
+	_ = encodeResponse(w, sr)
 }
 
-// FindURLs implements Service. Primarily useful in a client.
-func (e Endpoints) FindURLs(ctx context.Context, offset, pageSize int) ([]URL, error) {
-	request := findURLsRequest{Offset: offset, PageSize: pageSize}
-	response, err := e.FindURLsEndpoint(ctx, request)
+func (h handlersURL) FindURLByID(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeFindURLByIDRequest(r)
 	if err != nil {
-		return []URL{}, err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(findURLsResponse)
-	return resp.URLs, resp.Err
-}
 
-// UpdateOrCreateURL implements Service. Primarily useful in a client.
-func (e Endpoints) UpdateOrCreateURL(ctx context.Context, id string, p URL) error {
-	request := updateOrCreateURLRequest{ID: id, URL: p}
-	response, err := e.UpdateOrCreateURLEndpoint(ctx, request)
+	// Business logic.
+	url, err := h.s.FindURLByID(deAccount, deURL.ID)
 	if err != nil {
-		return err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(updateOrCreateURLResponse)
-	return resp.Err
+
+	// Encode object to answer request (response).
+	sr := findURLByIDResponse{URL: url, Err: err}
+	_ = encodeResponse(w, sr)
 }
 
-// UpdateURL implements Service. Primarily useful in a client.
-func (e Endpoints) UpdateURL(ctx context.Context, id string, p URL) error {
-	request := updateURLRequest{ID: id, URL: p}
-	response, err := e.UpdateURLEndpoint(ctx, request)
+func (h handlersURL) FindURLs(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeFindURLsRequest(r)
 	if err != nil {
-		return err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(updateURLResponse)
-	return resp.Err
-}
 
-// DeleteURL implements Service. Primarily useful in a client.
-func (e Endpoints) DeleteURL(ctx context.Context, id string) error {
-	request := deleteURLRequest{ID: id}
-	response, err := e.DeleteURLEndpoint(ctx, request)
+	// Business logic.
+	urls, err := h.s.FindURLs(deAccount, deURL.Offset, deURL.PageSize)
 	if err != nil {
-		return err
+		encodeError(err, w)
+		return
 	}
-	resp := response.(deleteURLResponse)
-	return resp.Err
+
+	// Encode object to answer request (response).
+	sr := findURLsResponse{URLs: urls, Err: err}
+	_ = encodeResponse(w, sr)
 }
 
-// MakeAddURLEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeAddURLEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(addURLRequest)
-		u, e := s.AddURL(ctx, req.URL)
-		return addURLResponse{ID: u.ID, Keyword: u.Keyword, URL: u.URL, Title: u.Title, Err: e}, nil
+func (h handlersURL) UpdateOrCreateURL(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeUpdateOrCreateURLRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
 	}
+
+	// Business logic.
+	err = h.s.UpdateOrCreateURL(deAccount, deURL.ID, deURL.URL)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateOrCreateURLResponse{Err: err}
+	_ = encodeResponse(w, sr)
 }
 
-// MakeFindURLByIDEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeFindURLByIDEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(findURLByIDRequest)
-		p, e := s.FindURLByID(ctx, req.ID)
-		return findURLByIDResponse{URL: p, Err: e}, nil
+func (h handlersURL) UpdateURL(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeUpdateURLRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
 	}
+
+	// Business logic.
+	err = h.s.UpdateURL(deAccount, deURL.ID, deURL.URL)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateURLResponse{Err: err}
+	_ = encodeResponse(w, sr)
 }
 
-// MakeFindURLsEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeFindURLsEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(findURLsRequest)
-		p, e := s.FindURLs(ctx, req.Offset, req.PageSize)
-		return findURLsResponse{URLs: p, Err: e}, nil
+func (h handlersURL) DeleteURL(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	deAccount, deURL, err := decodeDeleteURLRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
 	}
-}
 
-// MakeUpdateOrCreateURLEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeUpdateOrCreateURLEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(updateOrCreateURLRequest)
-		e := s.UpdateOrCreateURL(ctx, req.ID, req.URL)
-		return updateOrCreateURLResponse{Err: e}, nil
+	// Business logic.
+	err = h.s.DeleteURL(deAccount, deURL.ID)
+	if err != nil {
+		encodeError(err, w)
+		return
 	}
-}
 
-// MakeUpdateURLEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeUpdateURLEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(updateURLRequest)
-		e := s.UpdateURL(ctx, req.ID, req.URL)
-		return updateURLResponse{Err: e}, nil
-	}
-}
-
-// MakeDeleteURLEndpoint returns an endpoint via the passed service.
-// Primarily useful in a server.
-func MakeDeleteURLEndpoint(s Service) endpoint.Endpoint {
-	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
-		req := request.(deleteURLRequest)
-		e := s.DeleteURL(ctx, req.ID)
-		return deleteURLResponse{Err: e}, nil
-	}
+	// Encode object to answer request (response).
+	sr := deleteURLResponse{Err: err}
+	_ = encodeResponse(w, sr)
 }

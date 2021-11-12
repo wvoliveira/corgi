@@ -1,9 +1,6 @@
 package server
 
 import (
-	"encoding/json"
-	"errors"
-	"fmt"
 	"net/http"
 
 	"github.com/golang-jwt/jwt"
@@ -28,12 +25,12 @@ func AccessControl(h http.Handler) http.Handler {
 	})
 }
 
-func IsAuthorized(handler http.HandlerFunc) http.HandlerFunc {
+// IsAuthorized check if auth ok and set claims in request header.
+func IsAuthorized(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Header["Token"] == nil {
-			err := errors.New("no token found")
-			json.NewEncoder(w).Encode(err)
+			encodeError(ErrNoTokenFound, w)
 			return
 		}
 
@@ -41,31 +38,28 @@ func IsAuthorized(handler http.HandlerFunc) http.HandlerFunc {
 
 		token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, fmt.Errorf("There was an error in parsing token.")
+				return nil, ErrParseToken
 			}
 			return mySigningKey, nil
 		})
 
 		if err != nil {
-			err = errors.New("your token has been expired")
-			json.NewEncoder(w).Encode(err)
+			encodeError(ErrTokenExpired, w)
 			return
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			if claims["role"] == "admin" {
-				r.Header.Set("Role", "admin")
-				handler.ServeHTTP(w, r)
-				return
+			accountID := claims["id"].(string)
+			accountEmail := claims["email"].(string)
+			accountRole := claims["role"].(string)
 
-			} else if claims["role"] == "user" {
-				r.Header.Set("Role", "user")
-				handler.ServeHTTP(w, r)
-				return
+			r.Header.Set("AccountID", accountID)
+			r.Header.Set("AccountEmail", accountEmail)
+			r.Header.Set("AccountRole", accountRole)
 
-			}
+			h.ServeHTTP(w, r)
+			return
 		}
-		err = errors.New("not authorized")
-		json.NewEncoder(w).Encode(err)
+		encodeError(ErrUnauthorized, w)
 	}
 }

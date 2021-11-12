@@ -14,7 +14,11 @@ var (
 
 	ErrFieldsRequired      = errors.New("fields required: email and password")
 	ErrInternalServerError = errors.New("internal server error")
-	ErrUnauthorized        = errors.New("Unauthorized")
+	ErrUnauthorized        = errors.New("unauthorized")
+
+	ErrNoTokenFound = errors.New("no token found")
+	ErrParseToken   = errors.New("there was an error in parsing token")
+	ErrTokenExpired = errors.New("your token has been expired")
 
 	/*
 		ErrBadRouting is returned when an expected path variable is missing.
@@ -50,7 +54,7 @@ func codeFrom(err error) int {
 		return http.StatusNotFound
 	case ErrAlreadyExists, ErrInconsistentIDs:
 		return http.StatusBadRequest
-	case ErrUnauthorized:
+	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:
 		return http.StatusUnauthorized
 	default:
 		return http.StatusInternalServerError

@@ -77,7 +77,7 @@ func (r signInResponse) error() error { return r.Err }
 */
 
 type signUpRequest struct {
-	Name     string `json:"email"`
+	Name     string `json:"name"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
@@ -93,7 +93,9 @@ func (r signUpResponse) error() error { return r.Err }
 */
 
 type addURLRequest struct {
-	URL URL
+	Keyword string `json:"keyword"`
+	URL     string `json:"url"`
+	Title   string `json:"title"`
 }
 
 type addURLResponse struct {
