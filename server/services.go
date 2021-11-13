@@ -160,49 +160,63 @@ func (s Service) FindAccountByID(auth Account, id string) (acc Account, err erro
 	// Only admin can view another accounts.
 	// TODO: create more roles without hardcoded.
 	if auth.Role != "admin" && auth.ID != id {
-		return auth, ErrOnlyAdmin
+		return acc, ErrOnlyAdmin
 	}
 
-	u := Account{}
 	cacheKey := fmt.Sprintf("account_id:%s", id)
 
-	// check cache
+	// Check cache if account is present.
 	foo, found := s.cache.Get(cacheKey)
 	if found {
-		return foo.(Account), nil
+		return foo.(Account), err
 	}
 
-	// get in db
-	result := s.db.Model(&u).Where("id = ?", id).First(&u)
+	// Get account from databse.
+	result := s.db.Model(&acc).Where("id = ?", id).First(&acc)
 	if result.RowsAffected == 0 {
-		return u, ErrNotFound
+		return acc, ErrNotFound
 	}
 
-	// if found, set cache
-	s.cache.Set(cacheKey, u, cache.DefaultExpiration)
-	return u, nil
+	// If found, send do memory cache.
+	s.cache.Set(cacheKey, acc, cache.DefaultExpiration)
+	return
 }
 
 /*
 	Get a list of accounts.
 */
 
-func (s Service) FindAccounts(auth Account, offset, pageSize int) ([]Account, error) {
-	var u []Account
-
-	// get account in db
-	result := s.db.Model(&u).Offset(offset).Limit(pageSize).Find(&u)
-	if result.Error != nil {
-		return u, result.Error
+func (s Service) FindAccounts(auth Account, offset, pageSize int) (accs []Account, err error) {
+	// Only admins can view other accounts.
+	if auth.Role != "admin" {
+		// When a user is not a "admin", return a list with the same account.
+		err = s.db.Model(&accs).Where("id = ?", auth.ID).Offset(offset).Limit(pageSize).Find(&accs).Error
+		return
 	}
-	return u, nil
+
+	// Role admin.
+	// Get all accounts. Normally.
+	err = s.db.Model(&accs).Offset(offset).Limit(pageSize).Find(&accs).Error
+	return
 }
 
 /*
 	Update or create a new account.
 */
 
-func (s Service) UpdateOrCreateAccount(auth Account, id string, reqAccount Account) error {
+func (s Service) UpdateOrCreateAccount(auth Account, id string, reqAccount Account) (err error) {
+	// Only admins can edit others accounts.
+	// if the auth account is not a "admin" and want to change other
+	if auth.Role != "admin" && auth.ID != id {
+		return ErrOnlyAdmin
+	}
+
+	// PAREI AQUI
+
+	if auth.Role != "admin" {
+
+	}
+
 	var dbAccount Account
 	var result *gorm.DB
 
