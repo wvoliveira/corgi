@@ -2,7 +2,6 @@ package main
 
 import (
 	"embed"
-	"flag"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -29,38 +28,11 @@ import (
 //go:embed ui/dist/_next/static/*/*.js
 var nextFS embed.FS
 
-const (
-	defaultPort   = "8080"
-	defaultDBFile = "gorm.db"
-
-	defaultSecretKey = "SUPER_SECRET_KEY"
-)
-
-// @title URL API
-// @version 0.0.1
-// @description Micro-serice for managing URL
-// @termsOfService http://elga.io/terms
-// @contact.name API Support
-// @contact.email support@elga.io
-// @license.name Apache 2.0
-// @license.url http://www.apache.org/licenses/LICENSE-2.0.html
-// @host localhost:8080
-// @BasePath /
 func main() {
-	var (
-		addr = envString("REDIR_PORT", defaultPort)
-		dbf  = envString("REDIR_DB", defaultDBFile)
-		ssk  = envString("REDIR_SECRET_KEY", defaultSecretKey)
+	logger := server.NewLogger()
+	config := server.NewConfig(logger, ".")
 
-		httpAddr  = flag.String("http.addr", ":"+addr, "HTTP listen address")
-		dbFile    = flag.String("db.file", dbf, "Database file")
-		secretKey = flag.String("secret.key", ssk, "Secret key for encrypt and decrypt JWT")
-	)
-	flag.Parse()
-
-	// Start logger, database and cache.
-	logger := server.InitLogger()
-	database := server.InitDatabase(logger, dbFile)
+	database := server.InitDatabase(logger, config)
 	cache := server.InitCache()
 
 	// Make database migration.
@@ -71,7 +43,7 @@ func main() {
 
 	// Create all services: auth, account and URL.
 	var service server.Service
-	service = server.NewService(*secretKey, database, cache)
+	service = server.NewService(config.SecretKey, database, cache)
 
 	// Register APIs endpoint.
 	mux := http.NewServeMux()
@@ -85,7 +57,7 @@ func main() {
 	mux.Handle("/", ui)
 	http.Handle("/", server.AccessControl(mux))
 
-	startServer(logger, httpAddr)
+	startServer(logger, &config.ServerAddress)
 }
 
 func envString(env, fallback string) string {

@@ -4,7 +4,7 @@ node_modules
 .next
 redirect
 ui/dist
-gorm.db
+redir.db
 
 # Logs
 logs
