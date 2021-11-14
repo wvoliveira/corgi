@@ -13,9 +13,10 @@ var (
 	ErrNotFound        = errors.New("not found")
 	ErrOnlyAdmin       = errors.New("only admin can do it")
 
-	ErrFieldsRequired      = errors.New("fields required: email and password")
-	ErrInternalServerError = errors.New("internal server error")
-	ErrUnauthorized        = errors.New("unauthorized")
+	ErrFieldsRequired       = errors.New("fields required: email and password")
+	ErrInternalServerError  = errors.New("internal server error")
+	ErrUnauthorized         = errors.New("unauthorized")
+	ErrCanNotDeleteYourSelf = errors.New("delete yourself? thats not a good idea")
 
 	ErrNoTokenFound = errors.New("no token found")
 	ErrParseToken   = errors.New("there was an error in parsing token")

@@ -12,6 +12,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Service store all methods. Yeah monolithic.
 type Service struct {
 	db     *gorm.DB
 	cache  *cache.Cache
@@ -27,6 +28,7 @@ func NewService(secretKey string, db *gorm.DB, c *cache.Cache) Service {
 	}
 }
 
+// SignIn login with email and password.
 func (s Service) SignIn(p Account) (Account, error) {
 	sa := Account{}
 	cacheKey := fmt.Sprintf("pwd_email:%s", p.Email)
@@ -70,6 +72,7 @@ func (s Service) SignIn(p Account) (Account, error) {
 	return sa, nil
 }
 
+// SignUp register with e-mail and password.
 func (s Service) SignUp(p Account) error {
 	// Check if e-mail and password was sended.
 	// TODO: check e-mail pattern.
@@ -117,10 +120,7 @@ func (s Service) SignUp(p Account) error {
 	return nil
 }
 
-/*
-	Create a new account.
-*/
-
+// AddAccount create a new account.
 func (s Service) AddAccount(auth Account, payload Account) (Account, error) {
 	// Only admin can create a new account without signup process.
 	// TODO: create more roles without hardcoded.
@@ -152,10 +152,7 @@ func (s Service) AddAccount(auth Account, payload Account) (Account, error) {
 	return payload, nil
 }
 
-/*
-	Get account by ID.
-*/
-
+// FindAccountByID find a account with specific ID.
 func (s Service) FindAccountByID(auth Account, id string) (acc Account, err error) {
 	// Only admin can view another accounts.
 	// TODO: create more roles without hardcoded.
@@ -182,10 +179,7 @@ func (s Service) FindAccountByID(auth Account, id string) (acc Account, err erro
 	return
 }
 
-/*
-	Get a list of accounts.
-*/
-
+// FindAccounts Get a list of accounts.
 func (s Service) FindAccounts(auth Account, offset, pageSize int) (accs []Account, err error) {
 	// Only admins can view other accounts.
 	if auth.Role != "admin" {
@@ -200,123 +194,130 @@ func (s Service) FindAccounts(auth Account, offset, pageSize int) (accs []Accoun
 	return
 }
 
-/*
-	Update or create a new account.
-*/
+// UpdateOrCreateAccount Update or create a new account.
+func (s Service) UpdateOrCreateAccount(auth Account, id string, payload Account) (err error) {
+	// Database account and cache key.
+	var acc Account
+	var cacheKey = fmt.Sprintf("account_id:%s", id)
 
-func (s Service) UpdateOrCreateAccount(auth Account, id string, reqAccount Account) (err error) {
 	// Only admins can edit others accounts.
 	// if the auth account is not a "admin" and want to change other
 	if auth.Role != "admin" && auth.ID != id {
 		return ErrOnlyAdmin
 	}
 
-	// PAREI AQUI
-
-	if auth.Role != "admin" {
-
-	}
-
-	var dbAccount Account
-	var result *gorm.DB
-
-	cacheKey := fmt.Sprintf("account_id:%s", id)
-
+	// Try to parse ID as uuid.
 	if _, err := uuid.Parse(id); err != nil {
 		return ErrInconsistentIDs
 	}
 
-	result = s.db.Model(&reqAccount).Where("id = ?", id).First(&dbAccount)
+	// Check if account exists.
+	result := s.db.Model(&acc).Where("id = ?", id).First(&acc)
 
 	if result.RowsAffected == 0 {
-		if reqAccount.Email == "" {
-			return errors.New("fields required: email and password")
+		// Check needed fields in payload.
+		if payload.Name == "" || payload.Email == "" || payload.Password == "" {
+			return ErrFieldsRequired
 		}
-
-		if result = s.db.Model(&reqAccount).Create(&reqAccount); result.Error != nil {
-			return result.Error
+		// If not exists, create.
+		if err = s.db.Model(&payload).Create(&payload).Error; err != nil {
+			return
 		}
 	}
 
-	if result = s.db.Model(&dbAccount).Where("id=?", id).Save(&dbAccount); result.Error != nil {
-		return result.Error
+	// Update account in database.
+	if err = s.db.Model(&payload).Where("id=?", id).Save(&payload).Error; err != nil {
+		return
 	}
 
-	s.cache.Set(cacheKey, dbAccount, cache.DefaultExpiration)
-	return nil
+	// Set updated account in cache memory.
+	s.cache.Set(cacheKey, payload, cache.DefaultExpiration)
+	return
 }
 
-/*
-	Updates a account that already exists. Do not create.
-*/
+// UpdateAccount update specific account fields.
+func (s Service) UpdateAccount(auth Account, id string, payload Account) (err error) {
+	// Database account and cache key.
+	var acc Account
+	var cacheKey = fmt.Sprintf("account_id:%s", id)
 
-func (s Service) UpdateAccount(auth Account, id string, reqAccount Account) error {
-	var dbAccount Account
+	// Only admins can edit others accounts.
+	// if the auth account is not a "admin" and want to change other
+	if auth.Role != "admin" && auth.ID != id {
+		return ErrOnlyAdmin
+	}
 
-	result := s.db.Model(&reqAccount).First(&dbAccount, id)
-	cacheKey := fmt.Sprintf("account_id:%s", id)
+	// Try to parse ID as uuid.
+	if _, err := uuid.Parse(id); err != nil {
+		return ErrInconsistentIDs
+	}
 
-	if result.Error != nil {
+	// Check if account exists.
+	err = s.db.Model(&acc).First(&acc, id).Error
+	if err != nil {
 		return ErrNotFound
 	}
 
-	if result = s.db.Model(&reqAccount).Updates(&reqAccount); result.Error != nil {
-		return result.Error
+	// Update account with fields is not blank/null.
+	if err = s.db.Model(&payload).Updates(&payload).Error; err != nil {
+		return err
 	}
 
-	s.cache.Set(cacheKey, reqAccount, cache.DefaultExpiration)
+	// Send account to memory cache.
+	s.cache.Set(cacheKey, payload, cache.DefaultExpiration)
 	return nil
 }
 
-/*
-	Delete account by ID.
-*/
+// DeleteAccount delete specific account by ID.
+func (s Service) DeleteAccount(auth Account, id string) (err error) {
+	// Database account and cache key.
+	var acc Account
+	var cacheKey = fmt.Sprintf("account_id:%s", id)
 
-func (s Service) DeleteAccount(auth Account, id string) error {
-	u := Account{}
-	cacheKey := fmt.Sprintf("account_id:%s", id)
-
-	if result := s.db.Model(&u).Where("id = ?", id).First(&u); result.RowsAffected == 0 {
-		return ErrNotFound
+	// Only admin can delete another accounts.
+	if auth.Role != "admin" {
+		return ErrOnlyAdmin
 	}
 
-	if result := s.db.Model(&u).Where("id = ?", id).Delete(&u); result.Error != nil {
-		return result.Error
+	// Admin has the power to delete, but not yourself.
+	if auth.Role == "admin" && auth.ID == id {
+		return ErrCanNotDeleteYourSelf
 	}
 
-	// Delete URL in cache.
+	// Delete account in database.
+	if err = s.db.Model(&acc).Where("id = ?", id).Delete(&acc).Error; err != nil {
+		return err
+	}
+
+	// Delete account in cache.
 	s.cache.Delete(cacheKey)
 	return nil
 }
 
 /*
-	Create a short URL.
+	URL service functions.
 */
 
-func (s Service) AddURL(account Account, url URL) (URL, error) {
+// AddURL create a new short URL.
+func (s Service) AddURL(auth Account, payload URL) (url URL, err error) {
 	// Check if necessary fields was sended.
-	if url.Keyword == "" || url.URL == "" || url.Title == "" {
-		return url, errors.New("fields required: keyword, url, title and owner_id")
+	if payload.Keyword == "" || payload.URL == "" || payload.Title == "" {
+		return payload, errors.New("fields required: keyword, url and title")
 	}
 
-	result := s.db.Model(&url).Limit(1).Where("keyword=?", url.Keyword).Find(&url)
+	// Check if keyword exists.
+	result := s.db.Model(&url).Limit(1).Where("keyword=?", payload.Keyword).Find(&url)
 	if result.RowsAffected > 0 {
-		return url, ErrAlreadyExists // POST = create, don't overwrite
+		return payload, ErrAlreadyExists
 	}
 
-	url.ID = uuid.New().String()
-	url.Account = account
+	payload.ID = uuid.New().String()
+	payload.AccountID = auth.ID
+	url = payload
 
-	// Create a transaction.
-	o := s.db.Create(&url)
-	if o.Error != nil {
-		return url, o.Error
-	}
-
-	// Save database insert.
-	o = s.db.Save(&url)
-	if o.Error != nil {
-		return url, o.Error
+	// Create a new
+	if err = s.db.Model(&url).Create(&url).Error; err != nil {
+		return
 	}
 
 	// Store new URL in memory cache.
@@ -325,40 +326,30 @@ func (s Service) AddURL(account Account, url URL) (URL, error) {
 	return url, nil
 }
 
-func (s Service) FindURLByID(account Account, id string) (URL, error) {
-	u := URL{}
-	cacheKey := fmt.Sprintf("url_id:%s", id)
-
-	// Check if URL exists in cache.
-	foo, found := s.cache.Get(cacheKey)
-	if found {
-		return foo.(URL), nil
+// FindURLByID search a specific URL by ID.
+func (s Service) FindURLByID(auth Account, id string) (url URL, err error) {
+	// Only admin can get any URL.
+	if auth.Role == "admin" {
+		err = s.db.Model(&url).Where("id = ?", id).First(&url).Error
+	} else {
+		err = s.db.Model(&url).Where("id = ?", id).Where("account_id=?", auth.ID).First(&url).Error
 	}
-
-	// Get URL in database.
-	result := s.db.Model(&u).Where("id = ?", id).First(&u)
-	if result.RowsAffected == 0 {
-		return u, ErrNotFound
-	}
-
-	// If found, set cache.
-	s.cache.Set(cacheKey, u, cache.DefaultExpiration)
-	return u, nil
+	// TODO: get item from cache.
+	return
 }
 
-func (s Service) FindURLs(account Account, offset, pageSize int) (urls []URL, err error) {
-	// Get URLs in database.
-	result := s.db.Model(&urls).Where("account_id=?", account.ID).Offset(offset).Limit(pageSize).Find(&urls)
-
-	if result.Error != nil {
-		return urls, result.Error
+// FindURLs get a URL list from database.
+func (s Service) FindURLs(auth Account, offset, pageSize int) (urls []URL, err error) {
+	// Only admin can get all URLs.
+	if auth.Role == "admin" {
+		err = s.db.Model(&urls).Offset(offset).Limit(pageSize).Find(&urls).Error
+	} else {
+		err = s.db.Model(&urls).Where("account_id=?", auth.ID).Offset(offset).Limit(pageSize).Find(&urls).Error
 	}
-	return urls, nil
+	return
 }
 
-/*
-	Update or create a new URL.
-*/
+// UpdateOrCreateURL update or create a url.
 func (s Service) UpdateOrCreateURL(account Account, id string, reqURL URL) error {
 	var dbURL URL
 	var result *gorm.DB
@@ -390,9 +381,7 @@ func (s Service) UpdateOrCreateURL(account Account, id string, reqURL URL) error
 	return nil
 }
 
-/*
-	Updates a URL that already exists. Do not create.
-*/
+// UpdateURL update specific URL by ID.
 func (s Service) UpdateURL(account Account, id string, reqURL URL) error {
 	var dbURL URL
 
@@ -415,9 +404,7 @@ func (s Service) UpdateURL(account Account, id string, reqURL URL) error {
 	return nil
 }
 
-/*
-	Delete a URL by ID.
-*/
+// DeleteURL delete account by ID.
 func (s Service) DeleteURL(account Account, id string) error {
 	u := URL{}
 	cacheKey := fmt.Sprintf("url_id:%s", id)
@@ -434,8 +421,7 @@ func (s Service) DeleteURL(account Account, id string) error {
 	return nil
 }
 
-func generateJWT(secretKey string, a Account) (string, error) {
-	var mySigningKey = []byte(secretKey)
+func generateJWT(secretKey string, a Account) (hash string, err error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 
@@ -445,11 +431,11 @@ func generateJWT(secretKey string, a Account) (string, error) {
 	claims["role"] = a.Role
 	claims["exp"] = time.Now().Add(time.Minute * 30).Unix()
 
-	tokenHash, err := token.SignedString(mySigningKey)
+	hash, err = token.SignedString([]byte(secretKey))
 	if err != nil {
-		errors.New("error to generate JWT: " + err.Error())
-		return "", err
+		err = errors.New("error to generate JWT: " + err.Error())
+		return
 	}
 
-	return tokenHash, nil
+	return
 }
