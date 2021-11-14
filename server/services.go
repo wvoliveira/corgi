@@ -350,35 +350,46 @@ func (s Service) FindURLs(auth Account, offset, pageSize int) (urls []URL, err e
 }
 
 // UpdateOrCreateURL update or create a url.
-func (s Service) UpdateOrCreateURL(account Account, id string, reqURL URL) error {
-	var dbURL URL
-	var result *gorm.DB
-	cacheKey := fmt.Sprintf("url_id:%s", id)
+func (s Service) UpdateOrCreateURL(auth Account, id string, payload URL) (err error) {
+	var cacheKey = fmt.Sprintf("url_id:%s", id)
 
-	_, err := uuid.Parse(id)
-
+	// Check if id is a valid UUID.
+	_, err = uuid.Parse(id)
 	if err != nil {
 		return ErrInconsistentIDs
 	}
 
-	result = s.db.Model(&reqURL).Where("id = ?", id).First(&dbURL)
+	/*
+		TODO: receive URL with account object.
+	*/
 
-	if result.RowsAffected == 0 {
-		if reqURL.Keyword == "" || reqURL.URL == "" || reqURL.Title == "" || reqURL.AccountID == "" {
-			return errors.New("fields required: keyword, url, title and owner_id")
+	// Only admin can edit any URL.
+	if auth.Role == "admin" {
+		err = s.db.Model(&payload).Where("id = ?", id).Updates(&payload).Error
+		if err == gorm.ErrRecordNotFound {
+			payload.AccountID = auth.ID
+			if err = checkURLFields(payload); err != nil {
+				return err
+			}
+			err = s.db.Model(&payload).Create(&payload).Error
 		}
-
-		if result = s.db.Model(&reqURL).Create(&reqURL); result.Error != nil {
-			return result.Error
-		}
+		// Send object to memory cache.
+		s.cache.Set(cacheKey, payload.ID, cache.DefaultExpiration)
+		return
 	}
 
-	if result = s.db.Model(&dbURL).Where("id = ?", id).Save(&dbURL); result.Error != nil {
-		return result.Error
+	// Normal user
+	err = s.db.Model(&payload).Where("id = ?", id).Where("account_id = ?", auth.ID).Updates(&payload).Error
+	if err == gorm.ErrRecordNotFound {
+		payload.AccountID = auth.ID
+		if err = checkURLFields(payload); err != nil {
+			return err
+		}
+		err = s.db.Model(&payload).Create(&payload).Error
 	}
-
-	s.cache.Set(cacheKey, dbURL, cache.DefaultExpiration)
-	return nil
+	// Send object to memory cache.
+	s.cache.Set(cacheKey, payload.ID, cache.DefaultExpiration)
+	return
 }
 
 // UpdateURL update specific URL by ID.
@@ -437,5 +448,12 @@ func generateJWT(secretKey string, a Account) (hash string, err error) {
 		return
 	}
 
+	return
+}
+
+func checkURLFields(url URL) (err error) {
+	if url.Keyword == "" || url.Title == "" || url.URL == "" {
+		err = errors.New("fields required: keyword, title and url")
+	}
 	return
 }
