@@ -32,18 +32,21 @@ func main() {
 	logger := server.NewLogger()
 	config := server.NewConfig(logger, ".")
 
-	database := server.InitDatabase(logger, config)
+	database := server.NewDatabase(logger, config)
 	cache := server.InitCache()
 
 	// Make database migration.
-	database.AutoMigrate(server.Account{}, server.URL{})
+	database.DB.AutoMigrate(server.Account{}, server.URL{})
+
+	// Seed users.
+	database.SeedUsers()
 
 	// Web UI
 	ui := initWebUI(logger)
 
 	// Create all services: auth, account and URL.
 	var service server.Service
-	service = server.NewService(config.SecretKey, database, cache)
+	service = server.NewService(config.SecretKey, database.DB, cache)
 
 	// Register APIs endpoint.
 	mux := http.NewServeMux()

@@ -12,7 +12,7 @@ func TestInitDatabase(t *testing.T) {
 	// Set database in memory.
 	config.DBType = "memory"
 
-	_ = InitDatabase(logger, config)
+	_ = NewDatabase(logger, config)
 }
 
 // TestLoadSqlite test loadSqlite to run sqlite database.
