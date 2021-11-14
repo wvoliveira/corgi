@@ -32,15 +32,16 @@ func NewConfig(logger log.Logger, path string) (config Config) {
 	viper.SetConfigName("app")
 	viper.SetConfigType("env")
 
+	viper.SetDefault("DBType", dbType)
+	viper.SetDefault("DBDriver", dbDriver)
+	viper.SetDefault("DBSource", dbSource)
+	viper.SetDefault("ServerAddress", serverAddress)
+	viper.SetDefault("SecretKey", secretKey)
+
 	viper.AutomaticEnv()
+	viper.ReadInConfig()
 
-	err := viper.ReadInConfig()
-	if err != nil {
-		logger.Log("method", "NewConfig", "message", "error with viper.ReadInConfig", "err", err.Error())
-		os.Exit(1)
-	}
-
-	err = viper.Unmarshal(&config)
+	err := viper.Unmarshal(&config)
 	if err != nil {
 		logger.Log("method", "NewConfig", "message", "error with viper.Unmarshal", "err", err.Error())
 		os.Exit(1)

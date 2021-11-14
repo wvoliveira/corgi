@@ -31,3 +31,7 @@ user-swag:
 
 main-swag:
 	swag init --parseInternal --dir "./" -g main.go -o docs
+
+# Unit test API.
+go-test:
+	go test -v ./server
