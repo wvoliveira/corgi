@@ -12,6 +12,7 @@ var (
 	ErrAlreadyExists   = errors.New("already exists")
 	ErrNotFound        = errors.New("not found")
 	ErrOnlyAdmin       = errors.New("only admin can do it")
+	ErrEmailNotValid   = errors.New("try a valid e-mail")
 
 	ErrFieldsRequired       = errors.New("fields required: email and password")
 	ErrInternalServerError  = errors.New("internal server error")

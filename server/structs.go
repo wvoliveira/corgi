@@ -9,17 +9,17 @@ import (
 	ID should be globally unique.
 */
 type Account struct {
-	ID        string    `json:"id" gorm:"primaryKey;" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
+	ID        string    `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
 	CreatedAt time.Time `json:"created_at,omitempty" example:"2021-10-18T00:45:07.818344164-03:00"`
 	UpdatedAt time.Time `json:"updated_at,omitempty" example:"2021-10-18T00:49:06.160059334-03:00"`
 	LastLogin time.Time `json:"last_login,omitempty" example:"2021-10-20T00:50:00.100059334-03:00"`
 
-	Name     string `json:"name"`
+	Name     string `json:"name" example:"Wellington Oliveira"`
 	Email    string `json:"email" example:"oliveira@live.it"`
 	Password string `json:"-"`
 
-	Role  string `json:"role"`
-	Tags  string `json:"tags"`
+	Role  string `json:"role" example:"admin"`
+	Tags  string `json:"tags" example:"vip,mod,staff"`
 	Token string `json:"token"`
 }
 
@@ -28,13 +28,12 @@ type Account struct {
 	ID should be globally unique.
 */
 type URL struct {
-	ID        string    `json:"id" gorm:"primaryKey;" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
-	Keyword   string    `json:"keyword" gorm:"index" example:"google"`
+	ID        string    `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
+	Keyword   string    `json:"keyword" example:"google"`
 	URL       string    `json:"url" example:"https://www.google.com"`
 	Title     string    `json:"title" example:"Google Home"`
-	Active    *bool     `json:"active" gorm:"type:bool;default:true" example:"false"`
+	Active    *bool     `json:"active" example:"false"`
 	AccountID string    `json:"-"`
-	Account   Account   `json:"-"`
 	CreatedAt time.Time `json:"created_at" example:"2021-10-18T00:45:07.818344164-03:00"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
 }
@@ -99,10 +98,10 @@ type addURLRequest struct {
 }
 
 type addURLResponse struct {
-	ID      string `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
-	Keyword string `json:"keyword" example:"google"`
-	URL     string `json:"url" example:"https://www.google.com"`
-	Title   string `json:"title" example:"Google Home"`
+	ID      string `json:"id"`
+	Keyword string `json:"keyword"`
+	URL     string `json:"url"`
+	Title   string `json:"title"`
 	Err     error  `json:"err,omitempty"`
 }
 
@@ -189,7 +188,7 @@ func (r deleteURLResponse) error() error { return r.Err }
 
 type addAccountRequest struct {
 	Name     string `json:"name"`
-	Email    string `json:"email" example:"oliveira@live.it"`
+	Email    string `json:"email"`
 	Password string `json:"-"`
 }
 
