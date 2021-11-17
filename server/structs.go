@@ -10,17 +10,19 @@ import (
 */
 type Account struct {
 	ID        string    `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
-	CreatedAt time.Time `json:"created_at,omitempty" example:"2021-10-18T00:45:07.818344164-03:00"`
-	UpdatedAt time.Time `json:"updated_at,omitempty" example:"2021-10-18T00:49:06.160059334-03:00"`
-	LastLogin time.Time `json:"last_login,omitempty" example:"2021-10-20T00:50:00.100059334-03:00"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	UpdatedAt time.Time `json:"updated_at,omitempty"`
+	LastLogin time.Time `json:"last_login,omitempty"`
 
-	Name     string `json:"name" example:"Wellington Oliveira"`
-	Email    string `json:"email" example:"oliveira@live.it"`
+	Name     string `json:"name"`
+	Email    string `json:"email"`
 	Password string `json:"-"`
 
 	Role  string `json:"role" example:"admin"`
 	Tags  string `json:"tags" example:"vip,mod,staff"`
 	Token string `json:"token"`
+
+	Active string `json:"active"`
 }
 
 /*

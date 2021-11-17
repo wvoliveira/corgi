@@ -169,7 +169,7 @@ func (s Service) SignUp(ctx context.Context, payload Account) (err error) {
 	}
 
 	// Send a new account to cache. No problem if error apper.
-	_, _ = s.db.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+	_, _ = s.cache.Pipelined(ctx, func(rdb redis.Pipeliner) error {
 		rdb.Set(ctx, cacheIDKey, accountJs, 10)
 		rdb.Set(ctx, cacheEmailKey, accountJs, 10)
 		return nil
@@ -242,7 +242,7 @@ func (s Service) AddAccount(ctx context.Context, auth, payload Account) (account
 	}
 
 	// Send a new account to cache. No problem if error apper.
-	_, _ = s.db.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+	_, _ = s.cache.Pipelined(ctx, func(rdb redis.Pipeliner) error {
 		rdb.Set(ctx, cacheIDKey, accountJs, 10)
 		rdb.Set(ctx, cacheEmailKey, accountJs, 10)
 		return nil
@@ -257,10 +257,8 @@ func (s Service) FindAccountByID(ctx context.Context, auth Account, id string) (
 	dbIDKey, _ := s.dbAccountKey(id, "")
 	cacheIDKey, _ := s.cacheAccountKey(id, "")
 
-	// Only admin can view another accounts.
-	// TODO: create more roles without hardcoded.
-	if auth.Role != "admin" && auth.ID != id {
-		return account, ErrOnlyAdmin
+	if err = checkAccountRequest(auth, id, Account{}); err != nil {
+		return
 	}
 
 	var found, foundInCache bool
@@ -298,7 +296,7 @@ func (s Service) FindAccountByID(ctx context.Context, auth Account, id string) (
 	if !foundInCache {
 		cacheIDKey, cacheEmailKey := s.cacheAccountKey(id, account.Email)
 
-		_, _ = s.db.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		_, _ = s.cache.Pipelined(ctx, func(rdb redis.Pipeliner) error {
 			rdb.Set(ctx, cacheIDKey, item, 10)
 			rdb.Set(ctx, cacheEmailKey, item, 10)
 			return nil
@@ -316,7 +314,6 @@ func (s Service) FindAccounts(ctx context.Context, auth Account, offset, pageSiz
 
 	// TODO: Cache response.
 	if auth.Role != "admin" {
-		// When a user is not a "admin", return a list with the same account.
 		items, err = s.db.Sort(ctx, dbAuthIDKey, &redis.Sort{Offset: int64(offset), Count: int64(pageSize), Order: "ASC"}).Result()
 		if err != nil {
 			return
@@ -341,103 +338,229 @@ func (s Service) FindAccounts(ctx context.Context, auth Account, offset, pageSiz
 }
 
 // UpdateOrCreateAccount Update or create a new account.
-func (s Service) UpdateOrCreateAccount(auth Account, id string, payload Account) (err error) {
-	// Database account and cache key.
-	var acc Account
-	var cacheKey = fmt.Sprintf("account_id:%s", id)
+func (s Service) UpdateOrCreateAccount(ctx context.Context, auth Account, id string, payload Account) (err error) {
+	var (
+		found     bool
+		account   Account
+		accountJs []byte
+	)
 
-	// Only admins can edit others accounts.
-	// if the auth account is not a "admin" and want to change other
-	if auth.Role != "admin" && auth.ID != id {
-		return ErrOnlyAdmin
+	dbIDKey, dbEmailKey := s.dbAccountKey(id, payload.Email)
+	cacheIDKey, cacheEmailKey := s.cacheAccountKey(id, payload.Email)
+
+	if err = checkAccountRequest(auth, id, payload); err != nil {
+		return
 	}
 
-	// Try to parse ID as uuid.
-	if _, err := uuid.Parse(id); err != nil {
-		return ErrInconsistentIDs
+	// Check if account exist in cache.
+	item, err := s.cache.Get(ctx, cacheIDKey).Result()
+	if err == nil {
+		found = true
 	}
 
-	// Check if account exists.
-	result := s.db.Model(&acc).Where("id = ?", id).First(&acc)
+	// If not found in cache memory, search in database (more slowly).
+	if !found {
+		item, err = s.db.Get(ctx, dbIDKey).Result()
 
-	if result.RowsAffected == 0 {
-		// Check needed fields in payload.
-		if payload.Name == "" || payload.Email == "" || payload.Password == "" {
-			return ErrFieldsRequired
-		}
-		// If not exists, create.
-		if err = s.db.Model(&payload).Create(&payload).Error; err != nil {
+		// Not found in database.
+		if err == redis.Nil {
+			found = false
+		} else if err == nil {
+			found = true
+		} else {
 			return
 		}
 	}
 
-	// Update account in database.
-	if err = s.db.Model(&payload).Where("id=?", id).Save(&payload).Error; err != nil {
+	if !found {
+		accountJs, err = json.Marshal(payload)
+		if err != nil {
+			return
+		}
+
+		// Send a new account into database.
+		if _, err = s.db.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+			rdb.Set(ctx, dbIDKey, accountJs, 0)
+			rdb.Set(ctx, dbEmailKey, accountJs, 0)
+			return nil
+		}); err != nil {
+			return
+		}
+
+		// Send a new account to cache. No problem if error apper.
+		_, _ = s.cache.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+			rdb.Set(ctx, cacheIDKey, accountJs, 10)
+			rdb.Set(ctx, cacheEmailKey, accountJs, 10)
+			return nil
+		})
 		return
 	}
 
-	// Set updated account in cache memory.
-	s.cache.Set(cacheKey, payload, cache.DefaultExpiration)
+	err = json.Unmarshal([]byte(item), account)
+	if err != nil {
+		return
+	}
+
+	account.Name = payload.Name
+	account.Email = payload.Email
+	account.UpdatedAt = time.Now()
+
+	accountJs, err = json.Marshal(account)
+	if err != nil {
+		return
+	}
+
+	// Send a new account into database.
+	if _, err = s.db.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		rdb.Set(ctx, dbIDKey, accountJs, 0)
+		rdb.Set(ctx, dbEmailKey, accountJs, 0)
+		return nil
+	}); err != nil {
+		return
+	}
+
+	// Send a new account to cache. No problem if error apper.
+	_, _ = s.cache.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		rdb.Set(ctx, cacheIDKey, accountJs, 10)
+		rdb.Set(ctx, cacheEmailKey, accountJs, 10)
+		return nil
+	})
 	return
 }
 
 // UpdateAccount update specific account fields.
-func (s Service) UpdateAccount(auth Account, id string, payload Account) (err error) {
-	// Database account and cache key.
-	var acc Account
-	var cacheKey = fmt.Sprintf("account_id:%s", id)
+func (s Service) UpdateAccount(ctx context.Context, auth Account, id string, payload Account) (err error) {
+	var (
+		found     bool
+		account   Account
+		accountJs []byte
+	)
 
-	// Only admins can edit others accounts.
-	// if the auth account is not a "admin" and want to change other
-	if auth.Role != "admin" && auth.ID != id {
-		return ErrOnlyAdmin
+	dbIDKey, dbEmailKey := s.dbAccountKey(id, payload.Email)
+	cacheIDKey, cacheEmailKey := s.cacheAccountKey(id, payload.Email)
+
+	if err = checkAccountRequest(auth, id, payload); err != nil {
+		return
 	}
 
-	// Try to parse ID as uuid.
-	if _, err := uuid.Parse(id); err != nil {
-		return ErrInconsistentIDs
+	// Check if account exist in cache.
+	item, err := s.cache.Get(ctx, cacheIDKey).Result()
+	if err == nil {
+		found = true
 	}
 
-	// Check if account exists.
-	err = s.db.Model(&acc).First(&acc, id).Error
-	if err != nil {
+	// If not found in cache memory, search in database (more slowly).
+	if !found {
+		item, err = s.db.Get(ctx, dbIDKey).Result()
+
+		// Not found in database.
+		if err == redis.Nil {
+			found = false
+		} else if err == nil {
+			found = true
+		} else {
+			return
+		}
+	}
+
+	if !found {
 		return ErrNotFound
 	}
 
-	// Update account with fields is not blank/null.
-	if err = s.db.Model(&payload).Updates(&payload).Error; err != nil {
-		return err
+	err = json.Unmarshal([]byte(item), account)
+	if err != nil {
+		return
 	}
 
-	// Send account to memory cache.
-	s.cache.Set(cacheKey, payload, cache.DefaultExpiration)
-	return nil
+	account.Name = payload.Name
+	account.Email = payload.Email
+	account.UpdatedAt = time.Now()
+
+	accountJs, err = json.Marshal(account)
+	if err != nil {
+		return
+	}
+
+	// Send a new account into database.
+	if _, err = s.db.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		rdb.Set(ctx, dbIDKey, accountJs, 0)
+		rdb.Set(ctx, dbEmailKey, accountJs, 0)
+		return nil
+	}); err != nil {
+		return
+	}
+
+	// Send a new account to cache. No problem if error apper.
+	_, _ = s.cache.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		rdb.Set(ctx, cacheIDKey, accountJs, 10)
+		rdb.Set(ctx, cacheEmailKey, accountJs, 10)
+		return nil
+	})
+	return
 }
 
 // DeleteAccount delete specific account by ID.
-func (s Service) DeleteAccount(auth Account, id string) (err error) {
-	// Database account and cache key.
-	var acc Account
-	var cacheKey = fmt.Sprintf("account_id:%s", id)
+func (s Service) DeleteAccount(ctx context.Context, auth Account, id string) (err error) {
+	var (
+		found     bool
+		account   Account
+		accountJs []byte
+	)
 
-	// Only admin can delete another accounts.
-	if auth.Role != "admin" {
-		return ErrOnlyAdmin
+	dbIDKey, _ := s.dbAccountKey(id, "")
+	cacheIDKey, _ := s.cacheAccountKey(id, "")
+
+	if err = checkAccountRequest(auth, id, Account{}); err != nil {
+		return
 	}
 
-	// Admin has the power to delete, but not yourself.
-	if auth.Role == "admin" && auth.ID == id {
-		return ErrCanNotDeleteYourSelf
+	item, err := s.cache.Get(ctx, cacheIDKey).Result()
+	if err == nil {
+		found = true
 	}
 
-	// Delete account in database.
-	if err = s.db.Model(&acc).Where("id = ?", id).Delete(&acc).Error; err != nil {
-		return err
+	// If not found in cache memory, search in database (more slowly).
+	if !found {
+		item, err = s.db.Get(ctx, dbIDKey).Result()
+
+		// Not found in database.
+		if err == redis.Nil {
+			found = false
+		} else if err == nil {
+			found = true
+		} else {
+			return
+		}
 	}
 
-	// Delete account in cache.
-	s.cache.Delete(cacheKey)
-	return nil
+	if !found {
+		return ErrNotFound
+	}
+
+	err = json.Unmarshal([]byte(item), account)
+	if err != nil {
+		return
+	}
+
+	account.Active = "false"
+	account.UpdatedAt = time.Now()
+
+	accountJs, err = json.Marshal(account)
+	if err != nil {
+		return
+	}
+
+	dbIDKey, dbEmailKey := s.dbAccountKey(id, account.Email)
+	cacheIDKey, cacheEmailKey := s.cacheAccountKey(id, account.Email)
+
+	// Send a new account into database.
+	if err = sendPayloadPipelineDB(s.db, ctx, dbIDKey, dbEmailKey, accountJs); err != nil {
+		return
+	}
+
+	// Send a new account to cache. No problem if error apper.
+	_ = sendPayloadPipelineCache(s.cache, ctx, cacheIDKey, cacheEmailKey, accountJs)
+	return
 }
 
 /*
@@ -446,9 +569,8 @@ func (s Service) DeleteAccount(auth Account, id string) (err error) {
 
 // AddURL create a new short URL.
 func (s Service) AddURL(auth Account, payload URL) (url URL, err error) {
-	// Check if necessary fields was sended.
-	if payload.Keyword == "" || payload.URL == "" || payload.Title == "" {
-		return payload, errors.New("fields required: keyword, url and title")
+	if err = checkURLFields(payload); err != nil {
+		return
 	}
 
 	// Check if keyword exists.
@@ -601,5 +723,43 @@ func checkURLFields(url URL) (err error) {
 	if url.Keyword == "" || url.Title == "" || url.URL == "" {
 		err = errors.New("fields required: keyword, title and url")
 	}
+	return
+}
+
+func checkAccountRequest(auth Account, id string, payload Account) (err error) {
+	if payload.Email != "" {
+		if _, err = mail.ParseAddress(payload.Email); err != nil {
+			return ErrEmailNotValid
+		}
+	}
+
+	if auth.Role != "admin" && auth.ID != id {
+		return ErrOnlyAdmin
+	}
+
+	if _, err := uuid.Parse(id); err != nil {
+		return ErrInconsistentIDs
+	}
+	return
+}
+
+func sendPayloadPipelineDB(db *redis.Client, ctx context.Context, keyID, keyEmail string, value interface{}) (err error) {
+	if _, err = db.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		rdb.Set(ctx, keyID, value, 0)
+		rdb.Set(ctx, keyEmail, value, 0)
+		return nil
+	}); err != nil {
+		return
+	}
+	return
+}
+
+func sendPayloadPipelineCache(cache *redis.Client, ctx context.Context, keyID, keyEmail string, value interface{}) (err error) {
+	// Send a new account to cache. No problem if error apper.
+	_, err = cache.Pipelined(ctx, func(rdb redis.Pipeliner) error {
+		rdb.Set(ctx, keyID, value, 10)
+		rdb.Set(ctx, keyEmail, value, 10)
+		return nil
+	})
 	return
 }
