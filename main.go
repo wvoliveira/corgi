@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -28,15 +29,14 @@ import (
 //go:embed ui/dist/_next/static/*/*.js
 var nextFS embed.FS
 
+var ctx context.Context
+
 func main() {
 	logger := server.NewLogger()
 	config := server.NewConfig(logger, ".")
 
 	database := server.NewDatabase(logger, config)
-	cache := server.InitCache()
-
-	// Make database migration.
-	database.DB.AutoMigrate(server.Account{}, server.URL{})
+	cache := server.NewCache(logger, config)
 
 	// Seed users.
 	database.SeedUsers()
@@ -46,7 +46,7 @@ func main() {
 
 	// Create all services: auth, account and URL.
 	var service server.Service
-	service = server.NewService(config.SecretKey, database.DB, cache)
+	service = server.NewService(ctx, config.SecretKey, database.DB, cache.DB)
 
 	// Register APIs endpoint.
 	mux := http.NewServeMux()

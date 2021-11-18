@@ -14,17 +14,17 @@ import (
 )
 
 type database struct {
-	logger log.Logger
-	db     *redis.Client
-	config Config
+	Logger log.Logger
+	DB     *redis.Client
+	Config Config
 }
 
 // NewDatabase create a gorm database object.
 func NewDatabase(logger log.Logger, config Config) database {
 	return database{
-		logger: logger,
-		db:     initDatabase(logger, config),
-		config: config,
+		Logger: logger,
+		DB:     initDatabase(logger, config),
+		Config: config,
 	}
 }
 
@@ -43,23 +43,23 @@ func (d database) SeedUsers() {
 
 	// Check if admin account exists.
 	key := fmt.Sprintf("db_account_email:%s", "admin@local")
-	if _, err := d.db.Get(ctx, key).Result(); err != redis.Nil {
+	if _, err := d.DB.Get(ctx, key).Result(); err != redis.Nil {
 		return
 	}
 
 	// Generate a random password for admin account.
 	secret, err := password.Generate(20, 5, 0, false, true)
 	if err != nil {
-		d.logger.Log("method", "SeedUsers", "message", "fail to generate password", "err", err.Error())
+		d.Logger.Log("method", "SeedUsers", "message", "fail to generate password", "err", err.Error())
 		os.Exit(1)
 	}
 
 	messagePassword := fmt.Sprintf("admin password: %s", secret)
-	d.logger.Log("method", "SeedUsers", "message", messagePassword)
+	d.Logger.Log("method", "SeedUsers", "message", messagePassword)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
 	if err != nil {
-		d.logger.Log("method", "SeedUsers", "message", "fail to hash password", "err", err.Error())
+		d.Logger.Log("method", "SeedUsers", "message", "fail to hash password", "err", err.Error())
 		os.Exit(1)
 	}
 
@@ -72,11 +72,11 @@ func (d database) SeedUsers() {
 
 	accountJs, err := json.Marshal(account)
 	if err != nil {
-		d.logger.Log("method", "SeedUsers", "message", "error to marshal account to json", "err", err.Error())
+		d.Logger.Log("method", "SeedUsers", "message", "error to marshal account to json", "err", err.Error())
 	}
 
-	if err = d.db.Set(ctx, key, accountJs, 0).Err(); err != nil {
-		d.logger.Log("method", "SeedUsers", "message", "fail to create admin account", "err", err.Error())
+	if err = d.DB.Set(ctx, key, accountJs, 0).Err(); err != nil {
+		d.Logger.Log("method", "SeedUsers", "message", "fail to create admin account", "err", err.Error())
 		os.Exit(1)
 	}
 }

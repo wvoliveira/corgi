@@ -10,9 +10,9 @@ import (
 */
 type Account struct {
 	ID        string    `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
-	LastLogin time.Time `json:"last_login,omitempty"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	LastLogin time.Time `json:"last_login"`
 
 	Name     string `json:"name"`
 	Email    string `json:"email"`
@@ -31,13 +31,16 @@ type Account struct {
 */
 type URL struct {
 	ID        string    `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
-	Keyword   string    `json:"keyword" example:"google"`
-	URL       string    `json:"url" example:"https://www.google.com"`
-	Title     string    `json:"title" example:"Google Home"`
-	Active    *bool     `json:"active" example:"false"`
-	AccountID string    `json:"-"`
 	CreatedAt time.Time `json:"created_at" example:"2021-10-18T00:45:07.818344164-03:00"`
 	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
+
+	Keyword string `json:"keyword" example:"google"`
+	URL     string `json:"url" example:"https://www.google.com"`
+	Title   string `json:"title" example:"Google Home"`
+
+	AccountID string `json:"-"`
+
+	Active string `json:"active" example:"false"`
 }
 
 /*

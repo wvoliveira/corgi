@@ -1,13 +1,29 @@
 package server
 
 import (
-	"time"
-
-	"github.com/patrickmn/go-cache"
+	"github.com/go-kit/log"
+	"github.com/go-redis/redis/v8"
 )
 
-// InitCache start cache layer.
-func InitCache() (c *cache.Cache) {
-	return cache.New(5*time.Minute, 10*time.Minute)
+type cache struct {
+	Logger log.Logger
+	DB     *redis.Client
+	Config Config
+}
 
+// NewCache create a gorm cache object.
+func NewCache(logger log.Logger, config Config) cache {
+	return cache{
+		Logger: logger,
+		DB:     initCache(logger, config),
+		Config: config,
+	}
+}
+
+func initCache(logger log.Logger, config Config) (db *redis.Client) {
+	return redis.NewClient(&redis.Options{
+		Addr:     config.CacheAddr,
+		Password: config.CachePassword,
+		DB:       config.CacheDatabase,
+	})
 }
