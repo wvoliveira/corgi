@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/go-kit/log"
 	"github.com/go-redis/redis/v8"
@@ -49,9 +50,16 @@ func (d database) SeedUsers() {
 	)
 
 	account = Account{
-		ID:    uuid.New().String(),
-		Name:  "admin",
+		ID:        uuid.New().String(),
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		LastLogin: time.Now(),
+
+		Name:  "Administrator",
 		Email: "admin@local",
+		Role:  "admin",
+
+		Active: "true",
 	}
 
 	dbKeyPattern, _ := d.getAccountKey("*", account.Email)

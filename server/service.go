@@ -135,12 +135,15 @@ func (s Service) SignUp(payload Account) (err error) {
 	}
 
 	keys, _ = s.cache.Keys(s.ctx, cacheKeyPattern).Result()
-	if len(keys) != 0 {
+	if len(keys) > 0 {
 		return ErrAlreadyExists
 	}
 
-	keys, _ = s.db.Keys(s.ctx, dbKeyPattern).Result()
-	if len(keys) != 0 {
+	keys, err = s.db.Keys(s.ctx, dbKeyPattern).Result()
+	if err != redis.Nil && err != nil {
+		return
+	}
+	if len(keys) > 0 {
 		return ErrAlreadyExists
 	}
 

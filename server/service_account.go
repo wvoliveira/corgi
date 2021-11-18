@@ -19,11 +19,12 @@ func (s Service) getAccountKey(id, email string) (dbKey, cacheKey string) {
 // AddAccount create a new account.
 func (s Service) AddAccount(auth, payload Account) (account Account, err error) {
 	var (
-		found     bool
-		accountJs []byte
+		accountJs           []byte
+		keys                []string
+		found, foundInCache bool
 	)
 
-	dbKey, cacheKey := s.getAccountKey("*", payload.Email)
+	dbKeyPattern, cacheKeyPattern := s.getAccountKey("*", payload.Email)
 
 	_, err = mail.ParseAddress(payload.Email)
 	if err != nil {
@@ -38,25 +39,26 @@ func (s Service) AddAccount(auth, payload Account) (account Account, err error) 
 		return account, ErrFieldsRequired
 	}
 
-	_, err = s.cache.Get(s.ctx, cacheKey).Result()
-	if err == nil {
+	keys, _ = s.cache.Keys(s.ctx, cacheKeyPattern).Result()
+	if len(keys) > 0 {
 		return account, ErrAlreadyExists
 	}
 
-	if err == redis.Nil {
-		_, err = s.db.Get(s.ctx, dbKey).Result()
-
-		// Not found in database.
-		if err == redis.Nil {
-			found = false
-		} else if err == nil {
-			found = true
-		} else {
-			return
-		}
+	keys, err = s.db.Keys(s.ctx, dbKeyPattern).Result()
+	if err != redis.Nil && err != nil {
+		return account, err
+	}
+	if len(keys) > 0 {
+		found = true
 	}
 
-	if found {
+	if found && !foundInCache {
+		item, err := s.db.Get(s.ctx, keys[0]).Result()
+		if err != redis.Nil && err != nil {
+			return account, ErrAlreadyExists
+		}
+
+		_ = s.cache.Set(s.ctx, keys[0], item, 10*time.Minute).Err()
 		return account, ErrAlreadyExists
 	}
 
@@ -76,23 +78,22 @@ func (s Service) AddAccount(auth, payload Account) (account Account, err error) 
 		return
 	}
 
-	dbKey, cacheKey = s.getAccountKey(payload.ID, payload.Email)
+	dbKey, cacheKey := s.getAccountKey(payload.ID, payload.Email)
 
 	if err = s.db.Set(s.ctx, dbKey, accountJs, 0).Err(); err != nil {
 		return
 	}
-
 	_ = s.cache.Set(s.ctx, cacheKey, accountJs, 10).Err()
-
-	account = payload
-	return
+	return payload, nil
 }
 
 // FindAccountByID find a account with specific ID.
 func (s Service) FindAccountByID(auth Account, id string) (account Account, err error) {
 	var (
-		dbKey, cacheKey     string
-		found, foundInCache bool
+		dbKeyPattern, cacheKeyPattern string
+		keys                          []string
+		found, foundInCache           bool
+		item                          string
 	)
 
 	if err = checkAccountRequest(auth, id, Account{}); err != nil {
@@ -100,32 +101,36 @@ func (s Service) FindAccountByID(auth Account, id string) (account Account, err 
 	}
 
 	if auth.Role == "admin" {
-		dbKey, cacheKey = s.getAccountKey(id, "*")
+		dbKeyPattern, cacheKeyPattern = s.getAccountKey(id, "*")
 	} else {
-		dbKey, cacheKey = s.getAccountKey(id, auth.Email)
+		dbKeyPattern, cacheKeyPattern = s.getAccountKey(id, auth.Email)
 	}
 
-	item, err := s.cache.Get(s.ctx, cacheKey).Result()
-	if err == nil {
+	keys, _ = s.cache.Keys(s.ctx, cacheKeyPattern).Result()
+	if len(keys) > 0 {
 		found = true
 		foundInCache = true
 	}
 
 	if !found {
-		item, err = s.db.Get(s.ctx, dbKey).Result()
-
-		// Not found in database.
-		if err == redis.Nil {
-			found = false
-		} else if err == nil {
+		keys, _ = s.db.Keys(s.ctx, dbKeyPattern).Result()
+		if len(keys) > 0 {
 			found = true
-		} else {
-			return
 		}
 	}
 
-	if !found {
+	if !found && !foundInCache {
 		return account, ErrNotFound
+	}
+
+	if foundInCache {
+		item, err = s.cache.Get(s.ctx, keys[0]).Result()
+	} else {
+		item, err = s.db.Get(s.ctx, keys[0]).Result()
+	}
+
+	if err != redis.Nil && err != nil {
+		return account, err
 	}
 
 	if err = json.Unmarshal([]byte(item), &account); err != nil {
@@ -133,8 +138,7 @@ func (s Service) FindAccountByID(auth Account, id string) (account Account, err 
 	}
 
 	if !foundInCache {
-		_, cacheKey = s.getAccountKey(id, account.Email)
-		_ = s.cache.Set(s.ctx, cacheKey, item, 10).Err()
+		_ = s.cache.Set(s.ctx, keys[0], item, 10).Err()
 	}
 	return
 }
@@ -142,22 +146,32 @@ func (s Service) FindAccountByID(auth Account, id string) (account Account, err 
 // FindAccounts Get a list of accounts.
 func (s Service) FindAccounts(auth Account, offset, pageSize int) (accounts []Account, err error) {
 	var (
-		dbKey   string
+		dbKeyPattern string
+		keys         []string
+
+		items []string
+		item  string
+
 		account Account
 	)
 
 	if auth.Role == "admin" {
-		dbKey, _ = s.getAccountKey("*", "*")
+		dbKeyPattern, _ = s.getAccountKey("*", "*")
 	} else {
-		dbKey, _ = s.getAccountKey(auth.ID, auth.Email)
+		dbKeyPattern, _ = s.getAccountKey(auth.ID, auth.Email)
 	}
 
-	items, err := s.db.Sort(s.ctx, dbKey, &redis.Sort{Offset: int64(offset), Count: int64(pageSize), Order: "ASC"}).Result()
-	if err != nil {
-		return
+	keys, _, err = s.db.Scan(s.ctx, uint64(offset), dbKeyPattern, int64(pageSize)).Result()
+
+	for _, key := range keys {
+		item, err = s.db.Get(s.ctx, key).Result()
+		if err != redis.Nil && err != nil {
+			return accounts, err
+		}
+		items = append(items, item)
 	}
 
-	for _, item := range items {
+	for _, item = range items {
 		err = json.Unmarshal([]byte(item), &account)
 		if err != nil {
 			return
