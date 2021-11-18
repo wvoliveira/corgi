@@ -29,7 +29,7 @@ import (
 //go:embed ui/dist/_next/static/*/*.js
 var nextFS embed.FS
 
-var ctx context.Context
+var ctx = context.Background()
 
 func main() {
 	logger := server.NewLogger()
@@ -46,7 +46,7 @@ func main() {
 
 	// Create all services: auth, account and URL.
 	var service server.Service
-	service = server.NewService(ctx, config.SecretKey, database.DB, cache.DB)
+	service = server.NewService(logger, ctx, config.SecretKey, database.DB, cache.DB)
 
 	// Register APIs endpoint.
 	mux := http.NewServeMux()

@@ -36,14 +36,28 @@ func initDatabase(logger log.Logger, config Config) (db *redis.Client) {
 	})
 }
 
+func (d database) getAccountKey(id, email string) (dbKey, cacheKey string) {
+	return fmt.Sprintf("db_account_id:%s:account_email:%s", id, email),
+		fmt.Sprintf("cache_account_id:%s:account_email:%s", id, email)
+}
+
 // Create the first user for system.
 func (d database) SeedUsers() {
-	var account Account
-	var ctx = context.Background()
+	var (
+		account Account
+		ctx     = context.Background()
+	)
 
-	// Check if admin account exists.
-	key := fmt.Sprintf("db_account_email:%s", "admin@local")
-	if _, err := d.DB.Get(ctx, key).Result(); err != redis.Nil {
+	account = Account{
+		ID:    uuid.New().String(),
+		Name:  "admin",
+		Email: "admin@local",
+	}
+
+	dbKeyPattern, _ := d.getAccountKey("*", account.Email)
+
+	keys, _ := d.DB.Keys(ctx, dbKeyPattern).Result()
+	if len(keys) != 0 {
 		return
 	}
 
@@ -54,7 +68,7 @@ func (d database) SeedUsers() {
 		os.Exit(1)
 	}
 
-	messagePassword := fmt.Sprintf("admin password: %s", secret)
+	messagePassword := fmt.Sprintf("admin user: admin@local password: %s", secret)
 	d.Logger.Log("method", "SeedUsers", "message", messagePassword)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
@@ -63,17 +77,14 @@ func (d database) SeedUsers() {
 		os.Exit(1)
 	}
 
-	account = Account{
-		ID:       uuid.New().String(),
-		Name:     "admin",
-		Email:    "admin@local",
-		Password: string(hashedPassword),
-	}
+	account.Password = string(hashedPassword)
 
 	accountJs, err := json.Marshal(account)
 	if err != nil {
 		d.Logger.Log("method", "SeedUsers", "message", "error to marshal account to json", "err", err.Error())
 	}
+
+	key, _ := d.getAccountKey(account.ID, account.Email)
 
 	if err = d.DB.Set(ctx, key, accountJs, 0).Err(); err != nil {
 		d.Logger.Log("method", "SeedUsers", "message", "fail to create admin account", "err", err.Error())

@@ -333,14 +333,14 @@ func (s Service) DeleteAccount(auth Account, id string) (err error) {
 		dbKey, cacheKey = s.getAccountKey(id, auth.Email)
 	}
 
-	item, err := s.cache.Get(s.ctx, cacheIDKey).Result()
+	item, err := s.cache.Get(s.ctx, cacheKey).Result()
 	if err == nil {
 		found = true
 	}
 
 	// If not found in cache memory, search in database (more slowly).
 	if !found {
-		item, err = s.db.Get(s.ctx, dbIDKey).Result()
+		item, err = s.db.Get(s.ctx, dbKey).Result()
 
 		// Not found in database.
 		if err == redis.Nil {
@@ -369,15 +369,12 @@ func (s Service) DeleteAccount(auth Account, id string) (err error) {
 		return
 	}
 
-	dbIDKey, dbEmailKey := s.dbAccountKey(id, account.Email)
-	cacheIDKey, cacheEmailKey := s.cacheAccountKey(id, account.Email)
+	dbKey, cacheKey = s.getAccountKey(id, account.Email)
 
-	// Send a new account into database.
-	if err = sendPayloadPipelineDB(s.db, s.ctx, dbIDKey, dbEmailKey, accountJs); err != nil {
+	if err = s.db.Set(s.ctx, dbKey, accountJs, 0).Err(); err != nil {
 		return
 	}
 
-	// Send a new account to cache. No problem if error apper.
-	_ = sendPayloadPipelineCache(s.cache, s.ctx, cacheIDKey, cacheEmailKey, accountJs)
+	_ = s.cache.Set(s.ctx, cacheKey, accountJs, 10).Err()
 	return
 }

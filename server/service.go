@@ -7,6 +7,7 @@ import (
 	"net/mail"
 	"time"
 
+	"github.com/go-kit/log"
 	"github.com/go-redis/redis/v8"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
@@ -15,6 +16,7 @@ import (
 
 // Service store all methods. Yeah monolithic.
 type Service struct {
+	logger log.Logger
 	ctx    context.Context
 	db     *redis.Client
 	cache  *redis.Client
@@ -22,8 +24,9 @@ type Service struct {
 }
 
 // NewService create a new service with database and cache.
-func NewService(ctx context.Context, secretKey string, db *redis.Client, cache *redis.Client) Service {
+func NewService(logger log.Logger, ctx context.Context, secretKey string, db *redis.Client, cache *redis.Client) Service {
 	return Service{
+		logger: logger,
 		ctx:    ctx,
 		db:     db,
 		cache:  cache,
@@ -33,80 +36,95 @@ func NewService(ctx context.Context, secretKey string, db *redis.Client, cache *
 
 // SignIn login with email and password.
 func (s Service) SignIn(payload Account) (account Account, err error) {
-	_, dbEmailKey := s.dbAccountKey(payload.ID, payload.Email)
-	_, cacheEmailKey := s.cacheAccountKey(payload.ID, payload.Email)
+	var (
+		found, foundInCache bool
+		keys                []string
+	)
 
-	// Check e-mail pattern.
+	dbKeyPattern, cacheKeyPattern := s.getAccountKey("*", payload.Email)
+
 	_, err = mail.ParseAddress(payload.Email)
 	if err != nil {
 		return account, ErrEmailNotValid
 	}
 
-	// Check if e-mail and password was sended.
 	if payload.Password == "" {
 		return account, ErrFieldsRequired
 	}
 
-	// Check if account exist in cache.
-	item, err := s.cache.Get(s.ctx, cacheEmailKey).Result()
-	if err == nil {
-		if err = json.Unmarshal([]byte(item), &account); err != nil {
-			return
+	keys, err = s.cache.Keys(s.ctx, cacheKeyPattern).Result()
+	if len(keys) != 0 {
+		foundInCache = true
+	}
+
+	if foundInCache {
+		item, err := s.cache.Get(s.ctx, keys[0]).Result()
+
+		if err == nil {
+			if err = json.Unmarshal([]byte(item), &account); err != nil {
+				return account, err
+			}
 		}
 	}
 
-	// If not found in cache memory, search in database (more slowly).
-	if err == redis.Nil {
-		item, err = s.db.Get(s.ctx, dbEmailKey).Result()
+	if !foundInCache {
+		keys, err = s.db.Keys(s.ctx, dbKeyPattern).Result()
+		if len(keys) != 0 {
+			found = true
+		}
+	}
+
+	if found {
+		item, err := s.db.Get(s.ctx, keys[0]).Result()
 
 		// Not found in database.
 		if err == redis.Nil {
 			return account, ErrUnauthorized
 		}
 
-		// Found! Try to unmarshal and set to account variable.
 		if err == nil {
 			if err = json.Unmarshal([]byte(item), &account); err != nil {
-				return
+				return account, err
 			}
 		}
 	}
 
-	// If err is unknown, we are in trouble.
 	if err != redis.Nil && err != nil {
 		return
 	}
 
-	// Compare the stored hashed password, with the hashed version of the password that was received
 	if err := bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(payload.Password)); err != nil {
 		return account, ErrUnauthorized
 	}
 
-	// Generate JWT with specific claims.
 	tokenHash, err := generateJWT(s.secret, account)
 	if err != nil {
 		return
 	}
 
-	// Set token account with JWT.
 	account.Token = tokenHash
-
 	accountJs, err := json.Marshal(account)
 	if err != nil {
 		return
 	}
 
-	// Try to store the account in cache and not problem if cache is unavailable.
-	_ = s.cache.Set(s.ctx, cacheEmailKey, accountJs, 0).Err()
+	if !foundInCache {
+		_, cacheKey := s.getAccountKey(account.ID, payload.Email)
+		_ = s.cache.Set(s.ctx, cacheKey, accountJs, 0).Err()
+	}
 	return
 }
 
 // SignUp register with e-mail and password.
 func (s Service) SignUp(payload Account) (err error) {
-	dbIDKey, dbEmailKey := s.dbAccountKey(payload.ID, payload.Email)
-	cacheIDKey, cacheEmailKey := s.cacheAccountKey(payload.ID, payload.Email)
+	var (
+		dbKey, cacheKey string
+		accountJs       []byte
+		keys            []string
+	)
 
-	// Check e-mail pattern.
+	dbKeyPattern, cacheKeyPattern := s.getAccountKey("*", payload.Email)
+
 	_, err = mail.ParseAddress(payload.Email)
 	if err != nil {
 		return ErrEmailNotValid
@@ -116,22 +134,14 @@ func (s Service) SignUp(payload Account) (err error) {
 		return ErrFieldsRequired
 	}
 
-	// Check if account exist in cache.
-	_, err = s.cache.Get(s.ctx, cacheEmailKey).Result()
-	if err == nil {
+	keys, _ = s.cache.Keys(s.ctx, cacheKeyPattern).Result()
+	if len(keys) != 0 {
 		return ErrAlreadyExists
+	}
 
-		// Get from database here.
-	} else {
-		_, err = s.db.Get(s.ctx, dbEmailKey).Result()
-		if err == nil {
-			return ErrAlreadyExists
-		}
-
-		// We're in trouble.
-		if err != redis.Nil && err != nil {
-			return
-		}
+	keys, _ = s.db.Keys(s.ctx, dbKeyPattern).Result()
+	if len(keys) != 0 {
+		return ErrAlreadyExists
 	}
 
 	// Salt and hash the password using the bcrypt algorithm.
@@ -142,30 +152,24 @@ func (s Service) SignUp(payload Account) (err error) {
 
 	// Create a random ID and default role for new user.
 	payload.ID = uuid.New().String()
-	payload.Role = "user"
+	payload.CreatedAt = time.Now()
+	payload.UpdatedAt = time.Now()
+
 	payload.Password = string(hashedPassword)
+	payload.Role = "user"
+	payload.Active = "true"
 
-	accountJs, err := json.Marshal(payload)
+	accountJs, err = json.Marshal(payload)
 	if err != nil {
-		return
+		return err
 	}
 
-	// Send a new account into database.
-	if _, err = s.db.Pipelined(s.ctx, func(rdb redis.Pipeliner) error {
-		rdb.Set(s.ctx, dbIDKey, accountJs, 0)
-		rdb.Set(s.ctx, dbEmailKey, accountJs, 0)
-		return nil
-	}); err != nil {
-		return
+	dbKey, cacheKey = s.getAccountKey(payload.ID, payload.Email)
+	if err = s.db.Set(s.ctx, dbKey, accountJs, 0).Err(); err != nil {
+		return err
 	}
-
-	// Send a new account to cache. No problem if error apper.
-	_, _ = s.cache.Pipelined(s.ctx, func(rdb redis.Pipeliner) error {
-		rdb.Set(s.ctx, cacheIDKey, accountJs, 10)
-		rdb.Set(s.ctx, cacheEmailKey, accountJs, 10)
-		return nil
-	})
-	return
+	_ = s.cache.Set(s.ctx, cacheKey, accountJs, 10*time.Minute).Err()
+	return nil
 }
 
 func generateJWT(secretKey string, a Account) (hash string, err error) {
@@ -208,26 +212,5 @@ func checkAccountRequest(auth Account, id string, payload Account) (err error) {
 	if _, err := uuid.Parse(id); err != nil {
 		return ErrInconsistentIDs
 	}
-	return
-}
-
-func sendPayloadPipelineDB(db *redis.Client, ctx context.Context, keyID, keyEmail string, value interface{}) (err error) {
-	if _, err = db.Pipelined(ctx, func(rdb redis.Pipeliner) error {
-		rdb.Set(ctx, keyID, value, 0)
-		rdb.Set(ctx, keyEmail, value, 0)
-		return nil
-	}); err != nil {
-		return
-	}
-	return
-}
-
-func sendPayloadPipelineCache(cache *redis.Client, ctx context.Context, keyID, keyEmail string, value interface{}) (err error) {
-	// Send a new account to cache. No problem if error apper.
-	_, err = cache.Pipelined(ctx, func(rdb redis.Pipeliner) error {
-		rdb.Set(ctx, keyID, value, 10)
-		rdb.Set(ctx, keyEmail, value, 10)
-		return nil
-	})
 	return
 }
