@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/mail"
 	"time"
@@ -91,8 +92,8 @@ func (s Service) AddAccount(auth, payload Account) (account Account, err error) 
 func (s Service) FindAccountByID(auth Account, id string) (account Account, err error) {
 	var (
 		dbKeyPattern, cacheKeyPattern string
-		keys                          []string
 		found, foundInCache           bool
+		keys                          []string
 		item                          string
 	)
 
@@ -184,10 +185,12 @@ func (s Service) FindAccounts(auth Account, offset, pageSize int) (accounts []Ac
 // UpdateOrCreateAccount Update or create a new account.
 func (s Service) UpdateOrCreateAccount(auth Account, id string, payload Account) (err error) {
 	var (
-		dbKey, cacheKey string
-		found           bool
-		account         Account
-		accountJs       []byte
+		dbKeyPattern, cacheKeyPattern string
+		found, foundInCache           bool
+		keys                          []string
+		account                       Account
+		accountJs                     []byte
+		item                          string
 	)
 
 	if err = checkAccountRequest(auth, id, payload); err != nil {
@@ -195,65 +198,62 @@ func (s Service) UpdateOrCreateAccount(auth Account, id string, payload Account)
 	}
 
 	if auth.Role == "admin" {
-		dbKey, cacheKey = s.getAccountKey(id, "*")
+		dbKeyPattern, cacheKeyPattern = s.getAccountKey(id, "*")
 	} else {
-		dbKey, cacheKey = s.getAccountKey(id, "*")
+		dbKeyPattern, cacheKeyPattern = s.getAccountKey(id, auth.Email)
 	}
 
-	item, err := s.cache.Get(s.ctx, cacheKey).Result()
-	if err == nil {
+	keys, _ = s.cache.Keys(s.ctx, cacheKeyPattern).Result()
+	if len(keys) > 0 {
 		found = true
+		foundInCache = true
 	}
 
 	if !found {
-		item, err = s.db.Get(s.ctx, dbKey).Result()
-
-		// Not found in database.
-		if err == redis.Nil {
-			found = false
-		} else if err == nil {
+		keys, _ = s.db.Keys(s.ctx, dbKeyPattern).Result()
+		if len(keys) > 0 {
 			found = true
-		} else {
-			return
 		}
 	}
 
-	if !found {
+	if !found && !foundInCache {
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), 8)
+		if err != nil {
+			return errors.New("error to generate a hash password")
+		}
+
 		payload.ID = id
 		payload.CreatedAt = time.Now()
 		payload.UpdatedAt = time.Now()
+		payload.Password = string(hashedPassword)
+		payload.Role = "user"
 		payload.Active = "true"
+	} else {
+		item, err = s.db.Get(s.ctx, keys[0]).Result()
+		if err != redis.Nil && err != nil {
+			return errors.New("error to get account from database: " + err.Error())
+		}
 
-		accountJs, err = json.Marshal(payload)
-		if err != nil {
+		if err = json.Unmarshal([]byte(item), &account); err != nil {
 			return
 		}
 
-		dbKey, cacheKey = s.getAccountKey(id, payload.Email)
+		payload.ID = account.ID
+		payload.CreatedAt = account.CreatedAt
+		payload.UpdatedAt = time.Now()
+		payload.LastLogin = account.LastLogin
 
-		if err = s.db.Set(s.ctx, dbKey, accountJs, 0).Err(); err != nil {
-			return
-		}
-
-		_ = s.cache.Set(s.ctx, cacheKey, accountJs, 10).Err()
-		return
+		payload.Password = account.Password
+		payload.Role = account.Role
+		payload.Active = account.Active
 	}
 
-	err = json.Unmarshal([]byte(item), &account)
+	accountJs, err = json.Marshal(payload)
 	if err != nil {
 		return
 	}
 
-	account.Name = payload.Name
-	account.Email = payload.Email
-	account.UpdatedAt = time.Now()
-
-	accountJs, err = json.Marshal(account)
-	if err != nil {
-		return
-	}
-
-	dbKey, cacheKey = s.getAccountKey(id, payload.Email)
+	dbKey, cacheKey := s.getAccountKey(id, payload.Email)
 
 	if err = s.db.Set(s.ctx, dbKey, accountJs, 0).Err(); err != nil {
 		return
