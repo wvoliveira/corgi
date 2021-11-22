@@ -1,16 +1,16 @@
-# ![REDIR](.github/logo.png?raw=true "Redir logo")
+# ![Corgi](.github/logo.png?raw=true "Corgi logo")
 
-> Redir is a url shortener to reduce a long link.
+> Corgi é um sistema encurtador de links.
 
-## Features
+## Recursos
 
-* **Users** - Register/login new users via social networks or email.
-* **Easy** - Redir is easy and fast, enter the long link to get your shortened link.
-* **Own domain** - Shorten links using your own branded domain while increasing the click-through rate.
-* **Team features** - Manage links in teams by inviting members and assigning roles to team members.
-* **API** - Use one of the available APIs to increase and organize your link management in a more efficient way.
-* **Statistics** - Check the amount of clicks that your shortened url received.
-* **Shortened** - Use any link, no matter what size, Redir always shortens.
-* **Management** - Optimize and customize each short URL to take advantage of its potential. Set your custom alias (name), use it in affiliate programs, get QR code for printing flyers and much more.
+* **Usuários** - Registro/Autenticação Novos usuários via Rede Social ou E-mail e senha.
+* **Fácil** - Corgi é fácil e rápido. Insira um link gigante e pegue um link encurtado.
+* **Seu próprio domínio** - Reduza os links usando seu próprio domínio e aumente a taxa de cliques.
+* **Grupos** - Gerencie os links em grupo, atribuindo papéis de quem poderá alterar e visualizar informações sobre os links.
+* **API** - Use uma das APIs disponíveis para gerenciar os links de forma eficaz.
+* **Estatísticas** - Verifique a quantidade de cliques dos links encurtados..
+* **Encurtador** - Use qualquer link, não importa o tamanho. Corgi sempre irá encurta-lo.
+* **Gerencie** - Otimize e customize cada link para ter vantagens. Use um alias, programas de afiliados, crie QR code e muito mais..
 
-Use your own infrastructure to install this shortener service. With many features that gives you better quality for links shortening.
+Use sua própria infraestrutura para instalar esse encurtador de links. Com vários recursos que te trará mais informações sobre os seus usuários.
