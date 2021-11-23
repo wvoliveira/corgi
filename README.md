@@ -4,7 +4,7 @@
 
 ## Recursos
 
-* **Usuários** - Registro/Autenticação Novos usuários via Rede Social ou E-mail e senha.
+* **Usuários** - Registro/Autenticação com novos usuários via rede social ou e-mail/senha.
 * **Fácil** - Corgi é fácil e rápido. Insira um link gigante e pegue um link encurtado.
 * **Seu próprio domínio** - Reduza os links usando seu próprio domínio e aumente a taxa de cliques.
 * **Grupos** - Gerencie os links em grupo, atribuindo papéis de quem poderá alterar e visualizar informações sobre os links.
