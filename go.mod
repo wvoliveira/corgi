@@ -17,6 +17,7 @@ require (
 )
 
 require (
+	github.com/dghubble/gologin v2.1.0+incompatible // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/go-openapi/spec v0.20.4 // indirect

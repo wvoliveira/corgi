@@ -50,27 +50,57 @@ func NewConfig(logger zap.SugaredLogger, path string) (config Config) {
 	viper.SetConfigName("app")
 	viper.SetConfigType("env")
 
-	viper.AutomaticEnv()
-	viper.ReadInConfig()
-
-	// TODO: add rest of config.
-	// viper "set default" doesnt work.
-	if viper.Get("CORGI_DB_PORT") == 0 {
+	// Database config.
+	if viper.Get("CORGI_DB_HOST") == nil {
+		viper.Set("CORGI_DB_HOST", dbHost)
+	}
+	if viper.Get("CORGI_DB_PORT") == nil {
 		viper.Set("CORGI_DB_PORT", dbPort)
 	}
-	if viper.Get("CORGI_DB_USER") == "" {
+	if viper.Get("CORGI_DB_USER") == nil {
 		viper.Set("CORGI_DB_USER", dbUser)
 	}
-	if viper.Get("CORGI_DB_BASE") == "" {
+	if viper.Get("CORGI_DB_PASSWORD") == nil {
+		viper.Set("CORGI_DB_PASSWORD", dbPassword)
+	}
+	if viper.Get("CORGI_DB_BASE") == nil {
 		viper.Set("CORGI_DB_BASE", dbBase)
 	}
-	if viper.Get("CORGI_SERVER_ADDRESS") == "" {
-		viper.Set("CORGI_SERVER_ADDRESS", serverAddress)
+
+	// Cache config.
+	if viper.Get("CORGI_CACHE_ADDR") == nil {
+		viper.Set("CORGI_CACHE_ADDR", cacheAddr)
+	}
+	if viper.Get("CORGI_CACHE_PASSWORD") == nil {
+		viper.Set("CORGI_CACHE_PASSWORD", cachePassword)
+	}
+	if viper.Get("CORGI_CACHE_DATABASE") == nil {
+		viper.Set("CORGI_CACHE_DATABASE", cacheDatabase)
 	}
 
-	err := viper.Unmarshal(&config)
-	if err != nil {
-		logger.Infow("error to load config", "method", "NewConfig", "err", err.Error())
+	// Search engine config.
+	if viper.Get("CORGI_SEARCH_ADDR") == nil {
+		viper.Set("CORGI_SEARCH_ADDR", searchAddr)
+	}
+	if viper.Get("CORGI_SEARCH_PASSWORD") == nil {
+		viper.Set("CORGI_SEARCH_PASSWORD", searchPassword)
+	}
+
+	// Service config.
+	if viper.Get("CORGI_SERVER_ADDRESS") == nil {
+		viper.Set("CORGI_SERVER_ADDRESS", serverAddress)
+	}
+	if viper.Get("CORGI_SECRET_KEY") == nil {
+		viper.Set("CORGI_SECRET_KEY", secretKey)
+	}
+
+	viper.AutomaticEnv()
+	if err := viper.ReadInConfig(); err != nil {
+		logger.Warnf("error to read from config file", "method", "NewConfig", err.Error())
+	}
+
+	if err := viper.Unmarshal(&config); err != nil {
+		logger.Errorf("error to load config", "method", "NewConfig", "err", err.Error())
 		os.Exit(1)
 	}
 	return

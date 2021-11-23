@@ -18,13 +18,23 @@ type Account struct {
 	Email    string `json:"email" gorm:"index"`
 	Password string `json:"password"`
 
-	Role  string `json:"role"`
-	Tags  string `json:"tags"`
-	Token string `json:"token"`
+	Role string `json:"role"`
+	Tags string `json:"tags"`
 
 	Active string `json:"active"`
 
-	Links []Link
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+
+	Tokens []Token
+	Links  []Link
+}
+
+type Token struct {
+	ID           string `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	AccessToken  string `json:"-" gorm:"-"`
+	RefreshToken string `json:"refresh_token"`
+	AccountID    string `json:"account_id" gorm:"index"`
 }
 
 /*
@@ -40,10 +50,26 @@ type Link struct {
 	Destination string `json:"destination"`
 	Title       string `json:"title"`
 
-	AccountID string `json:"account_id" gorm:"index"`
-
 	Active string `json:"active"`
+
+	AccountID string `json:"account_id" gorm:"index"`
 }
+
+/*
+	Refresh request and response structs.
+*/
+
+type TokenRefreshRequest struct {
+	RefreshToken string `json:"refresh_token"`
+}
+
+type tokenRefreshResponse struct {
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Err          error  `json:"err,omitempty"`
+}
+
+func (r tokenRefreshResponse) error() error { return r.Err }
 
 /*
 	Sign-in request and response structs.
@@ -55,8 +81,9 @@ type signInRequest struct {
 }
 
 type signInResponse struct {
-	Token string `json:"token"`
-	Err   error  `json:"err,omitempty"`
+	AccessToken  string `json:"access_token"`
+	RefreshToken string `json:"refresh_token"`
+	Err          error  `json:"err,omitempty"`
 }
 
 func (r signInResponse) error() error { return r.Err }

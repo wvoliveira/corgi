@@ -4,14 +4,13 @@ import (
 	"errors"
 	"time"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
-// SignIn login with email and password.
-func (s Service) SignIn(payload Account) (account Account, err error) {
+// Login login with email and password.
+func (s Service) Login(payload Account) (account Account, err error) {
 	err = s.db.Model(&Account{}).Where("email = ?", payload.Email).First(&account).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return account, err
@@ -23,17 +22,31 @@ func (s Service) SignIn(payload Account) (account Account, err error) {
 		return account, ErrUnauthorized
 	}
 
-	tokenHash, err := generateJWT(s.secret, account)
+	accessToken, err := s.generateAccessToken(account)
 	if err != nil {
-		return
+		return account, errors.New("error to generate access token: " + err.Error())
 	}
 
-	account.Token = tokenHash
+	refreshToken, err := s.generateRefreshToken()
+	if err != nil {
+		return account, errors.New("error to generate refresh token: " + err.Error())
+	}
+
+	token := Token{
+		ID:           uuid.New().String(),
+		RefreshToken: refreshToken,
+		AccountID:    account.ID,
+	}
+
+	err = s.db.Debug().Model(&Token{}).Create(&token).Error
+
+	account.AccessToken = accessToken
+	account.RefreshToken = refreshToken
 	return
 }
 
-// SignUp register with e-mail and password.
-func (s Service) SignUp(payload Account) (err error) {
+// Register register with e-mail and password.
+func (s Service) Register(payload Account) (err error) {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(payload.Password), 8)
 	if err != nil {
 		return ErrInternalServerError
@@ -44,25 +57,6 @@ func (s Service) SignUp(payload Account) (err error) {
 	payload.Password = string(hashedPassword)
 	payload.Role = "user"
 	payload.Active = "true"
-	err = s.db.Model(&Account{}).Create(&payload).Error
-	return
-}
-
-func generateJWT(secretKey string, a Account) (hash string, err error) {
-	token := jwt.New(jwt.SigningMethodHS256)
-	claims := token.Claims.(jwt.MapClaims)
-
-	claims["authorized"] = true
-	claims["id"] = a.ID
-	claims["email"] = a.Email
-	claims["role"] = a.Role
-	claims["exp"] = time.Now().Add(time.Minute * 30).Unix()
-
-	hash, err = token.SignedString([]byte(secretKey))
-	if err != nil {
-		err = errors.New("error to generate JWT: " + err.Error())
-		return
-	}
-
+	err = s.db.Debug().Model(&Account{}).Create(&payload).Error
 	return
 }

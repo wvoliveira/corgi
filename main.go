@@ -31,7 +31,7 @@ func main() {
 	database := server.NewDatabase(*logger, config)
 	//cache := server.NewCache(*logger, config)
 
-	database.DB.AutoMigrate(&server.Account{}, &server.Link{})
+	database.DB.AutoMigrate(&server.Account{}, &server.Link{}, &server.Token{})
 	database.SeedUsers()
 
 	ui := initWebUI(*logger)

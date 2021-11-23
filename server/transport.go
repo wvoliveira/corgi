@@ -15,11 +15,18 @@ import (
 func MakeHTTPHandler(s Service, m Middlewares) http.Handler {
 	r := mux.NewRouter()
 
+	handlerToken := handlersToken{s}
 	handlerAuth := handlersAuth{s}
 	handlerAccount := handlersAccount{s}
 	handlerLink := handlersLink{s}
 
 	r.Use(m.Logging)
+
+	// Token subrouter.
+	subToken := r.PathPrefix("/api/v1/token").Subrouter().StrictSlash(true)
+	subToken.HandleFunc("/refresh", handlerToken.Refresh).Methods("POST")
+	// TODO: create a "validated" route.
+	subToken.Use(m.Authentication)
 
 	// Auth subrouter.
 	subAuth := r.PathPrefix("/api/v1/auth").Subrouter().StrictSlash(true)
@@ -51,43 +58,66 @@ func MakeHTTPHandler(s Service, m Middlewares) http.Handler {
 	return r
 }
 
-/*
-	Auth handlers.
-*/
-type handlersAuth struct {
+// Token handlers.
+type handlersToken struct {
 	s Service
 }
 
-func (h handlersAuth) Login(w http.ResponseWriter, r *http.Request) {
+func (h handlersToken) Refresh(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	dr, err := decodeSignInRequest(r)
+	acc, dr, err := decodeTokenRefreshRequest(r)
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Business logic.
-	account, err := h.s.SignIn(Account{Email: dr.Email, Password: dr.Password})
+	token, err := h.s.Refresh(acc, Token{RefreshToken: dr.RefreshToken})
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := signInResponse{Token: account.Token, Err: err}
+	sr := tokenRefreshResponse{AccessToken: token.AccessToken, RefreshToken: token.RefreshToken, Err: err}
 	_ = encodeResponse(w, sr)
 }
 
-func (h handlersAuth) Register(w http.ResponseWriter, r *http.Request) {
+//	Auth handlers.
+type handlersAuth struct {
+	s Service
+}
+
+func (h handlersAuth) Login(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	dr, err := decodeSignUpRequest(r)
+	dr, err := decodeAuthLoginRequest(r)
 	if err != nil {
 		encodeError(err, w)
 		return
 	}
 
 	// Business logic.
-	err = h.s.SignUp(Account{Name: dr.Name, Email: dr.Email, Password: dr.Password})
+	account, err := h.s.Login(Account{Email: dr.Email, Password: dr.Password})
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := signInResponse{AccessToken: account.AccessToken, RefreshToken: account.RefreshToken, Err: err}
+	_ = encodeResponse(w, sr)
+}
+
+func (h handlersAuth) Register(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	dr, err := decodeAuthRegisterRequest(r)
+	if err != nil {
+		encodeError(err, w)
+		return
+	}
+
+	// Business logic.
+	err = h.s.Register(Account{Name: dr.Name, Email: dr.Email, Password: dr.Password})
 	if err != nil {
 		encodeError(err, w)
 		return
@@ -98,10 +128,7 @@ func (h handlersAuth) Register(w http.ResponseWriter, r *http.Request) {
 	_ = encodeResponse(w, sr)
 }
 
-/*
-	Account handlers.
-*/
-
+// Account handlers.
 type handlersAccount struct {
 	s Service
 }
@@ -207,10 +234,7 @@ func (h handlersAccount) DeleteAccount(w http.ResponseWriter, r *http.Request) {
 	_ = encodeResponse(w, sr)
 }
 
-/*
-	Link handlers.
-*/
-
+// Link handlers.
 type handlersLink struct {
 	s Service
 }

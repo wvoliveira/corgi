@@ -44,13 +44,13 @@ func (m Middlewares) Authentication(next http.Handler) http.Handler {
 			return
 		}
 
-		var mySigningKey = []byte(m.config.SecretKey)
+		var SigningKey = []byte(m.config.SecretKey)
 
 		token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, ErrParseToken
 			}
-			return mySigningKey, nil
+			return SigningKey, nil
 		})
 
 		if err != nil {
