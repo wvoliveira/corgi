@@ -4,14 +4,24 @@ import (
 	"net/http"
 
 	"github.com/golang-jwt/jwt"
+	"go.uber.org/zap"
 )
 
-/*
-  Access control for Web UI.
-*/
+type Middlewares struct {
+	logger zap.SugaredLogger
+	config Config
+}
+
+// NewService create a new service with database and cache.
+func NewMiddlewares(logger zap.SugaredLogger, config Config) Middlewares {
+	return Middlewares{
+		logger: logger,
+		config: config,
+	}
+}
 
 // AccessControl set common headers for web UI.
-func AccessControl(h http.Handler) http.Handler {
+func (m Middlewares) AccessControl(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -21,20 +31,20 @@ func AccessControl(h http.Handler) http.Handler {
 			return
 		}
 
-		h.ServeHTTP(w, r)
+		next.ServeHTTP(w, r)
 	})
 }
 
 // IsAuthorized check if auth ok and set claims in request header.
-func IsAuthorized(secretKey string, h http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
+func (m Middlewares) Authentication(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 
 		if r.Header["Token"] == nil {
 			encodeError(ErrNoTokenFound, w)
 			return
 		}
 
-		var mySigningKey = []byte(secretKey)
+		var mySigningKey = []byte(m.config.SecretKey)
 
 		token, err := jwt.Parse(r.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -57,9 +67,9 @@ func IsAuthorized(secretKey string, h http.HandlerFunc) http.HandlerFunc {
 			r.Header.Set("AccountEmail", accountEmail)
 			r.Header.Set("AccountRole", accountRole)
 
-			h.ServeHTTP(w, r)
+			next.ServeHTTP(w, r)
 			return
 		}
 		encodeError(ErrUnauthorized, w)
-	}
+	})
 }

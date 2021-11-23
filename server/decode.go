@@ -162,24 +162,8 @@ func decodeFindLinksRequest(r *http.Request) (acc Account, req findLinksRequest,
 	return
 }
 
-func decodeUpdateOrCreateLinkRequest(r *http.Request) (acc Account, req updateOrCreateLinkRequest, err error) {
-	acc = getAccountFromHeaders(r)
-	vars := mux.Vars(r)
-
-	id, ok := vars["id"]
-	if !ok {
-		return acc, req, ErrBadRouting
-	}
-	req.ID = id
-
-	if err := json.NewDecoder(r.Body).Decode(&req.Link); err != nil {
-		return acc, req, err
-	}
-
-	return
-}
-
 func decodeUpdateLinkRequest(r *http.Request) (acc Account, req updateLinkRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {
@@ -194,6 +178,7 @@ func decodeUpdateLinkRequest(r *http.Request) (acc Account, req updateLinkReques
 }
 
 func decodeDeleteLinkRequest(r *http.Request) (acc Account, req deleteLinkRequest, err error) {
+	acc = getAccountFromHeaders(r)
 	vars := mux.Vars(r)
 	id, ok := vars["id"]
 	if !ok {

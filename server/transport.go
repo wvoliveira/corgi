@@ -12,37 +12,42 @@ import (
 /*
 	MakeHTTPHandler mounts all of the service endpoints into an http.Handler.
 */
-func MakeHTTPHandler(s Service) http.Handler {
+func MakeHTTPHandler(s Service, m Middlewares) http.Handler {
 	r := mux.NewRouter()
 
-	hau := handlersAuth{s}
-	hac := handlersAccount{s}
-	hur := handlersLink{s}
+	handlerAuth := handlersAuth{s}
+	handlerAccount := handlersAccount{s}
+	handlerLink := handlersLink{s}
 
-	/*
-		Auth with password endpoints and methods.
-	*/
-	r.HandleFunc("/api/v1/signin", hau.SignIn).Methods("POST")
-	r.HandleFunc("/api/v1/signup", hau.SignUp).Methods("POST")
+	r.Use(m.Logging)
 
-	/*
-		Account endpoints and methods.
-	*/
-	r.HandleFunc("/api/v1/accounts", IsAuthorized(s.secret, hac.AddAccount)).Methods("POST")
-	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(s.secret, hac.FindAccountByID)).Methods("GET")
-	r.HandleFunc("/api/v1/accounts", IsAuthorized(s.secret, hac.FindAccounts)).Methods("GET")
-	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(s.secret, hac.UpdateAccount)).Methods("PATCH")
-	r.HandleFunc("/api/v1/accounts/{id}", IsAuthorized(s.secret, hac.DeleteAccount)).Methods("DELETE")
+	// Auth subrouter.
+	subAuth := r.PathPrefix("/api/v1/auth").Subrouter().StrictSlash(true)
+	subAuth.HandleFunc("/password/login", handlerAuth.Login).Methods("POST")
+	subAuth.HandleFunc("/password/register", handlerAuth.Register).Methods("POST")
 
-	/*
-		Link endpoints and methods.
-	*/
-	r.HandleFunc("/api/v1/links", IsAuthorized(s.secret, hur.AddLink)).Methods("POST")
-	r.HandleFunc("/api/v1/links/{id}", IsAuthorized(s.secret, hur.FindLinkByID)).Methods("GET")
-	r.HandleFunc("/api/v1/links", IsAuthorized(s.secret, hur.FindLinks)).Methods("GET")
-	r.HandleFunc("/api/v1/links/{id}", IsAuthorized(s.secret, hur.UpdateLink)).Methods("PATCH")
-	r.HandleFunc("/api/v1/links/{id}", IsAuthorized(s.secret, hur.DeleteLink)).Methods("DELETE")
+	// Accounts subrouter.
+	subAccounts := r.PathPrefix("/api/v1/accounts").Subrouter().StrictSlash(true)
+	subAccounts.HandleFunc("/", handlerAccount.AddAccount).Methods("POST")
+	subAccounts.HandleFunc("/{id}", handlerAccount.FindAccountByID).Methods("GET")
+	subAccounts.HandleFunc("/", handlerAccount.FindAccounts).Methods("GET")
+	subAccounts.HandleFunc("/{id}", handlerAccount.UpdateAccount).Methods("PATCH")
+	subAccounts.HandleFunc("/{id}", handlerAccount.DeleteAccount).Methods("DELETE")
+	subAccounts.Use(m.Authentication)
 
+	// Links subrouter.
+	subLinks := r.PathPrefix("/api/v1/links").Subrouter().StrictSlash(true)
+	subLinks.HandleFunc("/", handlerLink.AddLink).Methods("POST")
+	subLinks.HandleFunc("/{id}", handlerLink.FindLinkByID).Methods("GET")
+	subLinks.HandleFunc("/", handlerLink.FindLinks).Methods("GET")
+	subLinks.HandleFunc("/{id}", handlerLink.UpdateLink).Methods("PATCH")
+	subLinks.HandleFunc("/{id}", handlerLink.DeleteLink).Methods("DELETE")
+	subLinks.Use(m.Authentication)
+
+	// Group all subrouters.
+	r.Handle("/api/v1/auth", subAuth)
+	r.Handle("/api/v1/accounts", subAccounts)
+	r.Handle("/api/v1/links", subLinks)
 	return r
 }
 
@@ -53,7 +58,7 @@ type handlersAuth struct {
 	s Service
 }
 
-func (h handlersAuth) SignIn(w http.ResponseWriter, r *http.Request) {
+func (h handlersAuth) Login(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
 	dr, err := decodeSignInRequest(r)
 	if err != nil {
@@ -73,7 +78,7 @@ func (h handlersAuth) SignIn(w http.ResponseWriter, r *http.Request) {
 	_ = encodeResponse(w, sr)
 }
 
-func (h handlersAuth) SignUp(w http.ResponseWriter, r *http.Request) {
+func (h handlersAuth) Register(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
 	dr, err := decodeSignUpRequest(r)
 	if err != nil {

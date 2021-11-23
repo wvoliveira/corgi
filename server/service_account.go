@@ -32,7 +32,7 @@ func (s Service) FindAccountByID(_ Account, id string) (account Account, err err
 
 // FindAccounts Get a list of accounts.
 func (s Service) FindAccounts(_ Account, offset, limit int) (accounts []Account, err error) {
-	err = s.db.Model(&Account{}).Limit(limit).Offset(offset).Find(accounts).Error
+	err = s.db.Model(&Account{}).Limit(limit).Offset(offset).Find(&accounts).Error
 	return
 }
 

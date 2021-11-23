@@ -1,15 +1,12 @@
 package server
 
 import (
-	"os"
-
-	"github.com/go-kit/log"
+	"go.uber.org/zap"
 )
 
 // NewLogger initialize a new logging object.
-func NewLogger() (logger log.Logger) {
-	logger = log.NewLogfmtLogger(os.Stderr)
-	logger = log.With(logger, "ts", log.DefaultTimestampUTC)
-	logger = log.With(logger, "caller", log.DefaultCaller)
-	return
+func NewLogger() (logger *zap.SugaredLogger) {
+	zlog, _ := zap.NewProduction()
+	defer zlog.Sync() // flushes buffer, if any
+	return zlog.Sugar()
 }

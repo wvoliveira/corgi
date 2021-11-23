@@ -21,20 +21,23 @@ func (s Service) AddLink(auth Account, payload Link) (link Link, err error) {
 		err = s.db.Model(&Link{}).Create(&link).Error
 		return
 	} else if err == nil {
-		return link, ErrAlreadyExists
+		return link, ErrLinkKeywordAlreadyExists
 	}
-	return
+	return link, ErrInternalServerError
 }
 
 // FindLinkByID search a specific Link by ID.
 func (s Service) FindLinkByID(auth Account, id string) (link Link, err error) {
 	err = s.db.Model(&Link{}).Where("account_id = ?", auth.ID).Where("id = ?", id).First(&link).Error
+	if err == gorm.ErrRecordNotFound {
+		return link, ErrLinkIDNotFound
+	}
 	return
 }
 
 // FindLinks get a Link list from database.
 func (s Service) FindLinks(auth Account, offset, limit int) (links []Link, err error) {
-	err = s.db.Model(&Link{}).Where("account_id = ?", auth.ID).Limit(limit).Offset(offset).Find(links).Error
+	err = s.db.Model(&Link{}).Where("account_id = ?", auth.ID).Limit(limit).Offset(offset).Find(&links).Error
 	return
 }
 
@@ -47,6 +50,6 @@ func (s Service) UpdateLink(auth Account, id string, payload Link) (err error) {
 // DeleteLink delete Link by ID.
 func (s Service) DeleteLink(auth Account, id string) (err error) {
 	var link Link
-	err = s.db.Model(&Link{}).Where("account_id = ?", auth.ID).Where("id = ?", id).Delete(&link).Error
+	err = s.db.Debug().Model(&Link{}).Where("account_id = ?", auth.ID).Where("id = ?", id).Delete(&link).Error
 	return
 }

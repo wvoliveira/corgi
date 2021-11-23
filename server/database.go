@@ -5,22 +5,22 @@ import (
 	"os"
 	"time"
 
-	"github.com/go-kit/log"
 	"github.com/google/uuid"
 	"github.com/sethvargo/go-password/password"
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 type database struct {
-	Logger log.Logger
+	Logger zap.SugaredLogger
 	DB     *gorm.DB
 	Config Config
 }
 
 // NewDatabase create a gorm database object.
-func NewDatabase(logger log.Logger, config Config) database {
+func NewDatabase(logger zap.SugaredLogger, config Config) database {
 	return database{
 		Logger: logger,
 		DB:     initDatabase(logger, config),
@@ -28,11 +28,11 @@ func NewDatabase(logger log.Logger, config Config) database {
 	}
 }
 
-func initDatabase(logger log.Logger, config Config) (db *gorm.DB) {
+func initDatabase(logger zap.SugaredLogger, config Config) (db *gorm.DB) {
 	connstring := fmt.Sprintf("postgres://%s@%s:%d/%s", config.DBUser, config.DBHost, config.DBPort, config.DBBase)
 	db, err := gorm.Open(postgres.Open(connstring), &gorm.Config{})
 	if err != nil {
-		logger.Log("method", "initDatabase", "message", "error configuring the database", "err", err.Error())
+		logger.Infow("error configuring the database", "method", "initDatabase", "err", err.Error())
 		os.Exit(0)
 	}
 	return db
@@ -59,16 +59,16 @@ func (d database) addAccountAdmin() {
 
 	secret, err := password.Generate(20, 5, 0, false, true)
 	if err != nil {
-		d.Logger.Log("method", "addAccountAdmin", "message", "fail to generate password", "err", err.Error())
+		d.Logger.Infow("fail to generate password", "method", "addAccountAdmin", "err", err.Error())
 		os.Exit(1)
 	}
 
 	messagePassword := fmt.Sprintf("account admin: admin@local password: %s", secret)
-	d.Logger.Log("method", "addAccountAdmin", "message", messagePassword)
+	d.Logger.Infow(messagePassword, "method", "addAccountAdmin", "message", messagePassword)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
 	if err != nil {
-		d.Logger.Log("method", "addAccountAdmin", "message", "fail to hash password", "err", err.Error())
+		d.Logger.Infow("method", "addAccountAdmin", "err", err.Error())
 		os.Exit(1)
 	}
 
@@ -95,16 +95,16 @@ func (d database) addAccountUser() {
 
 	secret, err := password.Generate(20, 5, 0, false, true)
 	if err != nil {
-		d.Logger.Log("method", "addAccountUser", "message", "fail to generate password", "err", err.Error())
+		d.Logger.Infow("fail to generate password", "method", "addAccountUser", "err", err.Error())
 		os.Exit(1)
 	}
 
 	messagePassword := fmt.Sprintf("account user: user@local password: %s", secret)
-	d.Logger.Log("method", "addAccountUser", "message", messagePassword)
+	d.Logger.Infow(messagePassword, "method", "addAccountUser")
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
 	if err != nil {
-		d.Logger.Log("method", "addAccountUser", "message", "fail to hash password", "err", err.Error())
+		d.Logger.Infow("fail to hash password", "method", "addAccountUser", "err", err.Error())
 		os.Exit(1)
 	}
 

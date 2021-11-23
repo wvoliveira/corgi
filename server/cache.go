@@ -1,18 +1,18 @@
 package server
 
 import (
-	"github.com/go-kit/log"
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
 )
 
 type cache struct {
-	Logger log.Logger
+	Logger zap.SugaredLogger
 	DB     *redis.Client
 	Config Config
 }
 
 // NewCache create a gorm cache object.
-func NewCache(logger log.Logger, config Config) cache {
+func NewCache(logger zap.SugaredLogger, config Config) cache {
 	return cache{
 		Logger: logger,
 		DB:     initCache(logger, config),
@@ -20,7 +20,7 @@ func NewCache(logger log.Logger, config Config) cache {
 	}
 }
 
-func initCache(logger log.Logger, config Config) (db *redis.Client) {
+func initCache(logger zap.SugaredLogger, config Config) (db *redis.Client) {
 	return redis.NewClient(&redis.Options{
 		Addr:     config.CacheAddr,
 		Password: config.CachePassword,

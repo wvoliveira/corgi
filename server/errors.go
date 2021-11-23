@@ -14,20 +14,25 @@ var (
 	ErrOnlyAdmin       = errors.New("only admin can do it")
 	ErrEmailNotValid   = errors.New("try a valid e-mail")
 
-	ErrFieldsRequired       = errors.New("fields required: email and password")
-	ErrInternalServerError  = errors.New("internal server error")
-	ErrUnauthorized         = errors.New("unauthorized")
-	ErrCanNotDeleteYourSelf = errors.New("delete yourself? thats not a good idea")
+	ErrFieldsRequired = errors.New("require more body fields for this request")
 
-	ErrNoTokenFound = errors.New("no token found")
+	// Auth errors.
+	ErrUnauthorized = errors.New("sorry, you are not unauthorized")
 	ErrParseToken   = errors.New("there was an error in parsing token")
 	ErrTokenExpired = errors.New("your token has been expired")
+	ErrNoTokenFound = errors.New("token autorization not found in header")
 
-	/*
-		ErrBadRouting is returned when an expected path variable is missing.
-		It always indicates programmer error.
-	*/
-	ErrBadRouting = errors.New("inconsistent mapping between route and handler (programmer error)")
+	// Account errors.
+	ErrAccountDeleteYourSelf = errors.New("delete yourself? thats not a good idea")
+
+	// Link errors.
+	ErrLinkIDNotFound           = errors.New("link id not found")
+	ErrLinkKeywordNotFound      = errors.New("link keyword not found")
+	ErrLinkKeywordAlreadyExists = errors.New("this link keyword already exists in our database")
+
+	// Internal errors.
+	ErrInternalServerError = errors.New("internal server error")
+	ErrBadRouting          = errors.New("inconsistent mapping between route and handler (programmer error)")
 )
 
 /*
@@ -53,9 +58,11 @@ func encodeError(err error, w http.ResponseWriter) {
 
 func codeFrom(err error) int {
 	switch err {
-	case ErrNotFound:
+	case ErrNotFound, ErrLinkIDNotFound, ErrLinkKeywordNotFound:
 		return http.StatusNotFound
-	case ErrAlreadyExists, ErrInconsistentIDs:
+	case ErrLinkKeywordAlreadyExists, ErrAlreadyExists:
+		return http.StatusForbidden
+	case ErrInconsistentIDs, ErrAccountDeleteYourSelf:
 		return http.StatusBadRequest
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:
 		return http.StatusUnauthorized

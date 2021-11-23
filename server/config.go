@@ -3,8 +3,8 @@ package server
 import (
 	"os"
 
-	"github.com/go-kit/log"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 const (
@@ -45,7 +45,7 @@ type Config struct {
 }
 
 // NewConfig load the configuration app.
-func NewConfig(logger log.Logger, path string) (config Config) {
+func NewConfig(logger zap.SugaredLogger, path string) (config Config) {
 	viper.AddConfigPath(path)
 	viper.SetConfigName("app")
 	viper.SetConfigType("env")
@@ -70,7 +70,7 @@ func NewConfig(logger log.Logger, path string) (config Config) {
 
 	err := viper.Unmarshal(&config)
 	if err != nil {
-		logger.Log("method", "NewConfig", "message", "error with viper.Unmarshal", "err", err.Error())
+		logger.Infow("error to load config", "method", "NewConfig", "err", err.Error())
 		os.Exit(1)
 	}
 	return

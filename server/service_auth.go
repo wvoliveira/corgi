@@ -2,7 +2,6 @@ package server
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -19,12 +18,6 @@ func (s Service) SignIn(payload Account) (account Account, err error) {
 	} else if err != nil {
 		return account, err
 	}
-
-	fmt.Println("PAYLOAD")
-	fmt.Println(payload)
-
-	fmt.Println("ACCOUNT")
-	fmt.Println(account)
 
 	if err := bcrypt.CompareHashAndPassword([]byte(account.Password), []byte(payload.Password)); err != nil {
 		return account, ErrUnauthorized
