@@ -1,5 +1,8 @@
 # ![Corgi](.github/logo.png?raw=true "Corgi logo")
 
+[![Lint](https://github.com/elga-io/corgi/actions/workflows/server.lint.yml/badge.svg)](https://github.com/elga-io/corgi/actions/workflows/server.lint.yml)
+[![Test](https://github.com/elga-io/corgi/actions/workflows/server.test.yml/badge.svg)](https://github.com/elga-io/corgi/actions/workflows/server.test.yml)
+
 > Corgi é um sistema encurtador de links.
 
 ## Recursos
