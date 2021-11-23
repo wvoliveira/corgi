@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-func decodeAuthLoginRequest(r *http.Request) (req signInRequest, err error) {
+func decodeAuthLoginRequest(r *http.Request) (req authLoginRequest, err error) {
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return req, err
 	}

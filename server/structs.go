@@ -31,10 +31,15 @@ type Account struct {
 }
 
 type Token struct {
-	ID           string `json:"id" gorm:"primaryKey;autoIncrement:false"`
-	AccessToken  string `json:"-" gorm:"-"`
-	RefreshToken string `json:"refresh_token"`
-	AccountID    string `json:"account_id" gorm:"index"`
+	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	LastUse   time.Time `json:"last_use"`
+
+	AccessToken  string    `json:"-" gorm:"-"`
+	RefreshToken string    `json:"refresh_token"`
+	ExpiresIn    time.Time `json:"expires_in"`
+	AccountID    string    `json:"account_id" gorm:"index"`
 }
 
 /*
@@ -60,12 +65,14 @@ type Link struct {
 */
 
 type TokenRefreshRequest struct {
+	ID           string `json:"-"`
 	RefreshToken string `json:"refresh_token"`
 }
 
 type tokenRefreshResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
 	Err          error  `json:"err,omitempty"`
 }
 
@@ -75,18 +82,19 @@ func (r tokenRefreshResponse) error() error { return r.Err }
 	Sign-in request and response structs.
 */
 
-type signInRequest struct {
+type authLoginRequest struct {
 	Email    string `json:"email"`
 	Password string `json:"password"`
 }
 
-type signInResponse struct {
+type authLoginResponse struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
+	ExpiresIn    int    `json:"expires_in"`
 	Err          error  `json:"err,omitempty"`
 }
 
-func (r signInResponse) error() error { return r.Err }
+func (r authLoginResponse) error() error { return r.Err }
 
 /*
 	Sign-up request and response structs.

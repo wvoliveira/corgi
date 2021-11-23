@@ -5,19 +5,25 @@ import (
 	"time"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/google/uuid"
 )
 
 // Refresh refresh access token.
 func (s Service) Refresh(a Account, payload Token) (token Token, err error) {
-	if !s.validToken(payload.RefreshToken) {
+	claims, ok := s.validToken(payload.RefreshToken)
+	if !ok {
 		return token, errors.New("invalid refresh token: " + err.Error())
 	}
+
+	payload.ID = claims["id"].(string)
 
 	if err = s.db.Debug().Model(&Token{}).Where("id = ?", payload.ID).First(&token).Error; err != nil {
 		return token, errors.New("error to get refresh token from database: " + err.Error())
 	}
 
-	if !s.validToken(token.RefreshToken) {
+	_, ok = s.validToken(token.RefreshToken)
+
+	if !ok {
 		return token, errors.New("invalid token from database: " + err.Error())
 	}
 
@@ -29,7 +35,7 @@ func (s Service) Refresh(a Account, payload Token) (token Token, err error) {
 	return
 }
 
-func (s Service) validToken(payload string) (valid bool) {
+func (s Service) validToken(payload string) (claims jwt.MapClaims, valid bool) {
 	var SigningKey = []byte(s.secret)
 
 	token, err := jwt.Parse(payload, func(token *jwt.Token) (interface{}, error) {
@@ -40,11 +46,11 @@ func (s Service) validToken(payload string) (valid bool) {
 	})
 
 	if err != nil {
-		return false
+		return claims, false
 	}
 
-	if _, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-		return true
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, true
 	}
 	return
 }
@@ -57,7 +63,7 @@ func (s Service) generateAccessToken(a Account) (at string, err error) {
 	claims["id"] = a.ID
 	claims["email"] = a.Email
 	claims["role"] = a.Role
-	claims["exp"] = time.Now().Add(time.Minute * 24).Unix()
+	claims["exp"] = time.Now().Add(time.Hour * 2).Unix()
 
 	at, err = accessToken.SignedString([]byte(s.secret))
 	if err != nil {
@@ -67,11 +73,14 @@ func (s Service) generateAccessToken(a Account) (at string, err error) {
 	return
 }
 
-func (s Service) generateRefreshToken() (rt string, err error) {
+func (s Service) generateRefreshToken() (id, rt string, err error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
-	rtClaims := refreshToken.Claims.(jwt.MapClaims)
-	rtClaims["sub"] = 1
-	rtClaims["exp"] = time.Now().AddDate(0, 0, 7).Unix()
+	claims := refreshToken.Claims.(jwt.MapClaims)
+	id = uuid.New().String()
+
+	claims["id"] = id
+	claims["sub"] = 1
+	claims["exp"] = time.Now().AddDate(0, 0, 7).Unix()
 
 	rt, err = refreshToken.SignedString([]byte(s.secret))
 	if err != nil {

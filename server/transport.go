@@ -79,7 +79,12 @@ func (h handlersToken) Refresh(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Encode object to answer request (response).
-	sr := tokenRefreshResponse{AccessToken: token.AccessToken, RefreshToken: token.RefreshToken, Err: err}
+	sr := tokenRefreshResponse{
+		AccessToken:  token.AccessToken,
+		RefreshToken: token.RefreshToken,
+		ExpiresIn:    7200,
+		Err:          err,
+	}
 	_ = encodeResponse(w, sr)
 }
 
@@ -104,7 +109,12 @@ func (h handlersAuth) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Encode object to answer request (response).
-	sr := signInResponse{AccessToken: account.AccessToken, RefreshToken: account.RefreshToken, Err: err}
+	sr := authLoginResponse{
+		AccessToken:  account.AccessToken,
+		RefreshToken: account.RefreshToken,
+		ExpiresIn:    7200,
+		Err:          err,
+	}
 	_ = encodeResponse(w, sr)
 }
 

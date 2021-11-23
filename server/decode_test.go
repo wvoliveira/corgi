@@ -7,8 +7,8 @@ import (
 	"testing"
 )
 
-func TestDecodeSignInRequest(t *testing.T) {
-	payloads := []signInRequest{
+func TestDecodeAuthLoginRequest(t *testing.T) {
+	payloads := []authLoginRequest{
 		{Email: "test1@email.com", Password: "secret1"},
 		{Email: "teste2@email.com", Password: "secret2"},
 	}
@@ -20,7 +20,7 @@ func TestDecodeSignInRequest(t *testing.T) {
 			t.Errorf("error to create a new request to /signin: %s", err.Error())
 		}
 
-		dr, err := decodeSignInRequest(req)
+		dr, err := decodeAuthLoginRequest(req)
 		if err != nil {
 			t.Errorf("error to decode from signInRequest function: %s", err.Error())
 		}

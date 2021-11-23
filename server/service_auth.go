@@ -27,13 +27,14 @@ func (s Service) Login(payload Account) (account Account, err error) {
 		return account, errors.New("error to generate access token: " + err.Error())
 	}
 
-	refreshToken, err := s.generateRefreshToken()
+	tokenID, refreshToken, err := s.generateRefreshToken()
 	if err != nil {
 		return account, errors.New("error to generate refresh token: " + err.Error())
 	}
 
 	token := Token{
-		ID:           uuid.New().String(),
+		ID:           tokenID,
+		CreatedAt:    time.Now(),
 		RefreshToken: refreshToken,
 		AccountID:    account.ID,
 	}
