@@ -164,21 +164,6 @@ type findLinksResponse struct {
 func (r findLinksResponse) error() error { return r.Err }
 
 /*
-	Update or Create Link resquest and response structs.
-*/
-
-type updateOrCreateLinkRequest struct {
-	ID   string
-	Link Link
-}
-
-type updateOrCreateLinkResponse struct {
-	Err error `json:"err,omitempty"`
-}
-
-func (r updateOrCreateLinkResponse) error() error { return nil }
-
-/*
 	Update Link resquest and response structs.
 */
 
@@ -255,21 +240,6 @@ type findAccountsResponse struct {
 }
 
 func (r findAccountsResponse) error() error { return r.Err }
-
-/*
-	Update or create Account request and response structs.
-*/
-
-type updateOrCreateAccountRequest struct {
-	ID      string
-	Account Account
-}
-
-type updateOrCreateAccountResponse struct {
-	Err error `json:"err,omitempty"`
-}
-
-func (r updateOrCreateAccountResponse) error() error { return nil }
 
 /*
 	Update Account request and response structs.

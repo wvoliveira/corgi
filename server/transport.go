@@ -181,7 +181,7 @@ func (h handlersAccount) FindAccountByID(w http.ResponseWriter, r *http.Request)
 	// Encode object to answer request (response).
 	sr := findAccountByIDResponse{Account: account, Err: err}
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(sr)
+	_ = json.NewEncoder(w).Encode(sr)
 }
 
 func (h handlersAccount) FindAccounts(w http.ResponseWriter, r *http.Request) {
