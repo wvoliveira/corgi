@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -27,18 +26,18 @@ import (
 //go:embed ui/dist/_next/static/*/*.js
 var nextFS embed.FS
 
-var ctx = context.Background()
-
 func main() {
 	logger := server.NewLogger()
 	config := server.NewConfig(logger, ".")
 
 	database := server.NewDatabase(logger, config)
-	cache := server.NewCache(logger, config)
+	//cache := server.NewCache(logger, config)
 
+	database.DB.AutoMigrate(&server.Account{}, &server.Link{})
 	database.SeedUsers()
+
 	ui := initWebUI(logger)
-	service := server.NewService(logger, ctx, config.SecretKey, database.DB, cache.DB)
+	service := server.NewService(logger, config.SecretKey, database.DB)
 
 	mux := http.NewServeMux()
 	mux.Handle("/api/v1/", handlers.LoggingHandler(os.Stdout, server.MakeHTTPHandler(service)))
@@ -46,7 +45,7 @@ func main() {
 	mux.Handle("/", ui)
 
 	http.Handle("/", server.AccessControl(mux))
-	startServer(logger, &config.ServerAddress)
+	startServer(logger, config.ServerAddress)
 }
 
 func initWebUI(logger log.Logger) (ui http.Handler) {
@@ -60,11 +59,11 @@ func initWebUI(logger log.Logger) (ui http.Handler) {
 	return
 }
 
-func startServer(logger log.Logger, httpAddr *string) {
+func startServer(logger log.Logger, httpAddr string) {
 	errs := make(chan error, 2)
 	go func() {
-		logger.Log("transport", "http", "address", *httpAddr, "msg", "listening")
-		errs <- http.ListenAndServe(*httpAddr, nil)
+		logger.Log("transport", "http", "address", httpAddr, "msg", "listening")
+		errs <- http.ListenAndServe(httpAddr, nil)
 	}()
 	go func() {
 		c := make(chan os.Signal)

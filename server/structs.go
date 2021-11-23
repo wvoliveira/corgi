@@ -9,56 +9,41 @@ import (
 	ID should be globally unique.
 */
 type Account struct {
-	ID        string    `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
+	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 	LastLogin time.Time `json:"last_login"`
 
 	Name     string `json:"name"`
-	Email    string `json:"email"`
+	Email    string `json:"email" gorm:"index"`
 	Password string `json:"password"`
 
-	Role  string `json:"role" example:"admin"`
-	Tags  string `json:"tags" example:"vip,mod,staff"`
+	Role  string `json:"role"`
+	Tags  string `json:"tags"`
 	Token string `json:"token"`
 
 	Active string `json:"active"`
+
+	Links []Link
 }
 
 /*
-	URL represents a single struct for URL.
+	Link represents a single struct for Link.
 	ID should be globally unique.
 */
-type URL struct {
-	ID        string    `json:"id" example:"eed7df28-5a16-46f0-b5bf-c26071a42ade"`
-	CreatedAt time.Time `json:"created_at" example:"2021-10-18T00:45:07.818344164-03:00"`
-	UpdatedAt time.Time `json:"updated_at" example:"2021-10-18T00:49:06.160059334-03:00"`
+type Link struct {
+	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 
-	Keyword string `json:"keyword" example:"google"`
-	URL     string `json:"url" example:"https://www.google.com"`
-	Title   string `json:"title" example:"Google Home"`
+	Keyword     string `json:"keyword" gorm:"index"`
+	Destination string `json:"destination"`
+	Title       string `json:"title"`
 
-	AccountID string `json:"-"`
+	AccountID string `json:"account_id" gorm:"index"`
 
-	Active string `json:"active" example:"false"`
+	Active string `json:"active"`
 }
-
-/*
-	We have two options to return errors from the business logic.
-
-	We could return the error via the endpoint itself. That makes certain things
-	a little bit easier, like providing non-200 HTTP responses to the client. But
-	Go kit assumes that endpoint errors are (or may be treated as)
-	transport-domain errors. For example, an endpoint error will count against a
-	circuit breaker error count.
-
-	Therefore, it's often better to return service (business logic) errors in the
-	response object. This means we have to do a bit more work in the HTTP
-	response encoder to detect e.g. a not-found error and provide a proper HTTP
-	status code. That work is done with the errorer interface, in transport.go.
-	Response types that may contain business-logic errors implement that
-	interface.
-*/
 
 /*
 	Sign-in request and response structs.
@@ -93,99 +78,99 @@ type signUpResponse struct {
 func (r signUpResponse) error() error { return r.Err }
 
 /*
-	Add URL resquest and response structs.
+	Add Link resquest and response structs.
 */
 
-type addURLRequest struct {
-	Keyword string `json:"keyword"`
-	URL     string `json:"url"`
-	Title   string `json:"title"`
+type addLinkRequest struct {
+	Keyword     string `json:"keyword"`
+	Destination string `json:"destination"`
+	Title       string `json:"title"`
 }
 
-type addURLResponse struct {
-	ID      string `json:"id"`
-	Keyword string `json:"keyword"`
-	URL     string `json:"url"`
-	Title   string `json:"title"`
-	Err     error  `json:"err,omitempty"`
+type addLinkResponse struct {
+	ID          string `json:"id"`
+	Keyword     string `json:"keyword"`
+	Destination string `json:"destination"`
+	Title       string `json:"title"`
+	Err         error  `json:"err,omitempty"`
 }
 
-func (r addURLResponse) error() error { return r.Err }
+func (r addLinkResponse) error() error { return r.Err }
 
 /*
-	Find URL resquest and response structs.
+	Find Link resquest and response structs.
 */
 
-type findURLByIDRequest struct {
+type findLinkByIDRequest struct {
 	ID string
 }
 
-type findURLByIDResponse struct {
-	URL URL   `json:"data,omitempty"`
-	Err error `json:"error,omitempty"`
+type findLinkByIDResponse struct {
+	Link Link  `json:"data,omitempty"`
+	Err  error `json:"error,omitempty"`
 }
 
-func (r findURLByIDResponse) error() error { return r.Err }
+func (r findLinkByIDResponse) error() error { return r.Err }
 
 /*
-	Find URLs request and response structs.
+	Find Links request and response structs.
 */
 
-type findURLsRequest struct {
+type findLinksRequest struct {
 	Offset   int
 	PageSize int
 }
 
-type findURLsResponse struct {
-	URLs []URL `json:"data,omitempty"`
-	Err  error `json:"error,omitempty"`
+type findLinksResponse struct {
+	Links []Link `json:"data,omitempty"`
+	Err   error  `json:"error,omitempty"`
 }
 
-func (r findURLsResponse) error() error { return r.Err }
+func (r findLinksResponse) error() error { return r.Err }
 
 /*
-	Update or Create URL resquest and response structs.
+	Update or Create Link resquest and response structs.
 */
 
-type updateOrCreateURLRequest struct {
-	ID  string
-	URL URL
+type updateOrCreateLinkRequest struct {
+	ID   string
+	Link Link
 }
 
-type updateOrCreateURLResponse struct {
+type updateOrCreateLinkResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r updateOrCreateURLResponse) error() error { return nil }
+func (r updateOrCreateLinkResponse) error() error { return nil }
 
 /*
-	Update URL resquest and response structs.
+	Update Link resquest and response structs.
 */
 
-type updateURLRequest struct {
-	ID  string
-	URL URL
+type updateLinkRequest struct {
+	ID   string
+	Link Link
 }
 
-type updateURLResponse struct {
+type updateLinkResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r updateURLResponse) error() error { return r.Err }
+func (r updateLinkResponse) error() error { return r.Err }
 
 /*
-	Delete URL request and response structs.
+	Delete Link request and response structs.
 */
 
-type deleteURLRequest struct {
+type deleteLinkRequest struct {
 	ID string
 }
 
-type deleteURLResponse struct {
+type deleteLinkResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r deleteURLResponse) error() error { return r.Err }
+func (r deleteLinkResponse) error() error { return r.Err }
 
 /*
 	Add Account request and response structs.

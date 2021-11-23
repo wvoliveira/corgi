@@ -1,22 +1,21 @@
 package server
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/go-kit/log"
-	"github.com/go-redis/redis/v8"
 	"github.com/google/uuid"
 	"github.com/sethvargo/go-password/password"
 	"golang.org/x/crypto/bcrypt"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
 )
 
 type database struct {
 	Logger log.Logger
-	DB     *redis.Client
+	DB     *gorm.DB
 	Config Config
 }
 
@@ -29,32 +28,24 @@ func NewDatabase(logger log.Logger, config Config) database {
 	}
 }
 
-func initDatabase(logger log.Logger, config Config) (db *redis.Client) {
-	return redis.NewClient(&redis.Options{
-		Addr:     config.DBAddr,
-		Password: config.DBPassword,
-		DB:       config.DBDatabase,
-	})
+func initDatabase(logger log.Logger, config Config) (db *gorm.DB) {
+	connstring := fmt.Sprintf("postgres://%s@%s:%d/%s", config.DBUser, config.DBHost, config.DBPort, config.DBBase)
+	db, err := gorm.Open(postgres.Open(connstring), &gorm.Config{})
+	if err != nil {
+		logger.Log("method", "initDatabase", "message", "error configuring the database", "err", err.Error())
+		os.Exit(0)
+	}
+	return db
 }
 
-func (d database) getAccountKey(id, email string) (dbKey, cacheKey string) {
-	return fmt.Sprintf("db_account_id:%s:account_email:%s", id, email),
-		fmt.Sprintf("cache_account_id:%s:account_email:%s", id, email)
-}
-
-// Create the first user for system.
+// Create the first users for system.
 func (d database) SeedUsers() {
-	var (
-		account Account
-		ctx     = context.Background()
-	)
+	d.addAccountAdmin()
+	d.addAccountUser()
+}
 
-	account = Account{
-		ID:        uuid.New().String(),
-		CreatedAt: time.Now(),
-		UpdatedAt: time.Now(),
-		LastLogin: time.Now(),
-
+func (d database) addAccountAdmin() {
+	account := Account{
 		Name:  "Administrator",
 		Email: "admin@local",
 		Role:  "admin",
@@ -62,40 +53,65 @@ func (d database) SeedUsers() {
 		Active: "true",
 	}
 
-	dbKeyPattern, _ := d.getAccountKey("*", account.Email)
-
-	keys, _ := d.DB.Keys(ctx, dbKeyPattern).Result()
-	if len(keys) != 0 {
+	if d.DB.Model(&account).Where("email = ?", account.Email).Updates(&account).RowsAffected > 0 {
 		return
 	}
 
-	// Generate a random password for admin account.
 	secret, err := password.Generate(20, 5, 0, false, true)
 	if err != nil {
-		d.Logger.Log("method", "SeedUsers", "message", "fail to generate password", "err", err.Error())
+		d.Logger.Log("method", "addAccountAdmin", "message", "fail to generate password", "err", err.Error())
 		os.Exit(1)
 	}
 
-	messagePassword := fmt.Sprintf("admin user: admin@local password: %s", secret)
-	d.Logger.Log("method", "SeedUsers", "message", messagePassword)
+	messagePassword := fmt.Sprintf("account admin: admin@local password: %s", secret)
+	d.Logger.Log("method", "addAccountAdmin", "message", messagePassword)
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
 	if err != nil {
-		d.Logger.Log("method", "SeedUsers", "message", "fail to hash password", "err", err.Error())
+		d.Logger.Log("method", "addAccountAdmin", "message", "fail to hash password", "err", err.Error())
 		os.Exit(1)
 	}
 
 	account.Password = string(hashedPassword)
 
-	accountJs, err := json.Marshal(account)
-	if err != nil {
-		d.Logger.Log("method", "SeedUsers", "message", "error to marshal account to json", "err", err.Error())
+	account.ID = uuid.New().String()
+	account.CreatedAt = time.Now()
+
+	d.DB.Model(&account).Create(&account)
+}
+
+func (d database) addAccountUser() {
+	account := Account{
+		Name:  "Normal user",
+		Email: "user@local",
+		Role:  "user",
+
+		Active: "true",
 	}
 
-	key, _ := d.getAccountKey(account.ID, account.Email)
+	if d.DB.Model(&account).Where("email = ?", account.Email).Updates(&account).RowsAffected > 0 {
+		return
+	}
 
-	if err = d.DB.Set(ctx, key, accountJs, 0).Err(); err != nil {
-		d.Logger.Log("method", "SeedUsers", "message", "fail to create admin account", "err", err.Error())
+	secret, err := password.Generate(20, 5, 0, false, true)
+	if err != nil {
+		d.Logger.Log("method", "addAccountUser", "message", "fail to generate password", "err", err.Error())
 		os.Exit(1)
 	}
+
+	messagePassword := fmt.Sprintf("account user: user@local password: %s", secret)
+	d.Logger.Log("method", "addAccountUser", "message", messagePassword)
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
+	if err != nil {
+		d.Logger.Log("method", "addAccountUser", "message", "fail to hash password", "err", err.Error())
+		os.Exit(1)
+	}
+
+	account.Password = string(hashedPassword)
+
+	account.ID = uuid.New().String()
+	account.CreatedAt = time.Now()
+
+	d.DB.Model(&account).Create(&account)
 }
