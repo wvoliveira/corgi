@@ -22,18 +22,18 @@ func MakeHTTPHandler(s Service, m Middlewares) http.Handler {
 
 	r.Use(m.Logging)
 
-	// Token subrouter.
+	// Token subrouters.
 	subToken := r.PathPrefix("/api/v1/token").Subrouter().StrictSlash(true)
 	subToken.HandleFunc("/refresh", handlerToken.Refresh).Methods("POST")
 	// TODO: create a "validated" route.
 	subToken.Use(m.Authentication)
 
-	// Auth subrouter.
+	// Auth subrouters.
 	subAuth := r.PathPrefix("/api/v1/auth").Subrouter().StrictSlash(true)
 	subAuth.HandleFunc("/password/login", handlerAuth.Login).Methods("POST")
 	subAuth.HandleFunc("/password/register", handlerAuth.Register).Methods("POST")
 
-	// Accounts subrouter.
+	// Accounts subrouters.
 	subAccounts := r.PathPrefix("/api/v1/accounts").Subrouter().StrictSlash(true)
 	subAccounts.HandleFunc("/", handlerAccount.AddAccount).Methods("POST")
 	subAccounts.HandleFunc("/{id}", handlerAccount.FindAccountByID).Methods("GET")
@@ -42,7 +42,7 @@ func MakeHTTPHandler(s Service, m Middlewares) http.Handler {
 	subAccounts.HandleFunc("/{id}", handlerAccount.DeleteAccount).Methods("DELETE")
 	subAccounts.Use(m.Authentication)
 
-	// Links subrouter.
+	// Links subrouters.
 	subLinks := r.PathPrefix("/api/v1/links").Subrouter().StrictSlash(true)
 	subLinks.HandleFunc("/", handlerLink.AddLink).Methods("POST")
 	subLinks.HandleFunc("/{id}", handlerLink.FindLinkByID).Methods("GET")
@@ -107,6 +107,11 @@ func (h handlersAuth) Login(w http.ResponseWriter, r *http.Request) {
 		encodeError(err, w)
 		return
 	}
+
+	// Set some account values when user login.
+	r.Header.Set("AccountID", account.ID)
+	r.Header.Set("AccountEmail", account.Email)
+	r.Header.Set("AccountRole", account.Role)
 
 	// Encode object to answer request (response).
 	sr := authLoginResponse{

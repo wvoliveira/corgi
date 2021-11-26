@@ -29,89 +29,55 @@ func NewDatabase(logger zap.SugaredLogger, config Config) database {
 }
 
 func initDatabase(logger zap.SugaredLogger, config Config) (db *gorm.DB) {
-	connstring := fmt.Sprintf("postgres://%s@%s:%d/%s", config.DBUser, config.DBHost, config.DBPort, config.DBBase)
-	db, err := gorm.Open(postgres.Open(connstring), &gorm.Config{})
+	connString := fmt.Sprintf("postgres://%s@%s:%d/%s", config.DBUser, config.DBHost, config.DBPort, config.DBBase)
+	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
 	if err != nil {
-		logger.Infow("error configuring the database", "method", "initDatabase", "err", err.Error())
-		os.Exit(0)
+		logger.Errorw("error configuring the database", "method", "initDatabase", "err", err.Error())
+		os.Exit(1)
 	}
 	return db
 }
 
-// Create the first users for system.
+// SeedUsers create the first users for system.
 func (d database) SeedUsers() {
-	d.addAccountAdmin()
-	d.addAccountUser()
-}
-
-func (d database) addAccountAdmin() {
-	account := Account{
-		Name:  "Administrator",
-		Email: "admin@local",
-		Role:  "admin",
-
-		Active: "true",
+	accounts := []Account{
+		{
+			Name:  "Administrator",
+			Email: "admin@local",
+			Role:  "admin",
+			Active: "true",
+		},
+		{
+			Name:  "Normal user",
+			Email: "user@local",
+			Role:  "user",
+			Active: "true",
+		},
 	}
 
-	if d.DB.Model(&account).Where("email = ?", account.Email).Updates(&account).RowsAffected > 0 {
-		return
+	for _, acc := range accounts {
+		if d.DB.Model(&acc).Where("email = ?", acc.Email).Updates(&acc).RowsAffected > 0 {
+			return
+		}
+
+		secret, err := password.Generate(20, 5, 0, false, true)
+		if err != nil {
+			d.Logger.Errorw("fail to generate password", "method", "SeedUsers", "email", acc.Email, "err", err.Error())
+			os.Exit(1)
+		}
+
+		messagePassword := fmt.Sprintf("account e-mail: %s password: %s", acc.Email, secret)
+		d.Logger.Infow("password was generated", "method", "SeedUsers", "message", messagePassword)
+
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
+		if err != nil {
+			d.Logger.Errorw("error to generate hash password", "method", "SeeUsers", "err", err.Error())
+			os.Exit(1)
+		}
+
+		acc.Password = string(hashedPassword)
+		acc.ID = uuid.New().String()
+		acc.CreatedAt = time.Now()
+		d.DB.Model(&acc).Create(&acc)
 	}
-
-	secret, err := password.Generate(20, 5, 0, false, true)
-	if err != nil {
-		d.Logger.Infow("fail to generate password", "method", "addAccountAdmin", "err", err.Error())
-		os.Exit(1)
-	}
-
-	messagePassword := fmt.Sprintf("account admin: admin@local password: %s", secret)
-	d.Logger.Infow(messagePassword, "method", "addAccountAdmin", "message", messagePassword)
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
-	if err != nil {
-		d.Logger.Infow("method", "addAccountAdmin", "err", err.Error())
-		os.Exit(1)
-	}
-
-	account.Password = string(hashedPassword)
-
-	account.ID = uuid.New().String()
-	account.CreatedAt = time.Now()
-
-	d.DB.Model(&account).Create(&account)
-}
-
-func (d database) addAccountUser() {
-	account := Account{
-		Name:  "Normal user",
-		Email: "user@local",
-		Role:  "user",
-
-		Active: "true",
-	}
-
-	if d.DB.Model(&account).Where("email = ?", account.Email).Updates(&account).RowsAffected > 0 {
-		return
-	}
-
-	secret, err := password.Generate(20, 5, 0, false, true)
-	if err != nil {
-		d.Logger.Infow("fail to generate password", "method", "addAccountUser", "err", err.Error())
-		os.Exit(1)
-	}
-
-	messagePassword := fmt.Sprintf("account user: user@local password: %s", secret)
-	d.Logger.Infow(messagePassword, "method", "addAccountUser")
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(secret), 8)
-	if err != nil {
-		d.Logger.Infow("fail to hash password", "method", "addAccountUser", "err", err.Error())
-		os.Exit(1)
-	}
-
-	account.Password = string(hashedPassword)
-
-	account.ID = uuid.New().String()
-	account.CreatedAt = time.Now()
-
-	d.DB.Model(&account).Create(&account)
 }
