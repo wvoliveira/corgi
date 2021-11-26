@@ -4,6 +4,11 @@ app:
   admin_password: 12345
   user_password: 12345
 
+auth:
+  google:
+    client_id:
+    client_secret:
+
 server:
   http_port: 8081
   grpc_port: 8082

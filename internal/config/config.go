@@ -2,10 +2,9 @@ package config
 
 import (
 	"fmt"
-	"os"
-
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/spf13/viper"
+	"os"
 )
 
 const (
@@ -44,6 +43,13 @@ type Config struct {
 		UserPassword  string `mapstructure:"user_password"`
 	}
 
+	Auth struct {
+		Google struct {
+			ClientID     string `mapstructure:"client_id"`
+			ClientSecret string `mapstructure:"client_secret"`
+		}
+	}
+
 	Server struct {
 		HTTPPort string `mapstructure:"http_port"`
 		GRCPPort string `mapstructure:"grpc_port"`
@@ -75,16 +81,26 @@ type Config struct {
 
 // NewConfig load the configuration app.
 func NewConfig(logger log.Logger, path string) (config Config) {
+	// To delete.
+	viper.Debug()
+
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("CORGI_")
+
 	viper.SetConfigName("app")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath(path)
 
-	viper.SetEnvPrefix("CORGI_")
-	viper.AutomaticEnv()
-
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %w \n", err))
+		panic(fmt.Errorf("Fatal error config file: %w\n", err))
+	}
+
+	viper.SetConfigFile(".env.yaml")
+	viper.AddConfigPath(".")
+	err = viper.MergeInConfig()
+	if err != nil {
+		panic(fmt.Errorf("Fatal error config file: %w\n", err))
 	}
 
 	// App config.
