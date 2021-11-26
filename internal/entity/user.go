@@ -7,7 +7,7 @@ type User struct {
 	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	//LastLogin time.Time `json:"last_login"`
+	LastLogin time.Time `json:"last_login"`
 
 	Name string `json:"name"`
 	//Email    string `json:"email" gorm:"index"`
@@ -17,9 +17,6 @@ type User struct {
 	Tags string `json:"tags"`
 
 	Active string `json:"active"`
-
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
 
 	Identities []Identity
 	Tokens     []Token

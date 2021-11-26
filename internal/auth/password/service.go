@@ -16,7 +16,7 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(ctx context.Context, email, password string) (entity.Identity, entity.User, error)
+	Login(ctx context.Context, email, password string) (entity.Token, error)
 	Register(ctx context.Context, email, password string) error
 
 	HTTPLogin(c *gin.Context)
@@ -47,60 +47,57 @@ func NewService(db *gorm.DB, signingKey string, tokenExpiration int, logger log.
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(ctx context.Context, email, password string) (identity entity.Identity, user entity.User, err error) {
+func (s service) Login(ctx context.Context, email, password string) (token entity.Token, err error) {
 	logger := s.logger.With(ctx, "email", email)
 
-	err = s.db.Debug().Model(&user).Where("provider = ? AND uid = ?", "email", email).Association("Identities").Find(&identity)
+	user := entity.User{}
+	identity := entity.Identity{}
+	err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "email", email).First(&identity).Error
 
-	// to delete.
-	logger.Debug("user", user)
-	logger.Debug("identity", identity)
-
-	//err = s.db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "email", email).First(&identity).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return identity, user, err
+		return token, err
 	} else if err != nil {
-		return identity, user, err
+		return token, err
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(identity.Password), []byte(password)); err != nil {
 		logger.Infof("authentication failed")
-		return identity, user, e.ErrUnauthorized
+		return token, e.ErrUnauthorized
 	}
-
-	logger.Infof("authentication successful")
 
 	accessToken, err := s.generateAccessToken(identity, user)
 	if err != nil {
-		return identity, user, errors.New("error to generate access token: " + err.Error())
+		return token, errors.New("error to generate access token: " + err.Error())
 	}
 
-	tokenID, refreshToken, err := s.generateRefreshToken(identity, user)
+	refreshToken, err := s.generateRefreshToken(identity, user)
 	if err != nil {
-		return identity, user, errors.New("error to generate refresh token: " + err.Error())
+		return token, errors.New("error to generate refresh token: " + err.Error())
 	}
 
-	token := entity.Token{
-		ID:           tokenID,
-		CreatedAt:    time.Now(),
-		RefreshToken: refreshToken,
-		UserID:       identity.ID,
+	refreshToken.AccessToken = accessToken.AccessToken
+	refreshToken.UserID = identity.UserID
+	err = s.db.Debug().Model(&entity.Token{}).Create(&refreshToken).Error
+	if err != nil {
+		return
 	}
 
-	err = s.db.Debug().Model(&entity.Token{}).Create(&token).Error
-
-	user.AccessToken = accessToken
-	user.RefreshToken = refreshToken
+	token.AccessToken = accessToken.AccessToken
+	token.RefreshToken = refreshToken.RefreshToken
+	token.AtExpires = accessToken.AtExpires
 	return
 }
 
 // Register a new user to our database.
 func (s service) Register(ctx context.Context, email, password string) (err error) {
+	logger := s.logger.With(ctx, "email", email)
+
 	identity := entity.Identity{}
 	user := entity.User{}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
 	if err != nil {
+		logger.Error("error to create a hashed password:", err.Error())
 		return e.ErrInternalServerError
 	}
 
@@ -120,40 +117,60 @@ func (s service) Register(ctx context.Context, email, password string) (err erro
 	return
 }
 
-func (s service) generateAccessToken(identity entity.Identity, user entity.User) (at string, err error) {
+func (s service) generateAccessToken(identity entity.Identity, user entity.User) (token entity.Token, err error) {
 	accessToken := jwt.New(jwt.SigningMethodHS256)
+
+	// This system is not a security problem. So, the token expires in 2 hours.
+	tokenExpires := time.Now().Add(time.Hour * 2).Unix()
+
 	claims := accessToken.Claims.(jwt.MapClaims)
-
 	claims["authorized"] = true
-	claims["id"] = identity.GetID()
-	claims["uid"] = identity.GetUID()
-	claims["role"] = user.GetRole()
-	claims["exp"] = time.Now().Add(time.Hour * 2).Unix()
+	claims["identity_id"] = identity.GetID()
+	claims["identity_provider"] = identity.Provider // e-mail, google, facebook, etc.
+	claims["identity_uid"] = identity.GetUID() // e-mail address, google id, facebook id, etc.
+	claims["user_id"] = user.GetID()
+	claims["user_role"] = user.GetRole()
+	claims["exp"] = tokenExpires
 
-	at, err = accessToken.SignedString([]byte(s.signingKey))
+	at, err := accessToken.SignedString([]byte(s.signingKey))
 	if err != nil {
 		err = errors.New("error to generate access token: " + err.Error())
 		return
 	}
+	token.CreatedAt = time.Now()
+	token.AccessToken = at
+	token.AtExpires = tokenExpires
+	token.UserID = user.GetID()
 	return
 }
 
-func (s service) generateRefreshToken(identity entity.Identity, user entity.User) (id, rt string, err error) {
+func (s service) generateRefreshToken(identity entity.Identity, user entity.User) (token entity.Token, err error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
-	claims := refreshToken.Claims.(jwt.MapClaims)
-	id = uuid.New().String()
+	id := uuid.New().String()
 
+	// Refresh token expires in 7 days. But I think to increase this value.
+	tokenExpires := time.Now().AddDate(0, 0, 7).Unix()
+
+	claims := refreshToken.Claims.(jwt.MapClaims)
 	claims["id"] = id
 	claims["sub"] = 1
-	claims["user_id"] = identity.GetID()
-	claims["user_uid"] = identity.GetUID() // e-mail, google id, facebook id, etc
+	claims["identity_id"] = identity.GetID()
+	claims["identity_provider"] = identity.Provider // e-mail, google, facebook, etc.
+	claims["identity_uid"] = identity.GetUID() // e-mail address, google id, facebook id, etc.
+	claims["user_id"] = user.GetID()
 	claims["user_role"] = user.GetRole()
-	claims["exp"] = time.Now().AddDate(0, 0, 7).Unix()
+	claims["exp"] = tokenExpires
 
-	rt, err = refreshToken.SignedString([]byte(s.signingKey))
+	rt, err := refreshToken.SignedString([]byte(s.signingKey))
 	if err != nil {
 		err = errors.New("error to generate refresh token: " + err.Error())
 		return
 	}
+
+	token.ID = id
+	token.CreatedAt = time.Now()
+	token.RefreshToken = rt
+	token.RtExpires = tokenExpires
+	token.UserID = user.GetID()
 	return
 }

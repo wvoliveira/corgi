@@ -1,8 +1,8 @@
 package errors
 
 import (
-	"encoding/json"
 	"errors"
+	"github.com/gin-gonic/gin"
 	"net/http"
 )
 
@@ -46,13 +46,11 @@ type Errorer interface {
 }
 
 // EncodeError generate a response for errors.
-func EncodeError(err error, w http.ResponseWriter) {
+func EncodeError(c *gin.Context, err error) {
 	if err == nil {
 		panic("encodeError with nil error")
 	}
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.WriteHeader(codeFrom(err))
-	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+	c.JSON(codeFrom(err), map[string]interface{}{
 		"error": err.Error(),
 	})
 }

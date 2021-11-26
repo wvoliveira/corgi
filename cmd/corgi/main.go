@@ -28,7 +28,7 @@ func main() {
 
 	// Connect to the database and seed first users.
 	db := database.NewDatabase(logg, cfg)
-	if err := db.AutoMigrate(&entity.Identity{}, &entity.User{}, &entity.Link{}, &entity.Token{}); err != nil {
+	if err := db.AutoMigrate(&entity.User{}, &entity.Identity{}, &entity.Link{}, &entity.Token{}); err != nil {
 		logg.Error("error in auto migrate", "err", err.Error())
 		os.Exit(1)
 	}

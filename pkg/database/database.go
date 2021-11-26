@@ -72,7 +72,7 @@ func SeedUsers(logger log.Logger, db *gorm.DB, c config.Config) {
 
 	for _, user := range users {
 		var count int64
-		db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", user.Identities[0].Provider, user.Identities[0].UID).Count(&count)
+		db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", user.Identities[0].Provider, user.Identities[0].UID).Count(&count)
 		if count > 0 {
 			continue
 		}
@@ -84,6 +84,6 @@ func SeedUsers(logger log.Logger, db *gorm.DB, c config.Config) {
 		}
 
 		user.Identities[0].Password = string(hashedPassword)
-		db.Debug().Model(&entity.User{}).Create(&user)
+		db.Model(&entity.User{}).Create(&user)
 	}
 }
