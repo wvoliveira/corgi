@@ -1,6 +1,7 @@
 package password
 
 import (
+	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/gin-gonic/gin"
 )
@@ -12,9 +13,10 @@ func (s service) HTTPLogin(c *gin.Context) {
 		e.EncodeError(c, err)
 		return
 	}
+	identity := entity.Identity{Provider: "email", UID: dr.Email, Password: dr.Password}
 
 	// Business logic.
-	token, err := s.Login(c.Request.Context(), dr.Email, dr.Password)
+	token, err := s.Login(c.Request.Context(), identity)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -37,9 +39,10 @@ func (s service) HTTPRegister(c *gin.Context) {
 		e.EncodeError(c, err)
 		return
 	}
+	identity := entity.Identity{Provider: "email", UID: dr.Email, Password: dr.Password}
 
 	// Business logic.
-	err = s.Register(c.Request.Context(), dr.Email, dr.Password)
+	err = s.Register(c.Request.Context(), identity)
 	if err != nil {
 		e.EncodeError(c, err)
 		return

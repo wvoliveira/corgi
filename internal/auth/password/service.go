@@ -16,8 +16,8 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(ctx context.Context, email, password string) (entity.Token, error)
-	Register(ctx context.Context, email, password string) error
+	Login(ctx context.Context, identity entity.Identity) (entity.Token, error)
+	Register(ctx context.Context, identity entity.Identity) error
 
 	HTTPLogin(c *gin.Context)
 	HTTPRegister(c *gin.Context)
@@ -47,12 +47,11 @@ func NewService(db *gorm.DB, signingKey string, tokenExpiration int, logger log.
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(ctx context.Context, email, password string) (token entity.Token, err error) {
-	logger := s.logger.With(ctx, "email", email)
+func (s service) Login(ctx context.Context, identity entity.Identity) (token entity.Token, err error) {
+	logger := s.logger.With(ctx, identity.Provider, identity.UID)
 
-	user := entity.User{}
-	identity := entity.Identity{}
-	err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "email", email).First(&identity).Error
+	identityDB := entity.Identity{}
+	err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return token, err
@@ -60,23 +59,32 @@ func (s service) Login(ctx context.Context, email, password string) (token entit
 		return token, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(identity.Password), []byte(password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(identity.Password), []byte(identityDB.Password)); err != nil {
 		logger.Infof("authentication failed")
 		return token, e.ErrUnauthorized
 	}
 
-	accessToken, err := s.generateAccessToken(identity, user)
+	// Get user info.
+	user := entity.User{}
+	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return token, err
+	} else if err != nil {
+		return token, err
+	}
+
+	accessToken, err := s.generateAccessToken(identityDB, user)
 	if err != nil {
 		return token, errors.New("error to generate access token: " + err.Error())
 	}
 
-	refreshToken, err := s.generateRefreshToken(identity, user)
+	refreshToken, err := s.generateRefreshToken(identityDB, user)
 	if err != nil {
 		return token, errors.New("error to generate refresh token: " + err.Error())
 	}
 
 	refreshToken.AccessToken = accessToken.AccessToken
-	refreshToken.UserID = identity.UserID
+	refreshToken.UserID = identityDB.UserID
 	err = s.db.Debug().Model(&entity.Token{}).Create(&refreshToken).Error
 	if err != nil {
 		return
@@ -89,13 +97,11 @@ func (s service) Login(ctx context.Context, email, password string) (token entit
 }
 
 // Register a new user to our database.
-func (s service) Register(ctx context.Context, email, password string) (err error) {
-	logger := s.logger.With(ctx, "email", email)
+func (s service) Register(ctx context.Context, identity entity.Identity) (err error) {
+	logger := s.logger.With(ctx, identity.Provider, identity.UID)
 
-	identity := entity.Identity{}
 	user := entity.User{}
-
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(password), 8)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(identity.Password), 8)
 	if err != nil {
 		logger.Error("error to create a hashed password:", err.Error())
 		return e.ErrInternalServerError
@@ -103,8 +109,6 @@ func (s service) Register(ctx context.Context, email, password string) (err erro
 
 	identity.ID = uuid.New().String()
 	identity.CreatedAt = time.Now()
-	identity.Provider = "email"
-	identity.UID = email
 	identity.Password = string(hashedPassword)
 
 	user.ID = uuid.New().String()
