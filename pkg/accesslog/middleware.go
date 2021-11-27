@@ -18,10 +18,14 @@ func Handler(logger log.Logger) gin.HandlerFunc {
 		ctx = log.WithRequest(ctx, c.Request)
 		c.Request = c.Request.WithContext(ctx)
 
+		// Start logging request access log.
+		logger.With(ctx, "request", "start", start).
+			Infof("%s %s %s", c.Request.Method, c.Request.URL.Path, c.Request.Proto)
+
 		c.Next()
 
-		// generate an access log message
-		logger.With(ctx, "duration", time.Now().Sub(start).Milliseconds(), "status", c.Writer.Status()).
+		// End logging response access log.
+		logger.With(ctx, "response", "duration", time.Now().Sub(start).Milliseconds(), "status", c.Writer.Status()).
 			Infof("%s %s %s %d %d", c.Request.Method, c.Request.URL.Path, c.Request.Proto, c.Writer.Status(), c.Writer.Size())
 	}
 }

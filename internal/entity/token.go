@@ -9,11 +9,11 @@ type Token struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	LastUse   time.Time `json:"last_use"`
 
-	AccessToken  string `json:"-" gorm:"-"`
+	AccessToken  string `json:"access_token" gorm:"-"`
 	RefreshToken string `json:"refresh_token"`
 
-	AtExpires    int64  `json:"-" gorm:"-"`
-	RtExpires    int64  `json:"rt_expires_in"`
+	AccessExpires int64 `json:"access_expires" gorm:"-"`
+	RefreshExpires int64 `json:"refresh_expires"`
 
 	UserID string `json:"user_id" gorm:"index"`
 }

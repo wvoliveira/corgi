@@ -11,7 +11,7 @@ import (
 func MiddlewareAuth(logger log.Logger, secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if c.Request.Header["Token"] == nil {
-			e.EncodeError(e.ErrNoTokenFound, c.Writer)
+			e.EncodeError(c, e.ErrNoTokenFound)
 			return
 		}
 
@@ -25,21 +25,18 @@ func MiddlewareAuth(logger log.Logger, secret string) gin.HandlerFunc {
 		})
 
 		if err != nil {
-			e.EncodeError(e.ErrTokenExpired, c.Writer)
+			e.EncodeError(c, e.ErrTokenExpired)
 			return
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			accountID := claims["id"].(string)
-			accountEmail := claims["email"].(string)
-			accountRole := claims["role"].(string)
-
-			c.Set("AccountID", accountID)
-			c.Set("AccountEmail", accountEmail)
-			c.Set("AccountRole", accountRole)
-
+			c.Set("identity_id", claims["identity_id"].(string))
+			c.Set("identity_provider", claims["identity_provider"].(string))
+			c.Set("identity_uid", claims["identity_uid"].(string))
+			c.Set("user_id", claims["user_id"].(string))
+			c.Set("user_role", claims["user_role"].(string))
 			c.Next()
 		}
-		e.EncodeError(e.ErrUnauthorized, c.Writer)
+		e.EncodeError(c, e.ErrUnauthorized)
 	}
 }

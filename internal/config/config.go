@@ -81,9 +81,6 @@ type Config struct {
 
 // NewConfig load the configuration app.
 func NewConfig(logger log.Logger, path string) (config Config) {
-	// To delete.
-	viper.Debug()
-
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("CORGI_")
 

@@ -26,7 +26,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 	sr := authLoginResponse{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
-		ExpiresIn:    token.AtExpires,
+		ExpiresIn:    token.AccessExpires,
 		Err:          err,
 	}
 	encodeResponse(c, sr)

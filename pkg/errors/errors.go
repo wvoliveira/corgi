@@ -16,6 +16,9 @@ var (
 
 	ErrFieldsRequired = errors.New("require more body fields for this request")
 
+	// Token errors.
+	ErrTokenInvalid = errors.New("invalid token")
+
 	// Auth errors.
 	ErrUnauthorized = errors.New("sorry, you are not unauthorized")
 	ErrParseToken   = errors.New("there was an error in parsing token")

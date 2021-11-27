@@ -5,9 +5,9 @@ import (
 	"errors"
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
+	"github.com/elga-io/corgi/pkg/jwt"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -36,13 +36,13 @@ type Identity interface {
 type service struct {
 	logger          log.Logger
 	db              *gorm.DB
-	signingKey      string
+	secret      string
 	tokenExpiration int
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, signingKey string, tokenExpiration int, logger log.Logger) Service {
-	return service{logger, db, signingKey, tokenExpiration}
+func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration int) Service {
+	return service{logger, db, secret, tokenExpiration}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
@@ -54,12 +54,14 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (token ent
 	err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
+		logger.Error("this provider not found in database")
 		return token, err
 	} else if err != nil {
+		logger.Error("error when get identity from database", err.Error())
 		return token, err
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(identity.Password), []byte(identityDB.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(identityDB.Password), []byte(identity.Password)); err != nil {
 		logger.Infof("authentication failed")
 		return token, e.ErrUnauthorized
 	}
@@ -73,12 +75,12 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (token ent
 		return token, err
 	}
 
-	accessToken, err := s.generateAccessToken(identityDB, user)
+	accessToken, err := jwt.GenerateAccessToken(s.secret, identityDB, user)
 	if err != nil {
 		return token, errors.New("error to generate access token: " + err.Error())
 	}
 
-	refreshToken, err := s.generateRefreshToken(identityDB, user)
+	refreshToken, err := jwt.GenerateRefreshToken(s.secret, identityDB, user)
 	if err != nil {
 		return token, errors.New("error to generate refresh token: " + err.Error())
 	}
@@ -92,7 +94,7 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (token ent
 
 	token.AccessToken = accessToken.AccessToken
 	token.RefreshToken = refreshToken.RefreshToken
-	token.AtExpires = accessToken.AtExpires
+	token.AccessExpires = accessToken.AccessExpires
 	return
 }
 
@@ -118,63 +120,5 @@ func (s service) Register(ctx context.Context, identity entity.Identity) (err er
 	user.Identities = append(user.Identities, identity)
 
 	err = s.db.Debug().Model(&entity.User{}).Create(&user).Error
-	return
-}
-
-func (s service) generateAccessToken(identity entity.Identity, user entity.User) (token entity.Token, err error) {
-	accessToken := jwt.New(jwt.SigningMethodHS256)
-
-	// This system is not a security problem. So, the token expires in 2 hours.
-	tokenExpires := time.Now().Add(time.Hour * 2).Unix()
-
-	claims := accessToken.Claims.(jwt.MapClaims)
-	claims["authorized"] = true
-	claims["identity_id"] = identity.GetID()
-	claims["identity_provider"] = identity.Provider // e-mail, google, facebook, etc.
-	claims["identity_uid"] = identity.GetUID() // e-mail address, google id, facebook id, etc.
-	claims["user_id"] = user.GetID()
-	claims["user_role"] = user.GetRole()
-	claims["exp"] = tokenExpires
-
-	at, err := accessToken.SignedString([]byte(s.signingKey))
-	if err != nil {
-		err = errors.New("error to generate access token: " + err.Error())
-		return
-	}
-	token.CreatedAt = time.Now()
-	token.AccessToken = at
-	token.AtExpires = tokenExpires
-	token.UserID = user.GetID()
-	return
-}
-
-func (s service) generateRefreshToken(identity entity.Identity, user entity.User) (token entity.Token, err error) {
-	refreshToken := jwt.New(jwt.SigningMethodHS256)
-	id := uuid.New().String()
-
-	// Refresh token expires in 7 days. But I think to increase this value.
-	tokenExpires := time.Now().AddDate(0, 0, 7).Unix()
-
-	claims := refreshToken.Claims.(jwt.MapClaims)
-	claims["id"] = id
-	claims["sub"] = 1
-	claims["identity_id"] = identity.GetID()
-	claims["identity_provider"] = identity.Provider // e-mail, google, facebook, etc.
-	claims["identity_uid"] = identity.GetUID() // e-mail address, google id, facebook id, etc.
-	claims["user_id"] = user.GetID()
-	claims["user_role"] = user.GetRole()
-	claims["exp"] = tokenExpires
-
-	rt, err := refreshToken.SignedString([]byte(s.signingKey))
-	if err != nil {
-		err = errors.New("error to generate refresh token: " + err.Error())
-		return
-	}
-
-	token.ID = id
-	token.CreatedAt = time.Now()
-	token.RefreshToken = rt
-	token.RtExpires = tokenExpires
-	token.UserID = user.GetID()
 	return
 }

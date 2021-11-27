@@ -5,10 +5,12 @@ import (
 	"github.com/elga-io/corgi/internal/auth/password"
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
+	"github.com/elga-io/corgi/pkg/accesslog"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
-	_ "github.com/lib/pq"
 	"net/http"
 	"os"
 	"os/signal"
@@ -35,17 +37,23 @@ func main() {
 	database.SeedUsers(logg, db, cfg)
 
 	// Services.
-	authPasswordService := password.NewService(db, cfg.App.SecretKey, 30, logg)
+	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30)
 
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
+	// Start sessions.
+	store := cookie.NewStore([]byte(cfg.App.SecretKey))
+
 	// Routers.
 	router := gin.New()
-	v1 := router.Group("/api/v1")
-	v1.POST("/auth/password/login", authPasswordService.HTTPLogin)
-	v1.POST("/auth/password/register", authPasswordService.HTTPRegister)
+	router.Use(sessions.Sessions("session", store))
+	router.Use(accesslog.Handler(logg))
+
+	v1Auth := router.Group("/api/v1/auth")
+	v1Auth.POST("/password/login", authPasswordService.HTTPLogin)
+	v1Auth.POST("/password/register", authPasswordService.HTTPRegister)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Server.HTTPPort,
@@ -75,7 +83,6 @@ func main() {
 	if err := srv.Shutdown(ctx); err != nil {
 		logg.Info("Server forced to shutdown: ", err)
 	}
-
 	logg.Info("Server exiting")
 
 }
