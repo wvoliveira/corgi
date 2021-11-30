@@ -36,6 +36,9 @@ var (
 	// Internal errors.
 	ErrInternalServerError = errors.New("internal server error")
 	ErrBadRouting          = errors.New("inconsistent mapping between route and handler (programmer error)")
+
+	// ErrRequestNeedBody error if client not send a body payload.
+	ErrRequestNeedBody = errors.New("methods POST and PATCH needs a body payload")
 )
 
 /*
@@ -56,6 +59,7 @@ func EncodeError(c *gin.Context, err error) {
 	c.JSON(codeFrom(err), map[string]interface{}{
 		"error": err.Error(),
 	})
+	return
 }
 
 func codeFrom(err error) int {

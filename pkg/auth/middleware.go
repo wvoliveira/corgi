@@ -3,25 +3,29 @@ package auth
 import (
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"net/http"
 )
 
 // MiddlewareAuth check if auth ok and set claims in request header.
 func MiddlewareAuth(logger log.Logger, secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.Header["Token"] == nil {
-			e.EncodeError(c, e.ErrNoTokenFound)
+		sessionAuth := sessions.DefaultMany(c, "session_auth")
+		tokenInterface := sessionAuth.Get("access_token")
+		if tokenInterface == nil {
+			logger.Info("jwt not found in session cookies")
+			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
 			return
 		}
 
-		var SigningKey = []byte(secret)
-
-		token, err := jwt.Parse(c.Request.Header["Token"][0], func(token *jwt.Token) (interface{}, error) {
+		accessToken := tokenInterface.(string)
+		token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				return nil, e.ErrParseToken
 			}
-			return SigningKey, nil
+			return []byte(secret), nil
 		})
 
 		if err != nil {
@@ -36,7 +40,9 @@ func MiddlewareAuth(logger log.Logger, secret string) gin.HandlerFunc {
 			c.Set("user_id", claims["user_id"].(string))
 			c.Set("user_role", claims["user_role"].(string))
 			c.Next()
+		} else {
+			e.EncodeError(c, e.ErrUnauthorized)
 		}
-		e.EncodeError(c, e.ErrUnauthorized)
+		return
 	}
 }

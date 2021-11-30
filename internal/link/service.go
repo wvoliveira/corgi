@@ -2,134 +2,121 @@ package link
 
 import (
 	"context"
-	validation "github.com/go-ozzo/ozzo-validation/v4"
-	"github.com/qiangxue/go-rest-api/internal/entity"
-	"github.com/qiangxue/go-rest-api/pkg/log"
+	"errors"
+	"github.com/elga-io/corgi/internal/entity"
+	e "github.com/elga-io/corgi/pkg/errors"
+	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
+	"gorm.io/gorm"
 	"time"
 )
 
-// Service encapsulates usecase logic for albums.
+// Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Get(ctx context.Context, id string) (Album, error)
-	Query(ctx context.Context, offset, limit int) ([]Album, error)
-	Count(ctx context.Context) (int, error)
-	Create(ctx context.Context, input CreateAlbumRequest) (Album, error)
-	Update(ctx context.Context, id string, input UpdateAlbumRequest) (Album, error)
-	Delete(ctx context.Context, id string) (Album, error)
-}
+	AddLink(ctx context.Context, link addLinkRequest) (entity.Link, error)
+	FindLinkByID(ctx context.Context, link findLinkByIDRequest) (entity.Link, error)
+	FindLinks(ctx context.Context, link findLinksRequest) ([]entity.Link, error)
+	UpdateLink(ctx context.Context, link updateLinkRequest) (entity.Link, error)
+	DeleteLink(ctx context.Context, link deleteLinkRequest) error
 
-// Album represents the data about an album.
-type Album struct {
-	entity.Album
-}
-
-// CreateAlbumRequest represents an album creation request.
-type CreateAlbumRequest struct {
-	Name string `json:"name"`
-}
-
-// Validate validates the CreateAlbumRequest fields.
-func (m CreateAlbumRequest) Validate() error {
-	return validation.ValidateStruct(&m,
-		validation.Field(&m.Name, validation.Required, validation.Length(0, 128)),
-	)
-}
-
-// UpdateAlbumRequest represents an album update request.
-type UpdateAlbumRequest struct {
-	Name string `json:"name"`
-}
-
-// Validate validates the CreateAlbumRequest fields.
-func (m UpdateAlbumRequest) Validate() error {
-	return validation.ValidateStruct(&m,
-		validation.Field(&m.Name, validation.Required, validation.Length(0, 128)),
-	)
+	HTTPAddLink(c *gin.Context)
+	HTTPFindLinkByID(c *gin.Context)
+	HTTPFindLinks(c *gin.Context)
+	HTTPUpdateLink(c *gin.Context)
+	HTTPDeleteLink(c *gin.Context)
 }
 
 type service struct {
-	repo   Repository
-	logger log.Logger
+	logger          log.Logger
+	db              *gorm.DB
 }
 
-// NewService creates a new album service.
-func NewService(repo Repository, logger log.Logger) Service {
-	return service{repo, logger}
+// NewService creates a new authentication service.
+func NewService(logger log.Logger, db *gorm.DB) Service {
+	return service{logger, db}
 }
 
-// Get returns the album with the specified the album ID.
-func (s service) Get(ctx context.Context, id string) (Album, error) {
-	album, err := s.repo.Get(ctx, id)
-	if err != nil {
-		return Album{}, err
+// AddLink create a new shortener link.
+func (s service) AddLink(ctx context.Context, link addLinkRequest) (l entity.Link, err error) {
+	logger := s.logger.With(ctx, "method", "AddLink", "user_id", link.UserID)
+
+	err = s.db.Model(&entity.Link{}).Where("url_short = ?", link.URLShort).Take(&l).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		l.ID = uuid.New().String()
+		l.CreatedAt = time.Now()
+		l.URLShort = link.URLShort
+		l.URLFull = link.URLFull
+		l.Title = link.Title
+		l.Active = "true"
+		l.UserID = link.UserID
+
+		err = s.db.Model(&entity.Link{}).Create(&l).Error
+		return l, err
+	} else if err == nil {
+		logger.Warnf("shortener link '%s' already exists", link.URLShort)
+		return l, e.ErrLinkKeywordAlreadyExists
 	}
-	return Album{album}, nil
+	logger.Errorf("error when creating a new shortener link, look: %s", err.Error())
+	return l, e.ErrInternalServerError
 }
 
-// Create creates a new album.
-func (s service) Create(ctx context.Context, req CreateAlbumRequest) (Album, error) {
-	if err := req.Validate(); err != nil {
-		return Album{}, err
+// FindLinkByID get a shortener link from ID.
+func (s service) FindLinkByID(ctx context.Context, link findLinkByIDRequest) (l entity.Link, err error) {
+	logger := s.logger.With(ctx, "method", "FindLinkByID", "user_id", link.UserID)
+
+	err = s.db.Model(&entity.Link{}).Where("link_id = ? AND user_id = ?", link.ID, link.UserID).First(&l).Error
+	if err == gorm.ErrRecordNotFound {
+		logger.Infof("the link id '%s' not found from user_id '%s'", link.ID, link.UserID)
+		return l, e.ErrLinkIDNotFound
+	} else if err == nil {
+		return
 	}
-	id := entity.GenerateID()
-	now := time.Now()
-	err := s.repo.Create(ctx, entity.Album{
-		ID:        id,
-		Name:      req.Name,
-		CreatedAt: now,
-		UpdatedAt: now,
-	})
-	if err != nil {
-		return Album{}, err
-	}
-	return s.Get(ctx, id)
+	logger.Errorf("oh crap, an errors occurred: %s", err.Error())
+	return
 }
 
-// Update updates the album with the specified ID.
-func (s service) Update(ctx context.Context, id string, req UpdateAlbumRequest) (Album, error) {
-	if err := req.Validate(); err != nil {
-		return Album{}, err
-	}
+// FindLinks get a list of links from database.
+func (s service) FindLinks(ctx context.Context, link findLinksRequest) (l []entity.Link, err error) {
+	logger := s.logger.With(ctx, "method", "FindLinks", "user_id", link.UserID)
 
-	album, err := s.Get(ctx, id)
-	if err != nil {
-		return album, err
+	err = s.db.Model(&entity.Link{}).Where("user_id = ?", link.UserID).Offset(link.Offset).Limit(link.Limit).Find(&l).Error
+	if err == gorm.ErrRecordNotFound {
+		logger.Infof("the links with '%d' offset and '%d' limit not found from user_id '%s'", link.Offset, link.Limit, link.UserID)
+		return l, e.ErrLinkIDNotFound
+	} else if err == nil {
+		return
 	}
-	album.Name = req.Name
-	album.UpdatedAt = time.Now()
-
-	if err := s.repo.Update(ctx, album.Album); err != nil {
-		return album, err
-	}
-	return album, nil
+	logger.Errorf("oh crap, an errors occurred: %s", err.Error())
+	return
 }
 
-// Delete deletes the album with the specified ID.
-func (s service) Delete(ctx context.Context, id string) (Album, error) {
-	album, err := s.Get(ctx, id)
-	if err != nil {
-		return Album{}, err
+// UpdateLink update specific link by ID.
+func (s service) UpdateLink(ctx context.Context, link updateLinkRequest) (l entity.Link, err error) {
+	logger := s.logger.With(ctx, "method", "FindLinks", "user_id", link.UserID)
+
+	err = s.db.Model(&entity.Link{}).Where("link_id = ? AND user_id = ?", link.ID, link.UserID).Updates(&l).Error
+	if err == gorm.ErrRecordNotFound {
+		logger.Infof("the link id '%s' not found from user_id '%s'", link.ID, link.UserID)
+		return l, e.ErrLinkIDNotFound
+	} else if err == nil {
+		return
 	}
-	if err = s.repo.Delete(ctx, id); err != nil {
-		return Album{}, err
-	}
-	return album, nil
+	logger.Errorf("oh crap, an errors occurred: %s", err.Error())
+	return
 }
 
-// Count returns the number of albums.
-func (s service) Count(ctx context.Context) (int, error) {
-	return s.repo.Count(ctx)
-}
+// DeleteLink delete a link by ID.
+func (s service) DeleteLink(ctx context.Context, link deleteLinkRequest) (err error) {
+	logger := s.logger.With(ctx, "method", "FindLinks", "user_id", link.UserID)
 
-// Query returns the albums with the specified offset and limit.
-func (s service) Query(ctx context.Context, offset, limit int) ([]Album, error) {
-	items, err := s.repo.Query(ctx, offset, limit)
-	if err != nil {
-		return nil, err
+	err = s.db.Debug().Model(&entity.Link{}).Where("link_id = ? AND user_id = ?", link.ID, link.UserID).Delete(&link).Error
+	if err == gorm.ErrRecordNotFound {
+		logger.Infof("the link id '%s' not found from user_id '%s'", link.ID, link.UserID)
+		return e.ErrLinkIDNotFound
+	} else if err == nil {
+		return
 	}
-	result := []Album{}
-	for _, item := range items {
-		result = append(result, Album{item})
-	}
-	return result, nil
+	logger.Errorf("oh crap, an errors occurred: %s", err.Error())
+	return
 }

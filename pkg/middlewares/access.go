@@ -1,5 +1,5 @@
 // Package accesslog provides a middleware that records every RESTful API call in a log message.
-package accesslog
+package middlewares
 
 import (
 	"github.com/elga-io/corgi/pkg/log"
@@ -7,8 +7,8 @@ import (
 	"time"
 )
 
-// Handler returns a middleware that records an access log message for every HTTP request being processed.
-func Handler(logger log.Logger) gin.HandlerFunc {
+// Access returns a middleware that records an access log message for every HTTP request being processed.
+func Access(logger log.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
@@ -19,13 +19,13 @@ func Handler(logger log.Logger) gin.HandlerFunc {
 		c.Request = c.Request.WithContext(ctx)
 
 		// Start logging request access log.
-		logger.With(ctx, "request", "start", start).
+		logger.With(ctx, "http", "request", "start", start).
 			Infof("%s %s %s", c.Request.Method, c.Request.URL.Path, c.Request.Proto)
 
 		c.Next()
 
 		// End logging response access log.
-		logger.With(ctx, "response", "duration", time.Now().Sub(start).Milliseconds(), "status", c.Writer.Status()).
+		logger.With(ctx, "http", "response", "duration", time.Now().Sub(start).Milliseconds(), "status", c.Writer.Status()).
 			Infof("%s %s %s %d %d", c.Request.Method, c.Request.URL.Path, c.Request.Proto, c.Writer.Status(), c.Writer.Size())
 	}
 }

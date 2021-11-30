@@ -3,6 +3,7 @@ package password
 import (
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -28,6 +29,14 @@ func (s service) HTTPLogin(c *gin.Context) {
 		RefreshToken: token.RefreshToken,
 		ExpiresIn:    token.AccessExpires,
 		Err:          err,
+	}
+
+	sessionAuth := sessions.DefaultMany(c, "session_auth")
+	sessionAuth.Set("access_token", token.AccessToken)
+	err = sessionAuth.Save()
+	if err != nil {
+		e.EncodeError(c, err)
+		return
 	}
 	encodeResponse(c, sr)
 }

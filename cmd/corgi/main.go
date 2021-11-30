@@ -5,9 +5,11 @@ import (
 	"github.com/elga-io/corgi/internal/auth/password"
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
-	"github.com/elga-io/corgi/pkg/accesslog"
+	"github.com/elga-io/corgi/internal/link"
+	"github.com/elga-io/corgi/pkg/auth"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -38,6 +40,7 @@ func main() {
 
 	// Services.
 	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30)
+	linkService := link.NewService(logg, db)
 
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -48,12 +51,22 @@ func main() {
 
 	// Routers.
 	router := gin.New()
-	router.Use(sessions.Sessions("session", store))
-	router.Use(accesslog.Handler(logg))
+	router.Use(sessions.SessionsMany([]string{"session_unique", "session_auth"}, store))
+	router.Use(middlewares.Access(logg))
+	router.Use(middlewares.Checks())
 
 	v1Auth := router.Group("/api/v1/auth")
 	v1Auth.POST("/password/login", authPasswordService.HTTPLogin)
 	v1Auth.POST("/password/register", authPasswordService.HTTPRegister)
+	// v1Auth.POST("/google/login", authGoogleService.HTTPLogin)
+
+	v1Links := router.Group("/api/v1/links")
+	v1Links.Use(auth.MiddlewareAuth(logg, cfg.App.SecretKey))
+	v1Links.POST("/", linkService.HTTPAddLink)
+	v1Links.GET("/{id}", linkService.HTTPFindLinkByID)
+	v1Links.GET("/", linkService.HTTPFindLinks)
+	v1Links.PATCH("/{id}", linkService.HTTPUpdateLink)
+	v1Links.DELETE("/{id}", linkService.HTTPDeleteLink)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Server.HTTPPort,
