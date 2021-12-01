@@ -6,7 +6,6 @@ import (
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
 	"github.com/elga-io/corgi/internal/link"
-	"github.com/elga-io/corgi/pkg/auth"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/elga-io/corgi/pkg/middlewares"
@@ -61,12 +60,13 @@ func main() {
 	// v1Auth.POST("/google/login", authGoogleService.HTTPLogin)
 
 	v1Links := router.Group("/api/v1/links")
-	v1Links.Use(auth.MiddlewareAuth(logg, cfg.App.SecretKey))
+	v1Links.Use(middlewares.Auth(logg, cfg.App.SecretKey))
+
 	v1Links.POST("/", linkService.HTTPAddLink)
-	v1Links.GET("/{id}", linkService.HTTPFindLinkByID)
+	v1Links.GET("/:id", linkService.HTTPFindLinkByID)
 	v1Links.GET("/", linkService.HTTPFindLinks)
-	v1Links.PATCH("/{id}", linkService.HTTPUpdateLink)
-	v1Links.DELETE("/{id}", linkService.HTTPDeleteLink)
+	v1Links.PATCH("/:id", linkService.HTTPUpdateLink)
+	v1Links.DELETE("/:id", linkService.HTTPDeleteLink)
 
 	srv := &http.Server{
 		Addr:    ":" + cfg.Server.HTTPPort,

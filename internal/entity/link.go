@@ -15,7 +15,7 @@ type Link struct {
 	Title    string `json:"title"`
 	Active   string `json:"active"`
 
-	UserID string `json:"user_id" gorm:"index"`
+	UserID string `json:"-" gorm:"index"`
 }
 
 // GetID returns the Link ID.

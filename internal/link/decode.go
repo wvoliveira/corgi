@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/gin-gonic/gin"
 	"strconv"
+	"time"
 )
 
 type addLinkRequest struct {
@@ -25,17 +26,20 @@ type findLinksRequest struct {
 }
 
 type updateLinkRequest struct {
-	ID       string
-	URLShort string `json:"url_short" gorm:"index"`
-	URLFull  string `json:"url_full"`
-	Title    string `json:"title"`
-	Active   string `json:"active"`
-	UserID   string `json:"user_id"`
+	ID        string    `json:"-"`
+	CreatedAt time.Time `json:"-"`
+	UpdatedAt time.Time `json:"-"`
+	URLShort  string    `json:"url_short"`
+	URLFull   string    `json:"url_full"`
+	Title     string    `json:"title"`
+	Active    string    `json:"active"`
+	UserID    string    `json:"-"`
 }
 
 type deleteLinkRequest struct {
-	ID     string
-	UserID string `json:"user_id"`
+	ID       string
+	URLShort string
+	UserID   string `json:"user_id"`
 }
 
 func decodeAddLink(c *gin.Context) (req addLinkRequest, err error) {

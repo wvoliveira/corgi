@@ -1,4 +1,4 @@
-package auth
+package middlewares
 
 import (
 	e "github.com/elga-io/corgi/pkg/errors"
@@ -9,19 +9,21 @@ import (
 	"net/http"
 )
 
-// MiddlewareAuth check if auth ok and set claims in request header.
-func MiddlewareAuth(logger log.Logger, secret string) gin.HandlerFunc {
+// Auth check if auth ok and set claims in request header.
+func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		logg := logger.With(c.Request.Context())
+
 		sessionAuth := sessions.DefaultMany(c, "session_auth")
 		if sessionAuth == nil {
-			logger.Info("session auth not found")
+			logg.Info("session_auth not found")
 			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
 			return
 		}
 
 		tokenInterface := sessionAuth.Get("access_token")
 		if tokenInterface == nil {
-			logger.Info("jwt not found in session cookies")
+			logg.Info("access token not found in session cookies")
 			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
 			return
 		}
@@ -29,13 +31,16 @@ func MiddlewareAuth(logger log.Logger, secret string) gin.HandlerFunc {
 		accessToken := tokenInterface.(string)
 		token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-				return nil, e.ErrParseToken
+				logg.Warnf("fail to parse access token")
+				_ = c.AbortWithError(http.StatusUnauthorized, e.ErrTokenInvalid)
+				return token, e.ErrParseToken
 			}
 			return []byte(secret), nil
 		})
 
 		if err != nil {
-			e.EncodeError(c, e.ErrTokenExpired)
+			logg.Infof("error to parse access token: %s", err.Error())
+			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrTokenExpired)
 			return
 		}
 
@@ -47,7 +52,8 @@ func MiddlewareAuth(logger log.Logger, secret string) gin.HandlerFunc {
 			c.Set("user_role", claims["user_role"].(string))
 			c.Next()
 		} else {
-			e.EncodeError(c, e.ErrUnauthorized)
+			logg.Info("invalid token! so sorry")
+			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrTokenInvalid)
 		}
 		return
 	}

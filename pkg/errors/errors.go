@@ -29,7 +29,7 @@ var (
 	ErrAccountDeleteYourSelf = errors.New("delete yourself? this is not a good idea")
 
 	// Link errors.
-	ErrLinkIDNotFound           = errors.New("link id not found")
+	ErrLinkNotFound             = errors.New("link not found")
 	ErrLinkKeywordNotFound      = errors.New("link keyword not found")
 	ErrLinkKeywordAlreadyExists = errors.New("this link keyword already exists in our database")
 
@@ -64,7 +64,7 @@ func EncodeError(c *gin.Context, err error) {
 
 func codeFrom(err error) int {
 	switch err {
-	case ErrNotFound, ErrLinkIDNotFound, ErrLinkKeywordNotFound:
+	case ErrNotFound, ErrLinkNotFound, ErrLinkKeywordNotFound:
 		return http.StatusNotFound
 	case ErrLinkKeywordAlreadyExists, ErrAlreadyExists:
 		return http.StatusForbidden
