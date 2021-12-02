@@ -21,6 +21,8 @@ type Service interface {
 
 	HTTPLogin(c *gin.Context)
 	HTTPRegister(c *gin.Context)
+
+	Routers(r *gin.RouterGroup)
 }
 
 // Identity represents an authenticated user identity.
@@ -36,7 +38,7 @@ type Identity interface {
 type service struct {
 	logger          log.Logger
 	db              *gorm.DB
-	secret      string
+	secret          string
 	tokenExpiration int
 }
 

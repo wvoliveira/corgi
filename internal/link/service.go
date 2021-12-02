@@ -15,22 +15,24 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	AddLink(ctx context.Context, link addLinkRequest) (entity.Link, error)
-	FindLinkByID(ctx context.Context, link findLinkByIDRequest) (entity.Link, error)
-	FindLinks(ctx context.Context, link findLinksRequest) ([]entity.Link, error)
-	UpdateLink(ctx context.Context, link updateLinkRequest) (entity.Link, error)
-	DeleteLink(ctx context.Context, link deleteLinkRequest) error
+	Add(ctx context.Context, link addRequest) (entity.Link, error)
+	FindByID(ctx context.Context, link findByIDRequest) (entity.Link, error)
+	FindAll(ctx context.Context, link findAllRequest) ([]entity.Link, error)
+	Update(ctx context.Context, link updateRequest) (entity.Link, error)
+	Delete(ctx context.Context, link deleteRequest) error
 
-	HTTPAddLink(c *gin.Context)
-	HTTPFindLinkByID(c *gin.Context)
-	HTTPFindLinks(c *gin.Context)
-	HTTPUpdateLink(c *gin.Context)
-	HTTPDeleteLink(c *gin.Context)
+	HTTPAdd(c *gin.Context)
+	HTTPFindByID(c *gin.Context)
+	HTTPFindAll(c *gin.Context)
+	HTTPUpdate(c *gin.Context)
+	HTTPDelete(c *gin.Context)
+
+	Routers(r *gin.RouterGroup)
 }
 
 type service struct {
-	logger          log.Logger
-	db              *gorm.DB
+	logger log.Logger
+	db     *gorm.DB
 }
 
 // NewService creates a new authentication service.
@@ -38,8 +40,8 @@ func NewService(logger log.Logger, db *gorm.DB) Service {
 	return service{logger, db}
 }
 
-// AddLink create a new shortener link.
-func (s service) AddLink(ctx context.Context, link addLinkRequest) (l entity.Link, err error) {
+// Add create a new shortener link.
+func (s service) Add(ctx context.Context, link addRequest) (l entity.Link, err error) {
 	logger := s.logger.With(ctx, "user_id", link.UserID)
 	logger.Infof("add link with url short '%s'", link.URLShort)
 
@@ -63,8 +65,8 @@ func (s service) AddLink(ctx context.Context, link addLinkRequest) (l entity.Lin
 	return l, e.ErrInternalServerError
 }
 
-// FindLinkByID get a shortener link from ID.
-func (s service) FindLinkByID(ctx context.Context, link findLinkByIDRequest) (l entity.Link, err error) {
+// FindByID get a shortener link from ID.
+func (s service) FindByID(ctx context.Context, link findByIDRequest) (l entity.Link, err error) {
 	logger := s.logger.With(ctx, "user_id", link.UserID)
 	logger.Infof("find link with id '%s'", link.ID)
 
@@ -79,8 +81,8 @@ func (s service) FindLinkByID(ctx context.Context, link findLinkByIDRequest) (l 
 	return
 }
 
-// FindLinks get a list of links from database.
-func (s service) FindLinks(ctx context.Context, link findLinksRequest) (l []entity.Link, err error) {
+// FindAll get a list of links from database.
+func (s service) FindAll(ctx context.Context, link findAllRequest) (l []entity.Link, err error) {
 	logger := s.logger.With(ctx, "user_id", link.UserID)
 	logger.Infof("find links with offset '%d' and limit '%d'", link.Offset, link.Limit)
 
@@ -95,8 +97,8 @@ func (s service) FindLinks(ctx context.Context, link findLinksRequest) (l []enti
 	return
 }
 
-// UpdateLink update specific link by ID.
-func (s service) UpdateLink(ctx context.Context, link updateLinkRequest) (l entity.Link, err error) {
+// Update change specific link by ID.
+func (s service) Update(ctx context.Context, link updateRequest) (l entity.Link, err error) {
 	logger := s.logger.With(ctx, "user_id", link.UserID)
 	logger.Infof("updating link with id '%s'", link.ID)
 
@@ -121,8 +123,8 @@ func (s service) UpdateLink(ctx context.Context, link updateLinkRequest) (l enti
 	return
 }
 
-// DeleteLink delete a link by ID.
-func (s service) DeleteLink(ctx context.Context, link deleteLinkRequest) (err error) {
+// Delete delete a link by ID.
+func (s service) Delete(ctx context.Context, link deleteRequest) (err error) {
 	logger := s.logger.With(ctx, "user_id", link.UserID)
 	logger.Infof("deleting link with id '%s'", link.ID)
 

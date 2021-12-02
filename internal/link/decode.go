@@ -7,25 +7,25 @@ import (
 	"time"
 )
 
-type addLinkRequest struct {
+type addRequest struct {
 	URLShort string `json:"url_short"`
 	URLFull  string `json:"url_full"`
 	Title    string `json:"title"`
 	UserID   string `json:"user_id"`
 }
 
-type findLinkByIDRequest struct {
+type findByIDRequest struct {
 	ID     string
 	UserID string `json:"user_id"`
 }
 
-type findLinksRequest struct {
+type findAllRequest struct {
 	Offset int
 	Limit  int
 	UserID string `json:"user_id"`
 }
 
-type updateLinkRequest struct {
+type updateRequest struct {
 	ID        string    `json:"-"`
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
@@ -36,13 +36,13 @@ type updateLinkRequest struct {
 	UserID    string    `json:"-"`
 }
 
-type deleteLinkRequest struct {
+type deleteRequest struct {
 	ID       string
 	URLShort string
 	UserID   string `json:"user_id"`
 }
 
-func decodeAddLink(c *gin.Context) (req addLinkRequest, err error) {
+func decodeAdd(c *gin.Context) (req addRequest, err error) {
 	userID, _ := c.Get("user_id")
 	if err = json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		return req, err
@@ -51,7 +51,7 @@ func decodeAddLink(c *gin.Context) (req addLinkRequest, err error) {
 	return req, nil
 }
 
-func decodeFindLinkByID(c *gin.Context) (req findLinkByIDRequest, err error) {
+func decodeFindByID(c *gin.Context) (req findByIDRequest, err error) {
 	userID, _ := c.Get("user_id")
 	linkID := c.Param("id")
 
@@ -60,7 +60,7 @@ func decodeFindLinkByID(c *gin.Context) (req findLinkByIDRequest, err error) {
 	return req, nil
 }
 
-func decodeFindLinks(c *gin.Context) (req findLinksRequest, err error) {
+func decodeFindAll(c *gin.Context) (req findAllRequest, err error) {
 	userID, _ := c.Get("user_id")
 
 	page, _ := strconv.Atoi(c.Query("page"))
@@ -83,7 +83,7 @@ func decodeFindLinks(c *gin.Context) (req findLinksRequest, err error) {
 	return req, nil
 }
 
-func decodeUpdateLink(c *gin.Context) (req updateLinkRequest, err error) {
+func decodeUpdate(c *gin.Context) (req updateRequest, err error) {
 	userID, _ := c.Get("user_id")
 	linkID := c.Param("id")
 
@@ -95,7 +95,7 @@ func decodeUpdateLink(c *gin.Context) (req updateLinkRequest, err error) {
 	return req, nil
 }
 
-func decodeDeleteLink(c *gin.Context) (req deleteLinkRequest, err error) {
+func decodeDelete(c *gin.Context) (req deleteRequest, err error) {
 	userID, _ := c.Get("user_id")
 	linkID := c.Param("id")
 	req.ID = linkID

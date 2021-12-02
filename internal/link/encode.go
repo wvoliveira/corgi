@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type addLinkResponse struct {
+type addResponse struct {
 	ID       string `json:"id"`
 	URLShort string `json:"url_short"`
 	URLFull  string `json:"url_full"`
@@ -14,34 +14,34 @@ type addLinkResponse struct {
 	Err      error  `json:"err,omitempty"`
 }
 
-func (r addLinkResponse) Error() error { return r.Err }
+func (r addResponse) Error() error { return r.Err }
 
-type findLinkByIDResponse struct {
+type findByIDResponse struct {
 	Link entity.Link `json:"data,omitempty"`
 	Err  error       `json:"error,omitempty"`
 }
 
-func (r findLinkByIDResponse) Error() error { return r.Err }
+func (r findByIDResponse) Error() error { return r.Err }
 
-type findLinksResponse struct {
+type findAllResponse struct {
 	Links []entity.Link `json:"data,omitempty"`
 	Err   error         `json:"error,omitempty"`
 }
 
-func (r findLinksResponse) Error() error { return r.Err }
+func (r findAllResponse) Error() error { return r.Err }
 
-type updateLinkResponse struct {
+type updateResponse struct {
 	Link entity.Link `json:"data,omitempty"`
+	Err  error       `json:"err,omitempty"`
+}
+
+func (r updateResponse) Error() error { return r.Err }
+
+type deleteResponse struct {
 	Err error `json:"err,omitempty"`
 }
 
-func (r updateLinkResponse) Error() error { return r.Err }
-
-type deleteLinkResponse struct {
-	Err error `json:"err,omitempty"`
-}
-
-func (r deleteLinkResponse) Error() error { return r.Err }
+func (r deleteResponse) Error() error { return r.Err }
 
 func encodeResponse(c *gin.Context, response interface{}) {
 	if err, ok := response.(e.Errorer); ok && err.Error() != nil {

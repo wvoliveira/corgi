@@ -7,9 +7,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+func (s service) Routers(r *gin.RouterGroup) {
+	r.POST("/auth/password/login", s.HTTPLogin)
+	r.POST("/auth/password/register", s.HTTPRegister)
+	// v1Auth.POST("/google/login", authGoogleService.HTTPLogin)
+}
+
 func (s service) HTTPLogin(c *gin.Context) {
 	// Decode request to request object.
-	dr, err := decodeAuthLoginRequest(c.Request)
+	dr, err := decodeLoginRequest(c.Request)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -24,7 +30,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	sr := authLoginResponse{
+	sr := loginResponse{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		ExpiresIn:    token.AccessExpires,
@@ -43,7 +49,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 
 func (s service) HTTPRegister(c *gin.Context) {
 	// Decode request to request object.
-	dr, err := decodeAuthRegisterRequest(c.Request)
+	dr, err := decodeRegisterRequest(c.Request)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -58,6 +64,6 @@ func (s service) HTTPRegister(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	sr := authRegisterResponse{Err: err}
+	sr := registerResponse{Err: err}
 	encodeResponse(c, sr)
 }

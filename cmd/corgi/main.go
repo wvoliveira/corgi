@@ -5,6 +5,7 @@ import (
 	"github.com/elga-io/corgi/internal/auth/password"
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
+	"github.com/elga-io/corgi/internal/health"
 	"github.com/elga-io/corgi/internal/link"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
@@ -19,12 +20,12 @@ import (
 	"time"
 )
 
-// Version indicates the current version of the application.
-var Version = "0.0.1"
+// version indicates the current version of the application.
+var version = "0.0.1"
 
 func main() {
 	// Create root logger tagged with server version.
-	logg := log.New().With(nil, "version", Version)
+	logg := log.New().With(nil, "version", version)
 
 	// Load application configurations.
 	cfg := config.NewConfig(logg, "configs")
@@ -40,6 +41,7 @@ func main() {
 	// Services.
 	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30)
 	linkService := link.NewService(logg, db)
+	healthService := health.NewService(logg, db, version)
 
 	// Create context that listens for the interrupt signal from the OS.
 	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
@@ -50,27 +52,33 @@ func main() {
 
 	// Routers.
 	router := gin.New()
-	router.Use(sessions.SessionsMany([]string{"session_unique", "session_auth"}, store))
-	router.Use(middlewares.Access(logg))
-	router.Use(middlewares.Checks())
+	root := router.Group("/")
 
-	v1Auth := router.Group("/api/v1/auth")
-	v1Auth.POST("/password/login", authPasswordService.HTTPLogin)
-	v1Auth.POST("/password/register", authPasswordService.HTTPRegister)
-	// v1Auth.POST("/google/login", authGoogleService.HTTPLogin)
+	// Handlers in root path ("/").
+	healthService.Routers(root)
 
-	v1Links := router.Group("/api/v1/links")
-	v1Links.Use(middlewares.Auth(logg, cfg.App.SecretKey))
+	api := router.Group("/api")
+	api.Use(sessions.SessionsMany([]string{"session_unique", "session_auth"}, store))
+	api.Use(middlewares.Access(logg))
+	api.Use(middlewares.Checks())
 
-	v1Links.POST("/", linkService.HTTPAddLink)
-	v1Links.GET("/:id", linkService.HTTPFindLinkByID)
-	v1Links.GET("/", linkService.HTTPFindLinks)
-	v1Links.PATCH("/:id", linkService.HTTPUpdateLink)
-	v1Links.DELETE("/:id", linkService.HTTPDeleteLink)
+	// Handlers in /api path.
+	authPasswordService.Routers(api)
+
+	v1 := router.Group("/api/v1")
+	v1.Use(sessions.SessionsMany([]string{"session_unique", "session_auth"}, store))
+	v1.Use(middlewares.Auth(logg, cfg.App.SecretKey))
+	api.Use(middlewares.Access(logg))
+	api.Use(middlewares.Checks())
+
+	// Handlers in /api/v1 path.
+	linkService.Routers(v1)
 
 	srv := &http.Server{
-		Addr:    ":" + cfg.Server.HTTPPort,
-		Handler: router,
+		Addr:         ":" + cfg.Server.HTTPPort,
+		Handler:      router,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 10 * time.Second,
 	}
 
 	// Initializing the server in a goroutine so that
@@ -97,5 +105,4 @@ func main() {
 		logg.Info("Server forced to shutdown: ", err)
 	}
 	logg.Info("Server exiting")
-
 }

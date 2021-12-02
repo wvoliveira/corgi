@@ -5,23 +5,31 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s service) HTTPAddLink(c *gin.Context) {
+func (s service) Routers(r *gin.RouterGroup) {
+	r.POST("/links", s.HTTPAdd)
+	r.GET("/links/:id", s.HTTPFindByID)
+	r.GET("/links", s.HTTPFindAll)
+	r.PATCH("/links/:id", s.HTTPUpdate)
+	r.DELETE("/links/:id", s.HTTPDelete)
+}
+
+func (s service) HTTPAdd(c *gin.Context) {
 	// Decode request to request object.
-	dr, err := decodeAddLink(c)
+	dr, err := decodeAdd(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Business logic.
-	link, err := s.AddLink(c.Request.Context(), dr)
+	link, err := s.Add(c.Request.Context(), dr)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := addLinkResponse{
+	sr := addResponse{
 		ID:       link.ID,
 		URLShort: link.URLShort,
 		URLFull:  link.URLFull,
@@ -31,94 +39,93 @@ func (s service) HTTPAddLink(c *gin.Context) {
 	encodeResponse(c, sr)
 }
 
-func (s service) HTTPFindLinkByID(c *gin.Context) {
+func (s service) HTTPFindByID(c *gin.Context) {
 	// Decode request to request object.
-	dr, err := decodeFindLinkByID(c)
+	dr, err := decodeFindByID(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Business logic.
-	link, err := s.FindLinkByID(c.Request.Context(), dr)
+	link, err := s.FindByID(c.Request.Context(), dr)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := findLinkByIDResponse{
+	sr := findByIDResponse{
 		Link: link,
 		Err:  err,
 	}
 	encodeResponse(c, sr)
 }
 
-func (s service) HTTPFindLinks(c *gin.Context) {
+func (s service) HTTPFindAll(c *gin.Context) {
 	// Decode request to request object.
-	dr, err := decodeFindLinks(c)
+	dr, err := decodeFindAll(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Business logic.
-	links, err := s.FindLinks(c.Request.Context(), dr)
+	links, err := s.FindAll(c.Request.Context(), dr)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := findLinksResponse{
+	sr := findAllResponse{
 		Links: links,
 		Err:   err,
 	}
 	encodeResponse(c, sr)
 }
 
-func (s service) HTTPUpdateLink(c *gin.Context) {
+func (s service) HTTPUpdate(c *gin.Context) {
 	// Decode request to request object.
-	dr, err := decodeUpdateLink(c)
+	dr, err := decodeUpdate(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Business logic.
-	link, err := s.UpdateLink(c.Request.Context(), dr)
+	link, err := s.Update(c.Request.Context(), dr)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := updateLinkResponse{
+	sr := updateResponse{
 		Link: link,
 		Err:  err,
 	}
 	encodeResponse(c, sr)
 }
 
-func (s service) HTTPDeleteLink(c *gin.Context) {
+func (s service) HTTPDelete(c *gin.Context) {
 	// Decode request to request object.
-	dr, err := decodeDeleteLink(c)
+	dr, err := decodeDelete(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Business logic.
-	err = s.DeleteLink(c.Request.Context(), dr)
+	err = s.Delete(c.Request.Context(), dr)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := deleteLinkResponse{
-		Err:  err,
+	sr := deleteResponse{
+		Err: err,
 	}
 	encodeResponse(c, sr)
 }
-
