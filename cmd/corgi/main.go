@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/elga-io/corgi/internal/auth"
 	"github.com/elga-io/corgi/internal/auth/password"
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
@@ -10,7 +11,6 @@ import (
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/elga-io/corgi/pkg/middlewares"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -42,37 +42,28 @@ func main() {
 	}
 	database.SeedUsers(logg, db, cfg)
 
-	// Services.
-	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30)
-	linkService := link.NewService(logg, db)
-	healthService := health.NewService(logg, db, version)
-
 	// Start sessions.
 	store := cookie.NewStore([]byte(cfg.App.SecretKey))
 
-	// Routers.
+	// Auth services like login, register, logout, etc.
+	authService := auth.NewService(logg, db, cfg.App.SecretKey, store)
+	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30, store)
+
+	// Business services like links, users, etc.
+	linkService := link.NewService(logg, db, cfg.App.SecretKey, store)
+
+	// Healthcheck services.
+	healthService := health.NewService(logg, db, version)
+
+	// Initialize routers.
 	router := gin.New()
-	root := router.Group("/")
+	router.Use(middlewares.Access(logg))
 
-	// Handlers in root path ("/").
-	healthService.Routers(root)
-
-	api := router.Group("/api")
-	api.Use(sessions.SessionsMany([]string{"session_unique", "session_auth"}, store))
-	api.Use(middlewares.Access(logg))
-	api.Use(middlewares.Checks())
-
-	// Handlers in /api path.
-	authPasswordService.Routers(api)
-
-	v1 := router.Group("/api/v1")
-	v1.Use(sessions.SessionsMany([]string{"session_unique", "session_auth"}, store))
-	v1.Use(middlewares.Auth(logg, cfg.App.SecretKey))
-	api.Use(middlewares.Access(logg))
-	api.Use(middlewares.Checks())
-
-	// Handlers in /api/v1 path.
-	linkService.Routers(v1)
+	// Register business and needed routers.
+	healthService.Routers(router)
+	authService.Routers(router)
+	authPasswordService.Routers(router)
+	linkService.Routers(router)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.HTTPPort,

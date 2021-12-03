@@ -15,7 +15,7 @@ type Service interface {
 	httpHealth(c *gin.Context)
 	//HTTPHealthcheck(c *gin.Context)
 
-	Routers(r *gin.RouterGroup)
+	Routers(r *gin.Engine)
 }
 
 type service struct {

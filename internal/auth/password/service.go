@@ -7,6 +7,7 @@ import (
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/jwt"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
@@ -22,7 +23,7 @@ type Service interface {
 	HTTPLogin(c *gin.Context)
 	HTTPRegister(c *gin.Context)
 
-	Routers(r *gin.RouterGroup)
+	Routers(r *gin.Engine)
 }
 
 // Identity represents an authenticated user identity.
@@ -40,11 +41,12 @@ type service struct {
 	db              *gorm.DB
 	secret          string
 	tokenExpiration int
+	store           cookie.Store
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration int) Service {
-	return service{logger, db, secret, tokenExpiration}
+func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration int, store cookie.Store) Service {
+	return service{logger, db, secret, tokenExpiration, store}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
@@ -87,13 +89,13 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (token ent
 		return token, errors.New("error to generate refresh token: " + err.Error())
 	}
 
-	refreshToken.AccessToken = accessToken.AccessToken
 	refreshToken.UserID = identityDB.UserID
 	err = s.db.Debug().Model(&entity.Token{}).Create(&refreshToken).Error
 	if err != nil {
 		return
 	}
 
+	token.ID = refreshToken.ID
 	token.AccessToken = accessToken.AccessToken
 	token.RefreshToken = refreshToken.RefreshToken
 	token.AccessExpires = accessToken.AccessExpires

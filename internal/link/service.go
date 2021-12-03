@@ -6,6 +6,7 @@ import (
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -27,17 +28,19 @@ type Service interface {
 	HTTPUpdate(c *gin.Context)
 	HTTPDelete(c *gin.Context)
 
-	Routers(r *gin.RouterGroup)
+	Routers(r *gin.Engine)
 }
 
 type service struct {
 	logger log.Logger
 	db     *gorm.DB
+	secret string
+	store  cookie.Store
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB) Service {
-	return service{logger, db}
+func NewService(logger log.Logger, db *gorm.DB, secret string, store cookie.Store) Service {
+	return service{logger, db, secret, store}
 }
 
 // Add create a new shortener link.
@@ -84,7 +87,6 @@ func (s service) FindByID(ctx context.Context, link findByIDRequest) (l entity.L
 // FindAll get a list of links from database.
 func (s service) FindAll(ctx context.Context, link findAllRequest) (l []entity.Link, err error) {
 	logger := s.logger.With(ctx, "user_id", link.UserID)
-	logger.Infof("find links with offset '%d' and limit '%d'", link.Offset, link.Limit)
 
 	err = s.db.Model(&entity.Link{}).Where("user_id = ?", link.UserID).Offset(link.Offset).Limit(link.Limit).Find(&l).Error
 	if err == gorm.ErrRecordNotFound {

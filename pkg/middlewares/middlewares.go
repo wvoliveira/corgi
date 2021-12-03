@@ -7,7 +7,31 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
 	"net/http"
+	"time"
 )
+
+// Access returns a middleware that records an access log message for every HTTP request being processed.
+func Access(logger log.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		start := time.Now()
+
+		// associate request ID and session ID with the request context
+		// so that they can be added to the log messages
+		ctx := c.Request.Context()
+		ctx = log.WithRequest(ctx, c.Request)
+		c.Request = c.Request.WithContext(ctx)
+
+		// Start logging request access log.
+		logger.With(ctx, "http", "request", "start", start).
+			Infof("%s %s %s", c.Request.Method, c.Request.URL.Path, c.Request.Proto)
+
+		c.Next()
+
+		// End logging response access log.
+		logger.With(ctx, "http", "response", "duration", time.Since(start).Milliseconds(), "status", c.Writer.Status()).
+			Infof("%s %s %s %d %d", c.Request.Method, c.Request.URL.Path, c.Request.Proto, c.Writer.Status(), c.Writer.Size())
+	}
+}
 
 // Auth check if auth ok and set claims in request header.
 func Auth(logger log.Logger, secret string) gin.HandlerFunc {
@@ -55,5 +79,20 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 			logg.Info("invalid token! so sorry")
 			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrTokenInvalid)
 		}
+	}
+}
+
+// Checks returns a middleware that verify some points before business logic.
+func Checks(logger log.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		if c.Request.Method == "POST" || c.Request.Method == "PATCH" {
+			if c.Request.Body == http.NoBody {
+				logger.Warnf("Empty body and POST or PATCH request")
+				e.EncodeError(c, e.ErrRequestNeedBody)
+				return
+			}
+		}
+		c.Next()
 	}
 }

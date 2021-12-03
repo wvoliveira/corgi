@@ -2,15 +2,22 @@ package link
 
 import (
 	e "github.com/elga-io/corgi/pkg/errors"
+	"github.com/elga-io/corgi/pkg/middlewares"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
-func (s service) Routers(r *gin.RouterGroup) {
-	r.POST("/links", s.HTTPAdd)
-	r.GET("/links/:id", s.HTTPFindByID)
-	r.GET("/links", s.HTTPFindAll)
-	r.PATCH("/links/:id", s.HTTPUpdate)
-	r.DELETE("/links/:id", s.HTTPDelete)
+func (s service) Routers(e *gin.Engine) {
+	r := e.Group("/api/v1/links",
+		middlewares.Checks(s.logger),
+		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store),
+		middlewares.Auth(s.logger, s.secret))
+
+	r.POST("/", s.HTTPAdd)
+	r.GET("/:id", s.HTTPFindByID)
+	r.GET("/", s.HTTPFindAll)
+	r.PATCH("/:id", s.HTTPUpdate)
+	r.DELETE("/:id", s.HTTPDelete)
 }
 
 func (s service) HTTPAdd(c *gin.Context) {

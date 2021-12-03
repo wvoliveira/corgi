@@ -3,13 +3,18 @@ package password
 import (
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
+	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
-func (s service) Routers(r *gin.RouterGroup) {
-	r.POST("/auth/password/login", s.HTTPLogin)
-	r.POST("/auth/password/register", s.HTTPRegister)
+func (s service) Routers(e *gin.Engine) {
+	r := e.Group("/api/auth/password",
+		middlewares.Checks(s.logger),
+		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store))
+
+	r.POST("/login", s.HTTPLogin)
+	r.POST("/register", s.HTTPRegister)
 	// v1Auth.POST("/google/login", authGoogleService.HTTPLogin)
 }
 
@@ -39,6 +44,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 
 	sessionAuth := sessions.DefaultMany(c, "session_auth")
 	sessionAuth.Set("access_token", token.AccessToken)
+	sessionAuth.Set("refresh_token_id", token.RefreshToken)
 	err = sessionAuth.Save()
 	if err != nil {
 		e.EncodeError(c, err)
