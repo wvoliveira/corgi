@@ -24,7 +24,7 @@ jobs:
           version: v1.29
 
           # Optional: working directory, useful for monorepos
-          working-directory: server
+          # working-directory:
 
           # Optional: golangci-lint command line arguments.
           args: -e SA1029

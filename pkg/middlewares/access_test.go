@@ -1,17 +1,17 @@
 package middlewares
 
 import (
-	"github.com/gin-gonic/gin"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 )
 
-func TestHandler(t *testing.T) {
+func TestAccess(t *testing.T) {
 	logger, entries := log.NewForTest()
-	handler := Handler(logger)
+	handler := Access(logger)
 
 	router := gin.New()
 	router.Use(handler)
@@ -20,8 +20,8 @@ func TestHandler(t *testing.T) {
 	_ = performRequest(router, "GET", "/")
 
 	// TEST
-	assert.Equal(t, 1, entries.Len())
-	assert.Equal(t, "GET /users HTTP/1.1 200 0", entries.All()[0].Message)
+	assert.Equal(t, 2, entries.Len())
+	assert.Equal(t, "GET / HTTP/1.1", entries.All()[0].Message)
 }
 
 type header struct {

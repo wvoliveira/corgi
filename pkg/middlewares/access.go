@@ -25,7 +25,7 @@ func Access(logger log.Logger) gin.HandlerFunc {
 		c.Next()
 
 		// End logging response access log.
-		logger.With(ctx, "http", "response", "duration", time.Now().Sub(start).Milliseconds(), "status", c.Writer.Status()).
+		logger.With(ctx, "http", "response", "duration", time.Since(start).Milliseconds(), "status", c.Writer.Status()).
 			Infof("%s %s %s %d %d", c.Request.Method, c.Request.URL.Path, c.Request.Proto, c.Writer.Status(), c.Writer.Size())
 	}
 }

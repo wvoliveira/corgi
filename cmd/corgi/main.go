@@ -24,8 +24,12 @@ import (
 var version = "0.0.1"
 
 func main() {
+	// Create context that listens for the interrupt signal from the OS.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
+
 	// Create root logger tagged with server version.
-	logg := log.New().With(nil, "version", version)
+	logg := log.New().With(ctx, "version", version)
 
 	// Load application configurations.
 	cfg := config.NewConfig(logg, "configs")
@@ -42,10 +46,6 @@ func main() {
 	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30)
 	linkService := link.NewService(logg, db)
 	healthService := health.NewService(logg, db, version)
-
-	// Create context that listens for the interrupt signal from the OS.
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
 
 	// Start sessions.
 	store := cookie.NewStore([]byte(cfg.App.SecretKey))

@@ -10,5 +10,4 @@ func (s service) Routers(r *gin.RouterGroup) {
 
 func (s service) httpHealth(c *gin.Context) {
 	c.JSON(200, "OK "+s.version)
-	return
 }

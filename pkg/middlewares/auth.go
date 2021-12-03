@@ -55,6 +55,5 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 			logg.Info("invalid token! so sorry")
 			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrTokenInvalid)
 		}
-		return
 	}
 }

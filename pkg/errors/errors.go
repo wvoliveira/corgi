@@ -59,7 +59,6 @@ func EncodeError(c *gin.Context, err error) {
 	c.JSON(codeFrom(err), map[string]interface{}{
 		"error": err.Error(),
 	})
-	return
 }
 
 func codeFrom(err error) int {
