@@ -38,21 +38,27 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logg := logger.With(c.Request.Context())
 
-		sessionAuth := sessions.DefaultMany(c, "session_auth")
-		if sessionAuth == nil {
-			logg.Info("session_auth not found")
-			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
-			return
+		// try to get access_token from URI
+		accessToken := c.Query("access_token")
+		if accessToken == "" {
+			logg.Warnf("access_token not found from URI query")
+
+			sessionAuth := sessions.DefaultMany(c, "session_auth")
+			if sessionAuth == nil {
+				logg.Info("session_auth not found")
+				_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
+				return
+			}
+
+			tokenInterface := sessionAuth.Get("access_token")
+			if tokenInterface == nil {
+				logg.Info("access token not found in session cookies")
+				_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
+				return
+			}
+			accessToken = tokenInterface.(string)
 		}
 
-		tokenInterface := sessionAuth.Get("access_token")
-		if tokenInterface == nil {
-			logg.Info("access token not found in session cookies")
-			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
-			return
-		}
-
-		accessToken := tokenInterface.(string)
 		token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 				logg.Warnf("fail to parse access token")
