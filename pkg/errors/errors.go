@@ -59,7 +59,6 @@ func EncodeError(c *gin.Context, err error) {
 		panic("encodeError with nil error")
 	}
 	_ = c.AbortWithError(codeFrom(err), err)
-	return
 }
 
 func codeFrom(err error) int {
