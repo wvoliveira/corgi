@@ -8,6 +8,9 @@ auth:
   google:
     client_id:
     client_secret:
+  facebook:
+    client_id:
+    client_secret:
 
 server:
   http_port: 8081

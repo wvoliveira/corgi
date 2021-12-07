@@ -34,7 +34,16 @@ func (s service) HTTPFind(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	ur := userResponse{Name: user.Name, Role: user.Role}
+	var identities []identity
+	for _, i := range user.Identities {
+		idt := identity{
+			Provider: i.Provider,
+			UID:      i.UID,
+		}
+		identities = append(identities, idt)
+	}
+
+	ur := userResponse{Name: user.Name, Role: user.Role, Identities: identities}
 	sr := findResponse{
 		userResponse: ur,
 		Err:          err,

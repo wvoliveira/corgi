@@ -223,6 +223,7 @@ golang.org/x/net/idna
 ## explicit; go 1.11
 golang.org/x/oauth2
 golang.org/x/oauth2/authhandler
+golang.org/x/oauth2/facebook
 golang.org/x/oauth2/google
 golang.org/x/oauth2/google/internal/externalaccount
 golang.org/x/oauth2/internal

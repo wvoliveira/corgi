@@ -6,9 +6,15 @@ import (
 	"time"
 )
 
+type identity struct {
+	Provider string `json:"provider"`
+	UID      string `json:"uid"`
+}
+
 type userResponse struct {
-	Name string `json:"name"`
-	Role string `json:"role"`
+	Name       string     `json:"name"`
+	Role       string     `json:"role"`
+	Identities []identity `json:"identities"`
 }
 
 type findResponse struct {

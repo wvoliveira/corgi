@@ -1,4 +1,4 @@
-package google
+package facebook
 
 import (
 	"fmt"
@@ -9,7 +9,7 @@ import (
 )
 
 func (s service) Routers(e *gin.Engine) {
-	r := e.Group("/api/auth/google",
+	r := e.Group("/api/auth/facebook",
 		middlewares.Checks(s.logger),
 		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store))
 
@@ -30,7 +30,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 	if c.Request.TLS != nil {
 		schema = "https"
 	}
-	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/google/callback")
+	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/facebook/callback")
 	redirectURL, err := s.Login(c.Request.Context(), callbackURL)
 	if err != nil {
 		e.EncodeError(c, err)
@@ -61,7 +61,7 @@ func (s service) HTTPCallback(c *gin.Context) {
 	if c.Request.TLS != nil {
 		schema = "https"
 	}
-	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/google/callback")
+	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/facebook/callback")
 	token, err := s.Callback(c.Request.Context(), callbackURL, dr)
 	if err != nil {
 		e.EncodeError(c, err)

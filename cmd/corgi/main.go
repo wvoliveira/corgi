@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"github.com/elga-io/corgi/internal/auth"
+	"github.com/elga-io/corgi/internal/auth/facebook"
 	"github.com/elga-io/corgi/internal/auth/google"
 	"github.com/elga-io/corgi/internal/auth/password"
 	"github.com/elga-io/corgi/internal/config"
@@ -57,6 +58,7 @@ func main() {
 	authService := auth.NewService(logg, db, cfg.App.SecretKey, store)
 	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30, store)
 	authGoogleService := google.NewService(logg, db, cfg, store)
+	authFacebookService := facebook.NewService(logg, db, cfg, store)
 
 	// Business services like links, users, etc.
 	linkService := link.NewService(logg, db, cfg.App.SecretKey, store)
@@ -74,6 +76,8 @@ func main() {
 	authService.Routers(router)
 	authPasswordService.Routers(router)
 	authGoogleService.Routers(router)
+	authFacebookService.Routers(router)
+
 	linkService.Routers(router)
 	userService.Routers(router)
 

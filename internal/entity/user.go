@@ -9,7 +9,6 @@ type User struct {
 	UpdatedAt time.Time `json:"updated_at"`
 
 	Name   string `json:"name"`
-	Email  string `json:"email"`
 	Role   string `json:"role"`
 	Active *bool  `json:"active" gorm:"default:true"`
 

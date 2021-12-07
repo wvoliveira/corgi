@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"fmt"
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/log"
@@ -38,13 +39,25 @@ func NewService(logger log.Logger, db *gorm.DB, secret string, store cookie.Stor
 func (s service) Find(ctx context.Context, userID string) (user entity.User, err error) {
 	logger := s.logger.With(ctx, "user_id", userID)
 
-	err = s.db.Model(&entity.User{}).Where("id = ?", userID).First(&user).Error
+	user.ID = userID
+	fmt.Println("USER_ID:", userID)
+
+	var identities []entity.Identity
+	err = s.db.Debug().Model(&user).Preload("Identities").Find(&user).Error
 	if err == gorm.ErrRecordNotFound {
 		logger.Infof("the user with user_id '%s' not found", userID)
 		return user, e.ErrUserNotFound
 	} else if err == nil {
+		fmt.Println("1 user")
+		fmt.Println(user)
+
+		fmt.Println("1 identities")
+		fmt.Println(identities)
 		return
 	}
+
+	fmt.Println("2 identities")
+	fmt.Println(identities)
 	logger.Errorf("oh crap, an errors occurred: %s", err.Error())
 	return
 }
