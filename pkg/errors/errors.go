@@ -25,7 +25,9 @@ var (
 	ErrTokenExpired = errors.New("your token has been expired")
 	ErrNoTokenFound = errors.New("token authorization not found in header")
 
-	// Account errors.
+	// ErrUserNotFound error when user not found in database.
+	ErrUserNotFound = errors.New("user not found")
+	// ErrAccountDeleteYourSelf user admin or user with permission with that cannot delete yourself.
 	ErrAccountDeleteYourSelf = errors.New("delete yourself? this is not a good idea")
 
 	// Link errors.
@@ -42,7 +44,7 @@ var (
 )
 
 /*
-	errorer is implemented by all concrete response types that may contain
+	Errorer is implemented by all concrete response types that may contain
 	errors. It allows us to change the HTTP response code without needing to
 	trigger an endpoint (transport-level) error. For more information, read the
 	big comment in endpoints.go.
@@ -56,9 +58,8 @@ func EncodeError(c *gin.Context, err error) {
 	if err == nil {
 		panic("encodeError with nil error")
 	}
-	c.JSON(codeFrom(err), map[string]interface{}{
-		"error": err.Error(),
-	})
+	_ = c.AbortWithError(codeFrom(err), err)
+	return
 }
 
 func codeFrom(err error) int {

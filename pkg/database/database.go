@@ -33,14 +33,14 @@ func initDatabase(logger log.Logger, c config.Config) (db *gorm.DB) {
 
 // SeedUsers create the first users for system.
 func SeedUsers(logger log.Logger, db *gorm.DB, c config.Config) {
+	t := true
 	users := []entity.User{
 		{
 			ID:        uuid.New().String(),
 			CreatedAt: time.Now(),
-			Name:      "Admin",
+			Name:      "Administrator",
 			Role:      "admin",
-			Tags:      "admin,superuser,root",
-			Active:    "true",
+			Active:    &t,
 			Identities: []entity.Identity{
 				{
 					ID:        uuid.New().String(),
@@ -56,8 +56,7 @@ func SeedUsers(logger log.Logger, db *gorm.DB, c config.Config) {
 			CreatedAt: time.Now(),
 			Name:      "User",
 			Role:      "user",
-			Tags:      "user,limited",
-			Active:    "true",
+			Active:    &t,
 			Identities: []entity.Identity{
 				{
 					ID:        uuid.New().String(),

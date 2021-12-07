@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"github.com/elga-io/corgi/internal/auth"
+	"github.com/elga-io/corgi/internal/auth/google"
 	"github.com/elga-io/corgi/internal/auth/password"
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
 	"github.com/elga-io/corgi/internal/health"
 	"github.com/elga-io/corgi/internal/link"
+	"github.com/elga-io/corgi/internal/user"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/elga-io/corgi/pkg/middlewares"
@@ -36,7 +38,13 @@ func main() {
 
 	// Connect to the database and seed first users.
 	db := database.NewDatabase(logg, cfg)
-	if err := db.AutoMigrate(&entity.User{}, &entity.Identity{}, &entity.Link{}, &entity.Token{}); err != nil {
+	if err := db.AutoMigrate(
+		&entity.User{},
+		&entity.Identity{},
+		&entity.Link{},
+		&entity.Token{},
+		&entity.Tag{},
+	); err != nil {
 		logg.Error("error in auto migrate", "err", err.Error())
 		os.Exit(1)
 	}
@@ -48,9 +56,11 @@ func main() {
 	// Auth services like login, register, logout, etc.
 	authService := auth.NewService(logg, db, cfg.App.SecretKey, store)
 	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30, store)
+	authGoogleService := google.NewService(logg, db, cfg, store)
 
 	// Business services like links, users, etc.
 	linkService := link.NewService(logg, db, cfg.App.SecretKey, store)
+	userService := user.NewService(logg, db, cfg.App.SecretKey, store)
 
 	// Healthcheck services.
 	healthService := health.NewService(logg, db, version)
@@ -63,7 +73,9 @@ func main() {
 	healthService.Routers(router)
 	authService.Routers(router)
 	authPasswordService.Routers(router)
+	authGoogleService.Routers(router)
 	linkService.Routers(router)
+	userService.Routers(router)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.HTTPPort,

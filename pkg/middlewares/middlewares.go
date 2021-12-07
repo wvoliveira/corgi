@@ -85,12 +85,12 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 // Checks returns a middleware that verify some points before business logic.
 func Checks(logger log.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		logg := logger.With(c.Request.Context())
 
 		if c.Request.Method == "POST" || c.Request.Method == "PATCH" {
 			if c.Request.Body == http.NoBody {
-				logger.Warnf("Empty body and POST or PATCH request")
-				e.EncodeError(c, e.ErrRequestNeedBody)
-				return
+				logg.Warnf("Empty body and POST or PATCH request")
+				_ = c.AbortWithError(http.StatusBadRequest, e.ErrRequestNeedBody)
 			}
 		}
 		c.Next()

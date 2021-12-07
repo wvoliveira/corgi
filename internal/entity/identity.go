@@ -8,11 +8,13 @@ type Identity struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	LastLogin time.Time `json:"last_login"`
 
-	Provider    string    `json:"provider"` // phone, email, wechat, github...
-	UID         string    `json:"uid"`      // e-mail, google id, facebook id, etc
-	Password    string    `json:"password"`
-	UserID      string    `json:"user_id"`
-	ConfirmedAt time.Time `json:"confirmed_at"`
+	Provider string `json:"provider"` // phone, email, wechat, github...
+	UID      string `json:"uid"`      // e-mail, google id, facebook id, etc
+	Password string `json:"password"`
+	UserID   string `json:"user_id"`
+
+	Verified   *bool     `json:"verified" gorm:"default:false"`
+	VerifiedAt time.Time `json:"confirmed_at"`
 }
 
 // GetID returns the user ID.

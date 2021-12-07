@@ -1,0 +1,67 @@
+package user
+
+import (
+	"github.com/elga-io/corgi/internal/entity"
+	e "github.com/elga-io/corgi/pkg/errors"
+	"github.com/elga-io/corgi/pkg/middlewares"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+)
+
+func (s service) Routers(e *gin.Engine) {
+	r := e.Group("/api/v1/user",
+		middlewares.Checks(s.logger),
+		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store),
+		middlewares.Auth(s.logger, s.secret))
+
+	r.GET("/me", s.HTTPFind)
+	r.PATCH("/me", s.HTTPUpdate)
+}
+
+func (s service) HTTPFind(c *gin.Context) {
+	// Decode request to request object.
+	dr, err := decodeFind(c)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	// Business logic.
+	user, err := s.Find(c.Request.Context(), dr.UserID)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	// Encode object to answer request (response).
+	ur := userResponse{Name: user.Name, Role: user.Role}
+	sr := findResponse{
+		userResponse: ur,
+		Err:          err,
+	}
+	encodeResponse(c, sr)
+}
+
+func (s service) HTTPUpdate(c *gin.Context) {
+	// Decode request to request object.
+	dr, err := decodeUpdate(c)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	// Business logic.
+	user, err := s.Update(c.Request.Context(), entity.User{ID: dr.UserID, Name: dr.Name})
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	// Encode object to answer request (response).
+	sr := updateResponse{
+		UpdatedAt: user.UpdatedAt,
+		Name:      user.Name,
+		Err:       err,
+	}
+	encodeResponse(c, sr)
+}

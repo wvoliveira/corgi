@@ -1,3 +1,6 @@
+# cloud.google.com/go v0.93.3
+## explicit; go 1.11
+cloud.google.com/go/compute/metadata
 # github.com/KyleBanks/depth v1.2.1
 ## explicit
 github.com/KyleBanks/depth
@@ -43,18 +46,6 @@ github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.19.15
 ## explicit; go 1.11
 github.com/go-openapi/swag
-# github.com/go-ozzo/ozzo-dbx v1.5.0
-## explicit; go 1.13
-github.com/go-ozzo/ozzo-dbx
-# github.com/go-ozzo/ozzo-routing/v2 v2.4.0
-## explicit; go 1.13
-github.com/go-ozzo/ozzo-routing/v2
-github.com/go-ozzo/ozzo-routing/v2/access
-github.com/go-ozzo/ozzo-routing/v2/content
-github.com/go-ozzo/ozzo-routing/v2/cors
-# github.com/go-ozzo/ozzo-validation/v4 v4.3.0
-## explicit; go 1.13
-github.com/go-ozzo/ozzo-validation/v4
 # github.com/go-playground/locales v0.13.0
 ## explicit; go 1.13
 github.com/go-playground/locales
@@ -68,9 +59,6 @@ github.com/go-playground/validator/v10
 # github.com/golang-jwt/jwt v3.2.2+incompatible
 ## explicit
 github.com/golang-jwt/jwt
-# github.com/golang/gddo v0.0.0-20190904175337-72a348e765d2
-## explicit
-github.com/golang/gddo/httputil/header
 # github.com/golang/protobuf v1.5.2
 ## explicit; go 1.9
 github.com/golang/protobuf/proto
@@ -172,16 +160,6 @@ github.com/pelletier/go-toml
 # github.com/pmezard/go-difflib v1.0.0
 ## explicit
 github.com/pmezard/go-difflib/difflib
-# github.com/qiangxue/go-env v1.0.0
-## explicit; go 1.13
-github.com/qiangxue/go-env
-# github.com/qiangxue/go-rest-api v1.0.1
-## explicit; go 1.13
-github.com/qiangxue/go-rest-api/internal/config
-github.com/qiangxue/go-rest-api/internal/errors
-github.com/qiangxue/go-rest-api/pkg/accesslog
-github.com/qiangxue/go-rest-api/pkg/dbcontext
-github.com/qiangxue/go-rest-api/pkg/log
 # github.com/spf13/afero v1.6.0
 ## explicit; go 1.13
 github.com/spf13/afero
@@ -238,7 +216,18 @@ golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/sha3
 # golang.org/x/net v0.0.0-20211015210444-4f30a5c0130f
 ## explicit; go 1.17
+golang.org/x/net/context
+golang.org/x/net/context/ctxhttp
 golang.org/x/net/idna
+# golang.org/x/oauth2 v0.0.0-20211104180415-d3ed0bb246c8
+## explicit; go 1.11
+golang.org/x/oauth2
+golang.org/x/oauth2/authhandler
+golang.org/x/oauth2/google
+golang.org/x/oauth2/google/internal/externalaccount
+golang.org/x/oauth2/internal
+golang.org/x/oauth2/jws
+golang.org/x/oauth2/jwt
 # golang.org/x/sys v0.0.0-20211015200801-69063c4bb744
 ## explicit; go 1.17
 golang.org/x/sys/cpu
@@ -267,6 +256,18 @@ golang.org/x/tools/go/buildutil
 golang.org/x/tools/go/internal/cgo
 golang.org/x/tools/go/loader
 golang.org/x/tools/internal/typeparams
+# google.golang.org/appengine v1.6.7
+## explicit; go 1.11
+google.golang.org/appengine
+google.golang.org/appengine/internal
+google.golang.org/appengine/internal/app_identity
+google.golang.org/appengine/internal/base
+google.golang.org/appengine/internal/datastore
+google.golang.org/appengine/internal/log
+google.golang.org/appengine/internal/modules
+google.golang.org/appengine/internal/remote_api
+google.golang.org/appengine/internal/urlfetch
+google.golang.org/appengine/urlfetch
 # google.golang.org/protobuf v1.27.1
 ## explicit; go 1.9
 google.golang.org/protobuf/encoding/prototext
