@@ -32,7 +32,7 @@ type Identity interface {
 type service struct {
 	logger          log.Logger
 	db              *gorm.DB
-	secret      string
+	secret          string
 	tokenExpiration int
 }
 
@@ -80,11 +80,13 @@ func (s service) Refresh(ctx context.Context, payload entity.Token) (token entit
 	}
 
 	if genRefresh {
-		if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).Delete(&token).Error; err != nil {
-			return token, errors.New("error to delete refresh token from database: " + err.Error())
-		}
 		if err = s.db.Debug().Model(&entity.Token{}).Create(&refreshToken).Error; err != nil {
-			return token, errors.New("error to create refresh token: " + err.Error())
+			logger.Error("error to create refresh token", err.Error())
+			return token, errors.New("error to create refresh token")
+		}
+		if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).Delete(&token).Error; err != nil {
+			logger.Error("error to delete refresh token from database", err.Error())
+			return token, errors.New("error to delete refresh token from database")
 		}
 		token.RefreshToken = refreshToken.RefreshToken
 	}
