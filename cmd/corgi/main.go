@@ -7,6 +7,7 @@ import (
 	"github.com/elga-io/corgi/internal/auth/facebook"
 	"github.com/elga-io/corgi/internal/auth/google"
 	"github.com/elga-io/corgi/internal/auth/password"
+	"github.com/elga-io/corgi/internal/auth/token"
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
 	"github.com/elga-io/corgi/internal/health"
@@ -63,10 +64,11 @@ func main() {
 	store := cookie.NewStore([]byte(cfg.App.SecretKey))
 
 	// Auth services like login, register, logout, etc.
-	authService := auth.NewService(logg, db, cfg.App.SecretKey, store)
-	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30, store)
-	authGoogleService := google.NewService(logg, db, cfg, store)
-	authFacebookService := facebook.NewService(logg, db, cfg, store)
+	authService := auth.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
+	authToken := token.NewService(logg, db, cfg.App.SecretKey, 30, store, authEnforcer)
+	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30, store, authEnforcer)
+	authGoogleService := google.NewService(logg, db, cfg, store, authEnforcer)
+	authFacebookService := facebook.NewService(logg, db, cfg, store, authEnforcer)
 
 	// Business services like links, users, etc.
 	linkService := link.NewService(logg, db, cfg.App.SecretKey, store)
@@ -82,6 +84,7 @@ func main() {
 	// Register business and needed routers.
 	healthService.Routers(router)
 	authService.Routers(router)
+	authToken.Routers(router)
 	authPasswordService.Routers(router)
 	authGoogleService.Routers(router)
 	authFacebookService.Routers(router)

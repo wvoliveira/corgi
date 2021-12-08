@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
 	"github.com/elga-io/corgi/pkg/jwt"
@@ -41,15 +42,16 @@ type Identity interface {
 }
 
 type service struct {
-	logger log.Logger
-	db     *gorm.DB
-	cfg    config.Config
-	store  cookie.Store
+	logger  log.Logger
+	db      *gorm.DB
+	cfg     config.Config
+	store   cookie.Store
+	enforce *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB, cfg config.Config, store cookie.Store) Service {
-	return service{logger, db, cfg, store}
+func NewService(logger log.Logger, db *gorm.DB, cfg config.Config, store cookie.Store, enforce *casbin.Enforcer) Service {
+	return service{logger, db, cfg, store, enforce}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.

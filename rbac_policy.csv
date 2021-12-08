@@ -5,5 +5,6 @@ p, anonymous, /api/auth/password/*, *
 p, anonymous, /api/auth/google/*, *
 p, anonymous, /api/auth/facebook/*, *
 
-p, user, /api/auth/*, *
+p, user, /api/auth/logout, GET
+p, user, /api/auth/token/refresh, *
 p, user, /api/v1/*, *

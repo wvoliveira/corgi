@@ -3,10 +3,12 @@ package token
 import (
 	"context"
 	"errors"
+	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/jwt"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 	"time"
@@ -15,18 +17,8 @@ import (
 // Service encapsulates the authentication logic.
 type Service interface {
 	Refresh(ctx context.Context, token entity.Token) (entity.Token, error)
-
 	HTTPRefresh(c *gin.Context)
-}
-
-// Identity represents an authenticated user identity.
-type Identity interface {
-	// GetID returns the user ID.
-	GetID() string
-	// GetUID returns the e-mail, google id, facebook id, etc.
-	GetUID() string
-	// GetRole returns the role.
-	GetRole() string
+	Routers(r *gin.Engine)
 }
 
 type service struct {
@@ -34,11 +26,13 @@ type service struct {
 	db              *gorm.DB
 	secret          string
 	tokenExpiration int
+	store           cookie.Store
+	enforce         *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration int) Service {
-	return service{logger, db, secret, tokenExpiration}
+func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration int, store cookie.Store, enforce *casbin.Enforcer) Service {
+	return service{logger, db, secret, tokenExpiration, store, enforce}
 }
 
 // Refresh authenticates a user and generates a new access and refresh JWT token if needed.

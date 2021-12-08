@@ -39,26 +39,20 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logg := logger.With(c.Request.Context())
 
-		// try to get access_token from URI
-		accessToken := c.Query("access_token")
-		if accessToken == "" {
-			logg.Warnf("access_token not found from URI query")
-
-			sessionAuth := sessions.DefaultMany(c, "session_auth")
-			if sessionAuth == nil {
-				logg.Info("session_auth not found")
-				_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
-				return
-			}
-
-			tokenInterface := sessionAuth.Get("access_token")
-			if tokenInterface == nil {
-				logg.Info("access token not found in session cookies")
-				_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
-				return
-			}
-			accessToken = tokenInterface.(string)
+		sessionAuth := sessions.DefaultMany(c, "session_auth")
+		if sessionAuth == nil {
+			logg.Info("session_auth not found")
+			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
+			return
 		}
+
+		tokenInterface := sessionAuth.Get("access_token")
+		if tokenInterface == nil {
+			logg.Info("access token not found in session cookies")
+			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
+			return
+		}
+		accessToken := tokenInterface.(string)
 
 		token, err := jwt.Parse(accessToken, func(token *jwt.Token) (interface{}, error) {
 			if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -83,7 +77,7 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 			c.Set("user_role", claims["user_role"].(string))
 			c.Next()
 		} else {
-			logg.Info("invalid token! so sorry")
+			logg.Warnf("invalid token! so sorry")
 			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrTokenInvalid)
 		}
 	}
@@ -122,7 +116,7 @@ func Authorizer(en *casbin.Enforcer, logger log.Logger) gin.HandlerFunc {
 		// casbin rule enforcing
 		res, err := en.Enforce(role, c.Request.URL.Path, c.Request.Method)
 		if err != nil {
-			logg.Error("error to enforce casbin authorization", err.Error())
+			logg.Error("error to enforce casbin authorization: ", err.Error())
 			_ = c.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}

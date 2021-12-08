@@ -3,8 +3,20 @@ package token
 import (
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
+	"github.com/elga-io/corgi/pkg/middlewares"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
+
+func (s service) Routers(e *gin.Engine) {
+	r := e.Group("/api/auth/token",
+		middlewares.Checks(s.logger),
+		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store),
+		middlewares.Auth(s.logger, s.secret),
+		middlewares.Authorizer(s.enforce, s.logger))
+
+	r.POST("/refresh", s.HTTPRefresh)
+}
 
 func (s service) HTTPRefresh(c *gin.Context) {
 	// Decode request to request object.

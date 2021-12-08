@@ -3,6 +3,7 @@ package password
 import (
 	"context"
 	"errors"
+	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/jwt"
@@ -19,10 +20,8 @@ import (
 type Service interface {
 	Login(ctx context.Context, identity entity.Identity) (entity.Token, error)
 	Register(ctx context.Context, identity entity.Identity) error
-
 	HTTPLogin(c *gin.Context)
 	HTTPRegister(c *gin.Context)
-
 	Routers(r *gin.Engine)
 }
 
@@ -42,11 +41,12 @@ type service struct {
 	secret          string
 	tokenExpiration int
 	store           cookie.Store
+	enforce         *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration int, store cookie.Store) Service {
-	return service{logger, db, secret, tokenExpiration, store}
+func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration int, store cookie.Store, enforce *casbin.Enforcer) Service {
+	return service{logger, db, secret, tokenExpiration, store, enforce}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
