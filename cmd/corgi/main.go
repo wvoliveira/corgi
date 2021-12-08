@@ -15,7 +15,6 @@ import (
 	"github.com/elga-io/corgi/internal/user"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
-	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -79,7 +78,6 @@ func main() {
 
 	// Initialize routers.
 	router := gin.New()
-	router.Use(middlewares.Access(logg))
 
 	// Register business and needed routers.
 	healthService.Routers(router)

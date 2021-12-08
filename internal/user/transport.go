@@ -10,6 +10,7 @@ import (
 
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/v1/user",
+		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
 		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store),
 		middlewares.Auth(s.logger, s.secret))
