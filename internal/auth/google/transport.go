@@ -11,7 +11,8 @@ import (
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth/google",
 		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store))
+		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store),
+		middlewares.Authorizer(s.enforce, s.logger))
 
 	r.GET("/login", s.HTTPLogin)
 	r.GET("/callback", s.HTTPCallback)

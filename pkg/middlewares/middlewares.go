@@ -90,7 +90,7 @@ func Checks(logger log.Logger) gin.HandlerFunc {
 
 		if c.Request.Method == "POST" || c.Request.Method == "PATCH" {
 			if c.Request.Body == http.NoBody {
-				logg.Warnf("Empty body and POST or PATCH request")
+				logg.Warnf("Empty body in POST or PATCH request")
 				_ = c.AbortWithError(http.StatusBadRequest, e.ErrRequestNeedBody)
 			}
 		}
