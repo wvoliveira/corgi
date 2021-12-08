@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751
+	github.com/casbin/casbin/v2 v2.39.1
 	github.com/gin-contrib/sessions v0.0.4
 	github.com/gin-gonic/gin v1.7.7
 	github.com/google/uuid v1.3.0
@@ -19,6 +20,7 @@ require (
 
 require (
 	cloud.google.com/go v0.93.3 // indirect
+	github.com/Knetic/govaluate v3.0.1-0.20171022003610-9aa49832a739+incompatible // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
 	github.com/gin-contrib/sse v0.1.0 // indirect

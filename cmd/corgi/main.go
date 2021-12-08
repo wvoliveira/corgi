@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/auth"
 	"github.com/elga-io/corgi/internal/auth/facebook"
 	"github.com/elga-io/corgi/internal/auth/google"
@@ -51,6 +52,13 @@ func main() {
 	}
 	database.SeedUsers(logg, db, cfg)
 
+	// Setup Casbin auth rules.
+	authEnforcer, err := casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
+	if err != nil {
+		logg.Error("error to get Casbin enforce rules")
+		os.Exit(2)
+	}
+
 	// Start sessions.
 	store := cookie.NewStore([]byte(cfg.App.SecretKey))
 
@@ -65,7 +73,7 @@ func main() {
 	userService := user.NewService(logg, db, cfg.App.SecretKey, store)
 
 	// Healthcheck services.
-	healthService := health.NewService(logg, db, version)
+	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)
 
 	// Initialize routers.
 	router := gin.New()

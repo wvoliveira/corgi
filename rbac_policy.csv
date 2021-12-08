@@ -1,0 +1,9 @@
+p, admin, /*, *
+
+p, anonymous, /health, GET
+p, anonymous, /api/auth/password/*, *
+p, anonymous, /api/auth/google/*, *
+p, anonymous, /api/auth/facebook/*, *
+
+p, user, /api/auth/*, *
+p, user, /api/v1/*, *

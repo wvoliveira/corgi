@@ -1,6 +1,7 @@
 package middlewares
 
 import (
+	"github.com/casbin/casbin/v2"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/gin-contrib/sessions"
@@ -100,5 +101,36 @@ func Checks(logger log.Logger) gin.HandlerFunc {
 			}
 		}
 		c.Next()
+	}
+}
+
+// Authorizer check if user role has access to resource.
+func Authorizer(en *casbin.Enforcer, logger log.Logger) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		logg := logger.With(c.Request.Context())
+
+		var role string
+		roleInterface, ok := c.Get("user_role")
+		if ok {
+			role = roleInterface.(string)
+		}
+
+		if role == "" {
+			role = "anonymous"
+		}
+
+		// casbin rule enforcing
+		res, err := en.Enforce(role, c.Request.URL.Path, c.Request.Method)
+		if err != nil {
+			logg.Error("error to enforce casbin authorization", err.Error())
+			_ = c.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		if res {
+			c.Next()
+		} else {
+			_ = c.AbortWithError(http.StatusForbidden, e.ErrUnauthorized)
+			return
+		}
 	}
 }

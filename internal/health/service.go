@@ -2,7 +2,9 @@ package health
 
 import (
 	"context"
+	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
@@ -21,12 +23,15 @@ type Service interface {
 type service struct {
 	logger  log.Logger
 	db      *gorm.DB
+	secret  string
+	store   cookie.Store
+	enforce *casbin.Enforcer
 	version string
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB, version string) Service {
-	return service{logger, db, version}
+func NewService(logger log.Logger, db *gorm.DB, secret string, store cookie.Store, enforce *casbin.Enforcer, version string) Service {
+	return service{logger, db, secret, store, enforce, version}
 }
 
 // Health create a new shortener link.
