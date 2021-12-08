@@ -30,10 +30,12 @@ var (
 	// ErrAccountDeleteYourSelf user admin or user with permission with that cannot delete yourself.
 	ErrAccountDeleteYourSelf = errors.New("delete yourself? this is not a good idea")
 
-	// Link errors.
-	ErrLinkNotFound             = errors.New("link not found")
-	ErrLinkKeywordNotFound      = errors.New("link keyword not found")
-	ErrLinkKeywordAlreadyExists = errors.New("this link keyword already exists in our database")
+	// ErrLinkNotFound link not found in database.
+	ErrLinkNotFound       = errors.New("domain and keyword combination not found")
+	ErrLinkAlreadyExists  = errors.New("this link keyword already exists in our database")
+	ErrLinkInvalidDomain  = errors.New("try to input a valid domain")
+	ErrLinkInvalidKeyword = errors.New("try to input a valid keyword between 6 and 15 chars")
+	ErrLinkInvalidURL     = errors.New("try to input a valid destination (URL)")
 
 	// Internal errors.
 	ErrInternalServerError = errors.New("internal server error")
@@ -58,14 +60,14 @@ func EncodeError(c *gin.Context, err error) {
 	if err == nil {
 		panic("encodeError with nil error")
 	}
-	_ = c.AbortWithError(codeFrom(err), err)
+	c.AbortWithStatusJSON(codeFrom(err), gin.H{"message": err.Error()})
 }
 
 func codeFrom(err error) int {
 	switch err {
-	case ErrNotFound, ErrLinkNotFound, ErrLinkKeywordNotFound:
+	case ErrNotFound, ErrLinkNotFound:
 		return http.StatusNotFound
-	case ErrLinkKeywordAlreadyExists, ErrAlreadyExists:
+	case ErrLinkAlreadyExists, ErrAlreadyExists, ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL:
 		return http.StatusForbidden
 	case ErrInconsistentIDs, ErrAccountDeleteYourSelf:
 		return http.StatusBadRequest

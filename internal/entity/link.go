@@ -10,10 +10,11 @@ type Link struct {
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 
-	URLShort string `json:"url_short" gorm:"index"`
-	URLFull  string `json:"url_full"`
-	Title    string `json:"title"`
-	Active   string `json:"active"`
+	Domain  string `json:"domain" gorm:"index"`
+	Keyword string `json:"keyword" gorm:"index"`
+	URL     string `json:"url" gorm:"index"`
+	Title   string `json:"title"`
+	Active  string `json:"active"`
 
 	UserID string `json:"-" gorm:"index"`
 }

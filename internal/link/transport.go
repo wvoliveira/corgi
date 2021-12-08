@@ -1,6 +1,7 @@
 package link
 
 import (
+	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-contrib/sessions"
@@ -30,7 +31,7 @@ func (s service) HTTPAdd(c *gin.Context) {
 	}
 
 	// Business logic.
-	link, err := s.Add(c.Request.Context(), dr)
+	link, err := s.Add(c.Request.Context(), entity.Link{Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, UserID: dr.UserID})
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -38,11 +39,12 @@ func (s service) HTTPAdd(c *gin.Context) {
 
 	// Encode object to answer request (response).
 	sr := addResponse{
-		ID:       link.ID,
-		URLShort: link.URLShort,
-		URLFull:  link.URLFull,
-		Title:    link.Title,
-		Err:      err,
+		ID:      link.ID,
+		Domain:  link.Domain,
+		Keyword: link.Keyword,
+		URL:     link.URL,
+		Title:   link.Title,
+		Err:     err,
 	}
 	encodeResponse(c, sr)
 }

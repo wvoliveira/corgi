@@ -7,11 +7,12 @@ import (
 )
 
 type addResponse struct {
-	ID       string `json:"id"`
-	URLShort string `json:"url_short"`
-	URLFull  string `json:"url_full"`
-	Title    string `json:"title"`
-	Err      error  `json:"err,omitempty"`
+	ID      string `json:"id"`
+	Domain  string `json:"domain"`
+	Keyword string `json:"keyword"`
+	URL     string `json:"url"`
+	Title   string `json:"title"`
+	Err     error  `json:"err,omitempty"`
 }
 
 func (r addResponse) Error() error { return r.Err }

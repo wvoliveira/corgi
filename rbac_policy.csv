@@ -1,9 +1,9 @@
 p, admin, /*, *
 
 p, anonymous, /health/*, GET
-p, anonymous, /api/auth/password/*, *
-p, anonymous, /api/auth/google/*, *
-p, anonymous, /api/auth/facebook/*, *
+p, anonymous, /api/auth/password/*, POST
+p, anonymous, /api/auth/google/*, GET
+p, anonymous, /api/auth/facebook/*, GET
 
 p, user, /api/auth/logout, GET
 p, user, /api/auth/token/refresh, *

@@ -8,10 +8,11 @@ import (
 )
 
 type addRequest struct {
-	URLShort string `json:"url_short"`
-	URLFull  string `json:"url_full"`
-	Title    string `json:"title"`
-	UserID   string `json:"user_id"`
+	Domain  string `json:"domain"`
+	Keyword string `json:"keyword"`
+	URL     string `json:"url"`
+	Title   string `json:"title"`
+	UserID  string `json:"user_id"`
 }
 
 type findByIDRequest struct {
@@ -29,17 +30,19 @@ type updateRequest struct {
 	ID        string    `json:"-"`
 	CreatedAt time.Time `json:"-"`
 	UpdatedAt time.Time `json:"-"`
-	URLShort  string    `json:"url_short"`
-	URLFull   string    `json:"url_full"`
+	Domain    string    `json:"domain"`
+	Keyword   string    `json:"keyword"`
+	URL       string    `json:"url"`
 	Title     string    `json:"title"`
 	Active    string    `json:"active"`
 	UserID    string    `json:"-"`
 }
 
 type deleteRequest struct {
-	ID       string
-	URLShort string
-	UserID   string `json:"user_id"`
+	ID      string
+	Domain  string
+	Keyword string
+	UserID  string `json:"user_id"`
 }
 
 func decodeAdd(c *gin.Context) (req addRequest, err error) {

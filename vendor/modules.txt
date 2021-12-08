@@ -17,6 +17,9 @@ github.com/PuerkitoBio/urlesc
 ## explicit
 github.com/alecthomas/template
 github.com/alecthomas/template/parse
+# github.com/asaskevich/govalidator v0.0.0-20200108200545-475eaeb16496
+## explicit; go 1.12
+github.com/asaskevich/govalidator
 # github.com/casbin/casbin/v2 v2.39.1
 ## explicit; go 1.13
 github.com/casbin/casbin/v2
@@ -63,6 +66,12 @@ github.com/go-openapi/spec
 # github.com/go-openapi/swag v0.19.15
 ## explicit; go 1.11
 github.com/go-openapi/swag
+# github.com/go-ozzo/ozzo-validation v3.6.0+incompatible
+## explicit
+# github.com/go-ozzo/ozzo-validation/v4 v4.3.0
+## explicit; go 1.13
+github.com/go-ozzo/ozzo-validation/v4
+github.com/go-ozzo/ozzo-validation/v4/is
 # github.com/go-playground/locales v0.13.0
 ## explicit; go 1.13
 github.com/go-playground/locales

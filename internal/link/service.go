@@ -16,7 +16,7 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Add(ctx context.Context, link addRequest) (entity.Link, error)
+	Add(ctx context.Context, link entity.Link) (entity.Link, error)
 	FindByID(ctx context.Context, link findByIDRequest) (entity.Link, error)
 	FindAll(ctx context.Context, link findAllRequest) ([]entity.Link, error)
 	Update(ctx context.Context, link updateRequest) (entity.Link, error)
@@ -44,16 +44,21 @@ func NewService(logger log.Logger, db *gorm.DB, secret string, store cookie.Stor
 }
 
 // Add create a new shortener link.
-func (s service) Add(ctx context.Context, link addRequest) (l entity.Link, err error) {
+func (s service) Add(ctx context.Context, link entity.Link) (l entity.Link, err error) {
 	logger := s.logger.With(ctx, "user_id", link.UserID)
-	logger.Infof("add link with url short '%s'", link.URLShort)
+	logger.Infof("add link with url short with domain '%s' and keyword '%s'", link.Domain, link.Keyword)
 
-	err = s.db.Model(&entity.Link{}).Where("url_short = ?", link.URLShort).Take(&l).Error
+	if err = checkLink(logger, link); err != nil {
+		return
+	}
+
+	err = s.db.Model(&entity.Link{}).Where("domain = ? AND keyword = ?", link.Domain, link.Keyword).Take(&l).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		l.ID = uuid.New().String()
 		l.CreatedAt = time.Now()
-		l.URLShort = link.URLShort
-		l.URLFull = link.URLFull
+		l.Domain = link.Domain
+		l.Keyword = link.Keyword
+		l.URL = link.URL
 		l.Title = link.Title
 		l.Active = "true"
 		l.UserID = link.UserID
@@ -61,8 +66,8 @@ func (s service) Add(ctx context.Context, link addRequest) (l entity.Link, err e
 		err = s.db.Model(&entity.Link{}).Create(&l).Error
 		return l, err
 	} else if err == nil {
-		logger.Warnf("shortener link '%s' already exists", link.URLShort)
-		return l, e.ErrLinkKeywordAlreadyExists
+		logger.Warnf("domain '%s' with keyword '%s' already exists", link.Domain, link.Keyword)
+		return l, e.ErrLinkAlreadyExists
 	}
 	logger.Errorf("error when creating a new shortener link, look: %s", err.Error())
 	return l, e.ErrInternalServerError
@@ -73,7 +78,7 @@ func (s service) FindByID(ctx context.Context, link findByIDRequest) (l entity.L
 	logger := s.logger.With(ctx, "user_id", link.UserID)
 	logger.Infof("find link with id '%s'", link.ID)
 
-	err = s.db.Model(&entity.Link{}).Where("id = ? AND user_id = ?", link.ID, link.UserID).First(&l).Error
+	err = s.db.Model(&entity.Link{}).Where("id = ? AND user_id = ?", link.ID, link.UserID).Take(&l).Error
 	if err == gorm.ErrRecordNotFound {
 		logger.Infof("the link id '%s' not found from user_id '%s'", link.ID, link.UserID)
 		return l, e.ErrLinkNotFound
@@ -114,8 +119,9 @@ func (s service) Update(ctx context.Context, link updateRequest) (l entity.Link,
 		l.ID = link.ID
 		l.CreatedAt = link.CreatedAt
 		l.UpdatedAt = link.UpdatedAt
-		l.URLShort = link.URLShort
-		l.URLFull = link.URLFull
+		l.Domain = link.Domain
+		l.Keyword = link.Keyword
+		l.URL = link.URL
 		l.Title = link.Title
 		l.Active = link.Active
 		return
@@ -136,7 +142,7 @@ func (s service) Delete(ctx context.Context, link deleteRequest) (err error) {
 		Where("id = ? AND user_id = ?", link.ID, link.UserID).
 		Delete(&link).Error
 
-	if err == gorm.ErrRecordNotFound || len(link.URLShort) == 0 {
+	if err == gorm.ErrRecordNotFound || len(link.Keyword) == 0 {
 		logger.Infof("the link id '%s' not found from user_id '%s'", link.ID, link.UserID)
 		return e.ErrLinkNotFound
 	} else if err == nil {
