@@ -67,9 +67,7 @@ func codeFrom(err error) int {
 	switch err {
 	case ErrNotFound, ErrLinkNotFound:
 		return http.StatusNotFound
-	case ErrLinkAlreadyExists, ErrAlreadyExists, ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL:
-		return http.StatusForbidden
-	case ErrInconsistentIDs, ErrAccountDeleteYourSelf:
+	case ErrInconsistentIDs, ErrAccountDeleteYourSelf, ErrLinkAlreadyExists, ErrAlreadyExists, ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL:
 		return http.StatusBadRequest
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:
 		return http.StatusUnauthorized

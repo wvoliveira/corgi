@@ -25,7 +25,12 @@ type findByIDResponse struct {
 func (r findByIDResponse) Error() error { return r.Err }
 
 type findAllResponse struct {
-	Links []entity.Link `json:"data,omitempty"`
+	Links []entity.Link `json:"data"`
+	Limit int           `json:"limit"`
+	Page  int           `json:"page"`
+	Sort  string        `json:"sort"`
+	Total int64         `json:"total"`
+	Pages int           `json:"pages"`
 	Err   error         `json:"error,omitempty"`
 }
 

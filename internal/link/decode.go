@@ -12,18 +12,20 @@ type addRequest struct {
 	Keyword string `json:"keyword"`
 	URL     string `json:"url"`
 	Title   string `json:"title"`
-	UserID  string `json:"user_id"`
+	UserID  string `json:"-"`
 }
 
 type findByIDRequest struct {
-	ID     string
-	UserID string `json:"user_id"`
+	ID     string `json:"-"`
+	UserID string `json:"-"`
 }
 
 type findAllRequest struct {
-	Offset int
-	Limit  int
-	UserID string `json:"user_id"`
+	Page   int    `json:"page"`
+	Sort   string `json:"-"`
+	Offset int    `json:"-"`
+	Limit  int    `json:"limit"`
+	UserID string `json:"-"`
 }
 
 type updateRequest struct {
@@ -39,9 +41,9 @@ type updateRequest struct {
 }
 
 type deleteRequest struct {
-	ID      string
-	Domain  string
-	Keyword string
+	ID      string `json:"-"`
+	Domain  string `json:"-"`
+	Keyword string `json:"-"`
 	UserID  string `json:"user_id"`
 }
 
@@ -68,8 +70,12 @@ func decodeFindAll(c *gin.Context) (req findAllRequest, err error) {
 
 	page, _ := strconv.Atoi(c.Query("page"))
 	limit, _ := strconv.Atoi(c.Query("limit"))
+	sort := c.Query("sort")
 	if page == 0 {
 		page = 1
+	}
+	if sort == "" {
+		sort = "ID desc"
 	}
 
 	switch {
@@ -80,6 +86,8 @@ func decodeFindAll(c *gin.Context) (req findAllRequest, err error) {
 	}
 	offset := (page - 1) * limit
 
+	req.Page = page
+	req.Sort = sort
 	req.Limit = limit
 	req.Offset = offset
 	req.UserID = userID.(string)

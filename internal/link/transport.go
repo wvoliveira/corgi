@@ -58,7 +58,7 @@ func (s service) HTTPFindByID(c *gin.Context) {
 	}
 
 	// Business logic.
-	link, err := s.FindByID(c.Request.Context(), dr)
+	link, err := s.FindByID(c.Request.Context(), dr.ID, dr.UserID)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -81,7 +81,7 @@ func (s service) HTTPFindAll(c *gin.Context) {
 	}
 
 	// Business logic.
-	links, err := s.FindAll(c.Request.Context(), dr)
+	total, pages, links, err := s.FindAll(c.Request.Context(), dr.Offset, dr.Limit, dr.Sort, dr.UserID)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -90,6 +90,11 @@ func (s service) HTTPFindAll(c *gin.Context) {
 	// Encode object to answer request (response).
 	sr := findAllResponse{
 		Links: links,
+		Limit: dr.Limit,
+		Page:  dr.Page,
+		Sort:  dr.Sort,
+		Total: total,
+		Pages: pages,
 		Err:   err,
 	}
 	encodeResponse(c, sr)
@@ -104,7 +109,10 @@ func (s service) HTTPUpdate(c *gin.Context) {
 	}
 
 	// Business logic.
-	link, err := s.Update(c.Request.Context(), dr)
+	link, err := s.Update(
+		c.Request.Context(),
+		entity.Link{ID: dr.ID, Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, Active: dr.Active, UserID: dr.UserID},
+	)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -127,7 +135,7 @@ func (s service) HTTPDelete(c *gin.Context) {
 	}
 
 	// Business logic.
-	err = s.Delete(c.Request.Context(), dr)
+	err = s.Delete(c.Request.Context(), dr.ID, dr.UserID)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
