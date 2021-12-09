@@ -30,29 +30,42 @@ func ValidToken(secret string, payload string) (claims jwt.MapClaims, valid bool
 	return
 }
 
-// GenerateTokens generate access and refresh tokens.
-func GenerateTokens(secret string, claims jwt.MapClaims, genRefresh bool) (at, rt entity.Token, err error) {
+// UpdateAccessToken generate access and refresh tokens.
+func UpdateAccessToken(secret string, claims jwt.MapClaims) (token entity.Token, err error) {
 	identity := entity.Identity{
-		ID: claims["identity_id"].(string),
+		ID:       claims["identity_id"].(string),
 		Provider: claims["identity_provider"].(string),
-		UID: claims["identity_uid"].(string),
+		UID:      claims["identity_uid"].(string),
 	}
 
 	user := entity.User{
-		ID: claims["user_id"].(string),
+		ID:   claims["user_id"].(string),
 		Role: claims["user_role"].(string),
 	}
 
-	at, err = GenerateAccessToken(secret, identity, user)
+	token, err = GenerateAccessToken(secret, identity, user)
 	if err != nil {
 		return
 	}
+	return
+}
 
-	if genRefresh {
-		rt, err = GenerateRefreshToken(secret, identity, user)
-		if err != nil {
-			return
-		}
+// UpdateRefreshToken generate refresh token.
+func UpdateRefreshToken(secret string, claims jwt.MapClaims) (token entity.Token, err error) {
+	identity := entity.Identity{
+		ID:       claims["identity_id"].(string),
+		Provider: claims["identity_provider"].(string),
+		UID:      claims["identity_uid"].(string),
+	}
+
+	user := entity.User{
+		ID:   claims["user_id"].(string),
+		Role: claims["user_role"].(string),
+	}
+
+	token, err = GenerateRefreshToken(secret, identity, user)
+	if err != nil {
+		return
 	}
 	return
 }

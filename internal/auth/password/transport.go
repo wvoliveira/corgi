@@ -45,7 +45,8 @@ func (s service) HTTPLogin(c *gin.Context) {
 
 	sessionAuth := sessions.DefaultMany(c, "session_auth")
 	sessionAuth.Set("access_token", token.AccessToken)
-	sessionAuth.Set("refresh_token_id", token.RefreshToken)
+	sessionAuth.Set("refresh_token_id", token.ID)
+	sessionAuth.Set("refresh_token_exp", token.RefreshExpires)
 	err = sessionAuth.Save()
 	if err != nil {
 		e.EncodeError(c, err)

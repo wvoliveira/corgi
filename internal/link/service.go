@@ -3,6 +3,7 @@ package link
 import (
 	"context"
 	"errors"
+	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/log"
@@ -33,15 +34,16 @@ type Service interface {
 }
 
 type service struct {
-	logger log.Logger
-	db     *gorm.DB
-	secret string
-	store  cookie.Store
+	logger  log.Logger
+	db      *gorm.DB
+	secret  string
+	store   cookie.Store
+	enforce *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB, secret string, store cookie.Store) Service {
-	return service{logger, db, secret, store}
+func NewService(logger log.Logger, db *gorm.DB, secret string, store cookie.Store, enforce *casbin.Enforcer) Service {
+	return service{logger, db, secret, store, enforce}
 }
 
 // Add create a new shortener link.

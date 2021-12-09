@@ -2,11 +2,14 @@ package middlewares
 
 import (
 	"github.com/casbin/casbin/v2"
+	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
+	j "github.com/elga-io/corgi/pkg/jwt"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"gorm.io/gorm"
 	"net/http"
 	"time"
 )
@@ -35,7 +38,7 @@ func Access(logger log.Logger) gin.HandlerFunc {
 }
 
 // Auth check if auth ok and set claims in request header.
-func Auth(logger log.Logger, secret string) gin.HandlerFunc {
+func Auth(logger log.Logger, secret string, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logg := logger.With(c.Request.Context())
 
@@ -75,6 +78,52 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 			c.Set("identity_uid", claims["identity_uid"].(string))
 			c.Set("user_id", claims["user_id"].(string))
 			c.Set("user_role", claims["user_role"].(string))
+
+			// TODO: try to update access and refresh tokens.
+			accessTokenExpires := int64(claims["exp"].(float64))
+			refreshTokenID := sessionAuth.Get("refresh_token_id").(string)
+			refreshTokenExpires := sessionAuth.Get("refresh_token_exp").(int64)
+
+			// Logic for update access-token.
+			tm := time.Unix(accessTokenExpires, 0)
+			remains := -(time.Since(tm).Minutes())
+
+			// If there is less 6 minutes left, create a new access token and put in Cookie.
+			var jwtRefreshToken, jwtAccessToken entity.Token
+			var refreshTokenValid, updateCookies bool
+			if remains < 6 {
+				err = db.Debug().Model(&entity.Token{}).Where("id = ?", refreshTokenID).Take(&jwtRefreshToken).Error
+				if err == nil {
+					_, refreshTokenValid := j.ValidToken(secret, jwtRefreshToken.RefreshToken)
+					if refreshTokenValid {
+						jwtAccessToken, err = j.UpdateAccessToken(secret, claims)
+						sessionAuth.Set("access_token", jwtAccessToken.AccessToken)
+						updateCookies = true
+					}
+				}
+			}
+
+			// Logic for update refresh-token.
+			tm = time.Unix(refreshTokenExpires, 0)
+			remains = -(time.Since(tm).Hours())
+			// If there is less 2 hours left, create a new access token.
+			if remains < 2 && refreshTokenValid {
+				// Create a new refresh token and put in Cookie.
+				jwtRefreshToken, err = j.UpdateRefreshToken(secret, claims)
+
+				// Create first and delete after.
+				if err = db.Debug().Model(&entity.Token{}).Create(&jwtRefreshToken).Error; err == nil {
+					if err = db.Debug().Model(&entity.Token{}).Where("id = ?", refreshTokenID).Delete(&entity.Token{ID: refreshTokenID}).Error; err == nil {
+						sessionAuth.Set("refresh_token_id", jwtRefreshToken.RefreshToken)
+						sessionAuth.Set("refresh_token_exp", jwtRefreshToken.RefreshExpires)
+						updateCookies = true
+					}
+				}
+			}
+
+			if updateCookies {
+				_ = sessionAuth.Save()
+			}
 			c.Next()
 		} else {
 			logg.Warnf("invalid token! so sorry")

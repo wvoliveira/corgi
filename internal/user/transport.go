@@ -13,7 +13,8 @@ func (s service) Routers(e *gin.Engine) {
 		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
 		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store),
-		middlewares.Auth(s.logger, s.secret))
+		middlewares.Auth(s.logger, s.secret, s.db),
+		middlewares.Authorizer(s.enforce, s.logger))
 
 	r.GET("/me", s.HTTPFind)
 	r.PATCH("/me", s.HTTPUpdate)

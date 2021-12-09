@@ -70,8 +70,8 @@ func main() {
 	authFacebookService := facebook.NewService(logg, db, cfg, store, authEnforcer)
 
 	// Business services like links, users, etc.
-	linkService := link.NewService(logg, db, cfg.App.SecretKey, store)
-	userService := user.NewService(logg, db, cfg.App.SecretKey, store)
+	linkService := link.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
+	userService := user.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
 
 	// Healthcheck services.
 	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)

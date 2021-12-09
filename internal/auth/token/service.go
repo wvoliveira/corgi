@@ -42,18 +42,18 @@ func (s service) Refresh(ctx context.Context, payload entity.Token) (token entit
 
 	claims, ok := jwt.ValidToken(s.secret, payload.RefreshToken)
 	if !ok {
-		logger.Error("invalid refresh token", err.Error())
+		logger.Warnf("invalid refresh token: %s", err.Error())
 		return token, e.ErrUnauthorized
 	}
 
 	token.ID = claims["id"].(string)
 	if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).First(&token).Error; err != nil {
-		logger.Error("error to get refresh token from our database", err.Error())
+		logger.Warnf("error to get refresh token from our database: %s", err.Error())
 		return token, e.ErrUnauthorized
 	}
 
 	if claims, ok = jwt.ValidToken(s.secret, token.RefreshToken); !ok {
-		logger.Errorf("invalid refresh token from our database", err.Error())
+		logger.Warnf("invalid refresh token from our database: %s", err.Error())
 		// TODO: Delete from database if not valid.
 		return token, e.ErrUnauthorized
 	}
@@ -64,13 +64,18 @@ func (s service) Refresh(ctx context.Context, payload entity.Token) (token entit
 
 	genRefresh := false
 	// If there is 2 hours left, create a new refresh token.
-	if remains < 2 {
+	if remains < -2 {
 		genRefresh = true
 	}
 
-	accessToken, refreshToken, err := jwt.GenerateTokens(s.secret, claims, genRefresh)
+	accessToken, err := jwt.UpdateAccessToken(s.secret, claims)
 	if err != nil {
 		return token, errors.New("error to generate access token: " + err.Error())
+	}
+
+	refreshToken, err := jwt.UpdateRefreshToken(s.secret, claims)
+	if err != nil {
+		return token, errors.New("error to generate refresh token: " + err.Error())
 	}
 
 	if genRefresh {
