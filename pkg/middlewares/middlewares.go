@@ -97,8 +97,10 @@ func Auth(logger log.Logger, secret string, db *gorm.DB) gin.HandlerFunc {
 					_, refreshTokenValid := j.ValidToken(secret, jwtRefreshToken.RefreshToken)
 					if refreshTokenValid {
 						jwtAccessToken, err = j.UpdateAccessToken(secret, claims)
-						sessionAuth.Set("access_token", jwtAccessToken.AccessToken)
-						updateCookies = true
+						if err == nil {
+							sessionAuth.Set("access_token", jwtAccessToken.AccessToken)
+							updateCookies = true
+						}
 					}
 				}
 			}
@@ -110,13 +112,14 @@ func Auth(logger log.Logger, secret string, db *gorm.DB) gin.HandlerFunc {
 			if remains < 2 && refreshTokenValid {
 				// Create a new refresh token and put in Cookie.
 				jwtRefreshToken, err = j.UpdateRefreshToken(secret, claims)
-
-				// Create first and delete after.
-				if err = db.Debug().Model(&entity.Token{}).Create(&jwtRefreshToken).Error; err == nil {
-					if err = db.Debug().Model(&entity.Token{}).Where("id = ?", refreshTokenID).Delete(&entity.Token{ID: refreshTokenID}).Error; err == nil {
-						sessionAuth.Set("refresh_token_id", jwtRefreshToken.RefreshToken)
-						sessionAuth.Set("refresh_token_exp", jwtRefreshToken.RefreshExpires)
-						updateCookies = true
+				if err == nil {
+					// Create first and delete after.
+					if err = db.Debug().Model(&entity.Token{}).Create(&jwtRefreshToken).Error; err == nil {
+						if err = db.Debug().Model(&entity.Token{}).Where("id = ?", refreshTokenID).Delete(&entity.Token{ID: refreshTokenID}).Error; err == nil {
+							sessionAuth.Set("refresh_token_id", jwtRefreshToken.RefreshToken)
+							sessionAuth.Set("refresh_token_exp", jwtRefreshToken.RefreshExpires)
+							updateCookies = true
+						}
 					}
 				}
 			}
