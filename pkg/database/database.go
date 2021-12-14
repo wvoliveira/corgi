@@ -18,10 +18,11 @@ import (
 
 // NewDatabase create a gorm database object.
 func NewDatabase(logger log.Logger, c config.Config) (db *gorm.DB) {
-	return initDatabase(logger, c)
+	return InitDatabase(logger, c)
 }
 
-func initDatabase(logger log.Logger, c config.Config) (db *gorm.DB) {
+// InitDatabase create a database connection.
+func InitDatabase(logger log.Logger, c config.Config) (db *gorm.DB) {
 	connString := fmt.Sprintf("postgres://%s@%s:%d/%s", c.Database.User, c.Database.Host, c.Database.Port, c.Database.Base)
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
 	if err != nil {

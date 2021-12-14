@@ -26,14 +26,29 @@ func Access(logger log.Logger) gin.HandlerFunc {
 		c.Request = c.Request.WithContext(ctx)
 
 		// Start logging request access log.
-		logger.With(ctx, "http", "request", "start", start).
-			Infof("%s %s %s", c.Request.Method, c.Request.URL.Path, c.Request.Proto)
+		logger.With(ctx,
+			"http", "request",
+			"client_ip", c.ClientIP(),
+			"start", start,
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"proto", c.Request.Proto,
+		).Info()
 
 		c.Next()
 
 		// End logging response access log.
-		logger.With(ctx, "http", "response", "duration", time.Since(start).Milliseconds(), "status", c.Writer.Status()).
-			Infof("%s %s %s %d %d", c.Request.Method, c.Request.URL.Path, c.Request.Proto, c.Writer.Status(), c.Writer.Size())
+		logger.With(ctx,
+			"http", "response",
+			"client_ip", c.ClientIP(),
+			"duration", time.Since(start).Milliseconds(),
+			"status", c.Writer.Status(),
+			"method", c.Request.Method,
+			"path", c.Request.URL.Path,
+			"proto", c.Request.Proto,
+			"status", c.Writer.Status(),
+			"size", c.Writer.Size(),
+		).Info()
 	}
 }
 
@@ -42,7 +57,7 @@ func Auth(logger log.Logger, secret string, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logg := logger.With(c.Request.Context())
 
-		sessionAuth := sessions.DefaultMany(c, "session_auth")
+		sessionAuth := sessions.DefaultMany(c, "auth")
 		if sessionAuth == nil {
 			logg.Info("session_auth not found")
 			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)

@@ -35,3 +35,9 @@ main-swag:
 # Unit test API.
 go-test:
 	go test -v ./server
+
+seed-location-ipv4:
+	go run .\scripts\seed_locations.go -ip-version=4 -file="dbip-city-ipv4-num.csv"
+
+seed-location-ipv6:
+	go run .\scripts\seed_locations.go -ip-version=6 -file="dbip-city-ipv6-num.csv"

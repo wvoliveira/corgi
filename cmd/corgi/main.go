@@ -12,6 +12,7 @@ import (
 	"github.com/elga-io/corgi/internal/entity"
 	"github.com/elga-io/corgi/internal/health"
 	"github.com/elga-io/corgi/internal/link"
+	"github.com/elga-io/corgi/internal/public"
 	"github.com/elga-io/corgi/internal/user"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
@@ -44,8 +45,11 @@ func main() {
 		&entity.User{},
 		&entity.Identity{},
 		&entity.Link{},
+		&entity.LinkLog{},
 		&entity.Token{},
 		&entity.Tag{},
+		&entity.LocationIPv4{},
+		&entity.LocationIPv6{},
 	); err != nil {
 		logg.Error("error in auto migrate", "err", err.Error())
 		os.Exit(1)
@@ -73,6 +77,9 @@ func main() {
 	linkService := link.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
 	userService := user.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
 
+	// Public routes, like links?
+	publicService := public.NewService(logg, db, store, authEnforcer)
+
 	// Healthcheck services.
 	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)
 
@@ -89,6 +96,7 @@ func main() {
 
 	linkService.Routers(router)
 	userService.Routers(router)
+	publicService.Routers(router)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.HTTPPort,
