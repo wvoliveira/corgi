@@ -65,7 +65,7 @@ func main() {
 
 	file, err := os.Open(*fileCSV)
 	if err != nil {
-		fmt.Println("error to open CSV file: %s", err.Error())
+		fmt.Printf("error to open CSV file: %s\n", err.Error())
 		os.Exit(2)
 	}
 
@@ -126,7 +126,7 @@ func main() {
 	}
 
 	if err := scanner.Err(); err != nil {
-		fmt.Println("error to scan file: %s", err.Error())
+		fmt.Printf("error to scan file: %s\n", err.Error())
 		os.Exit(2)
 	}
 }

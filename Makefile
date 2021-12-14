@@ -32,10 +32,6 @@ user-swag:
 main-swag:
 	swag init --parseInternal --dir "./" -g main.go -o docs
 
-# Unit test API.
-go-test:
-	go test -v ./server
-
 seed-location-ipv4:
 	go run .\scripts\seed_locations.go -ip-version=4 -file="dbip-city-ipv4-num.csv"
 

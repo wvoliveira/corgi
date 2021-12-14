@@ -21,7 +21,7 @@ func TestAccess(t *testing.T) {
 
 	// TEST
 	assert.Equal(t, 2, entries.Len())
-	assert.Equal(t, "GET / HTTP/1.1", entries.All()[0].Message)
+	assert.Equal(t, "", entries.All()[0].Message)
 }
 
 type header struct {
