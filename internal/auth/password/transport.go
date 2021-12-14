@@ -12,7 +12,7 @@ func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth/password",
 		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store))
+		sessions.SessionsMany([]string{"unique", "auth"}, s.store))
 
 	r.POST("/login", s.HTTPLogin)
 	r.POST("/register", s.HTTPRegister)
@@ -43,7 +43,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 		Err:          err,
 	}
 
-	sessionAuth := sessions.DefaultMany(c, "session_auth")
+	sessionAuth := sessions.DefaultMany(c, "auth")
 	sessionAuth.Set("access_token", token.AccessToken)
 	sessionAuth.Set("refresh_token_id", token.ID)
 	sessionAuth.Set("refresh_token_exp", token.RefreshExpires)

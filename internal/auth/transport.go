@@ -11,7 +11,7 @@ func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth",
 		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"session_unique", "session_auth"}, s.store),
+		sessions.SessionsMany([]string{"unique", "auth"}, s.store),
 		middlewares.Auth(s.logger, s.secret, s.db),
 		middlewares.Authorizer(s.enforce, s.logger))
 
@@ -29,7 +29,7 @@ func (s service) HTTPLogout(c *gin.Context) {
 		return
 	}
 
-	sessionAuth := sessions.DefaultMany(c, "session_auth")
+	sessionAuth := sessions.DefaultMany(c, "auth")
 	tokenIDInterface := sessionAuth.Get("refresh_token_id")
 	if tokenIDInterface != nil {
 		dr.Token.ID = tokenIDInterface.(string)
