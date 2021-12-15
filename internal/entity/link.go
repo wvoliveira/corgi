@@ -34,7 +34,8 @@ type LinkLog struct {
 	UserAgentDeviceFamily string `json:"user_agent_device_family"`
 	Referer               string `json:"referer"`
 
-	LinkID string `json:"-" gorm:"index"`
+	LinkID         string `json:"-" gorm:"index"`
+	LocationIPv4ID string `json:"-" gorm:"index"`
 }
 
 func (l *LinkLog) BeforeCreate(tx *gorm.DB) (err error) {

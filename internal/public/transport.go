@@ -7,6 +7,7 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/ua-parser/uap-go/uaparser"
+	"net"
 	"net/http"
 )
 
@@ -25,7 +26,7 @@ func (s service) HTTPFindByKeyword(c *gin.Context) {
 
 	parser := uaparser.NewFromSaved()
 	client := parser.Parse(userAgent)
-	// n := net.ParseIP(remoteAddress)
+	ip := net.ParseIP(remoteAddress)
 
 	// Decode request to request object.
 	dr, err := decodeFindByKeyword(c)
@@ -41,7 +42,11 @@ func (s service) HTTPFindByKeyword(c *gin.Context) {
 	sessionUnique := sessions.DefaultMany(c, "_corgi")
 	domainKey := sessionUnique.Get(dr.Domain)
 
-	if domainKey != nil {
+	if ip.IsLoopback() {
+		unique = false
+	}
+
+	if unique && domainKey != nil {
 		keywords = domainKey.([]string)
 		for _, keyword := range keywords {
 			if keyword == dr.Keyword {
@@ -52,7 +57,7 @@ func (s service) HTTPFindByKeyword(c *gin.Context) {
 	}
 
 	linkLog := entity.LinkLog{
-		RemoteAddress:         remoteAddress, // change to remoteAddress
+		RemoteAddress:         remoteAddress,
 		UserAgentRaw:          userAgent,
 		UserAgentFamily:       client.UserAgent.Family,
 		UserAgentOSFamily:     client.Os.Family,
