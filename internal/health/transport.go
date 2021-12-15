@@ -8,7 +8,7 @@ import (
 
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/health",
-		sessions.SessionsMany([]string{"unique", "auth"}, s.store),
+		sessions.SessionsMany([]string{"_corgi", "session"}, s.store),
 		middlewares.Authorizer(s.enforce, s.logger))
 	r.GET("/ping", s.httpHealth)
 	//r.GET("/live", s.httpLive)

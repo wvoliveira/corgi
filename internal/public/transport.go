@@ -7,14 +7,13 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/ua-parser/uap-go/uaparser"
-	"net"
 	"net/http"
 )
 
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/",
 		middlewares.Access(s.logger),
-		sessions.SessionsMany([]string{"unique", "auth"}, s.store))
+		sessions.SessionsMany([]string{"_corgi", "session"}, s.store))
 
 	r.GET("/:keyword", s.HTTPFindByKeyword)
 }
@@ -26,7 +25,7 @@ func (s service) HTTPFindByKeyword(c *gin.Context) {
 
 	parser := uaparser.NewFromSaved()
 	client := parser.Parse(userAgent)
-	n := net.ParseIP(remoteAddress)
+	// n := net.ParseIP(remoteAddress)
 
 	// Decode request to request object.
 	dr, err := decodeFindByKeyword(c)
@@ -39,10 +38,10 @@ func (s service) HTTPFindByKeyword(c *gin.Context) {
 	unique := true
 	var keywords []string
 
-	sessionUnique := sessions.DefaultMany(c, "unique")
+	sessionUnique := sessions.DefaultMany(c, "_corgi")
 	domainKey := sessionUnique.Get(dr.Domain)
 
-	if !n.IsLoopback() && domainKey != nil {
+	if domainKey != nil {
 		keywords = domainKey.([]string)
 		for _, keyword := range keywords {
 			if keyword == dr.Keyword {
@@ -69,7 +68,7 @@ func (s service) HTTPFindByKeyword(c *gin.Context) {
 	}
 
 	// Set keyword in session domain key
-	if domainKey == nil || (domainKey != nil && unique) {
+	if unique {
 		keywords = append(keywords, dr.Keyword)
 		sessionUnique.Set(dr.Domain, keywords)
 		_ = sessionUnique.Save()

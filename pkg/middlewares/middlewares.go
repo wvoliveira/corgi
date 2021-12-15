@@ -57,7 +57,7 @@ func Auth(logger log.Logger, secret string, db *gorm.DB) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logg := logger.With(c.Request.Context())
 
-		sessionAuth := sessions.DefaultMany(c, "auth")
+		sessionAuth := sessions.DefaultMany(c, "session")
 		if sessionAuth == nil {
 			logg.Info("session_auth not found")
 			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)

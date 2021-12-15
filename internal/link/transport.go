@@ -12,7 +12,7 @@ func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/v1/links",
 		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"unique", "auth"}, s.store),
+		sessions.SessionsMany([]string{"_corgi", "session"}, s.store),
 		middlewares.Auth(s.logger, s.secret, s.db))
 
 	r.POST("/", s.HTTPAdd)

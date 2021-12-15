@@ -12,7 +12,7 @@ func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth/facebook",
 		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"unique", "auth"}, s.store),
+		sessions.SessionsMany([]string{"_corgi", "session"}, s.store),
 		middlewares.Authorizer(s.enforce, s.logger))
 
 	r.GET("/login", s.HTTPLogin)
@@ -78,7 +78,7 @@ func (s service) HTTPCallback(c *gin.Context) {
 		Err:          err,
 	}
 
-	sessionAuth := sessions.DefaultMany(c, "auth")
+	sessionAuth := sessions.DefaultMany(c, "session")
 	sessionAuth.Set("access_token", token.AccessToken)
 	sessionAuth.Set("refresh_token_id", token.ID)
 	sessionAuth.Set("refresh_token_exp", token.RefreshExpires)
