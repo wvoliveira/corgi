@@ -4,19 +4,16 @@ import (
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth/password",
 		middlewares.Access(s.logger),
-		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"_corgi", "session"}, s.store))
+		middlewares.Checks(s.logger))
 
 	r.POST("/login", s.HTTPLogin)
 	r.POST("/register", s.HTTPRegister)
-	// v1Auth.POST("/google/login", authGoogleService.HTTPLogin)
 }
 
 func (s service) HTTPLogin(c *gin.Context) {
@@ -43,15 +40,6 @@ func (s service) HTTPLogin(c *gin.Context) {
 		Err:          err,
 	}
 
-	sessionAuth := sessions.DefaultMany(c, "session")
-	sessionAuth.Set("access_token", token.AccessToken)
-	sessionAuth.Set("refresh_token_id", token.ID)
-	sessionAuth.Set("refresh_token_exp", token.RefreshExpires)
-	err = sessionAuth.Save()
-	if err != nil {
-		e.EncodeError(c, err)
-		return
-	}
 	encodeResponse(c, sr)
 }
 

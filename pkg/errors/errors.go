@@ -19,11 +19,12 @@ var (
 	// Token errors.
 	ErrTokenInvalid = errors.New("invalid token")
 
-	// Auth errors.
-	ErrUnauthorized = errors.New("sorry, you are not unauthorized")
-	ErrParseToken   = errors.New("there was an error in parsing token")
-	ErrTokenExpired = errors.New("your token has been expired")
-	ErrNoTokenFound = errors.New("token authorization not found in header")
+	// ErrUnauthorized default authentication error.
+	ErrUnauthorized     = errors.New("sorry, you are not unauthorized")
+	ErrParseToken       = errors.New("there was an error in parsing token")
+	ErrTokenExpired     = errors.New("your token has been expired")
+	ErrNoTokenFound     = errors.New("token authorization not found in header")
+	ErrAuthHeaderFormat = errors.New("must provide Authorization header with format `Bearer {token}`")
 
 	// ErrUserNotFound error when user not found in database.
 	ErrUserNotFound = errors.New("user not found")

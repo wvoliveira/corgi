@@ -16,6 +16,7 @@ import (
 	"github.com/elga-io/corgi/internal/user"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"net/http"
@@ -85,6 +86,9 @@ func main() {
 
 	// Initialize routers.
 	router := gin.New()
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowAllOrigins = true
+	router.Use(cors.New(corsConfig))
 
 	// Register business and needed routers.
 	healthService.Routers(router)

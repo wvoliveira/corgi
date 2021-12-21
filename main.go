@@ -15,10 +15,10 @@ import (
 // version indicates the current version of the application.
 var version = "0.0.1"
 
-//go:embed web/dist
-//go:embed web/dist/_next
-//go:embed web/dist/_next/static/chunks/pages/*.js
-//go:embed web/dist/_next/static/*/*.js
+////go:embed web/dist
+////go:embed web/dist/_next
+////go:embed web/dist/_next/static/chunks/pages/*.js
+////go:embed web/dist/_next/static/*/*.js
 var nextFS embed.FS
 
 func main() {

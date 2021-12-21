@@ -58,11 +58,11 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (token ent
 	err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		logger.Error("this provider not found in database")
-		return token, err
+		logger.Warnf("this provider + uid not found in database: %s", err.Error())
+		return token, e.ErrUnauthorized
 	} else if err != nil {
-		logger.Error("error when get identity from database", err.Error())
-		return token, err
+		logger.Warnf("error when get identity from database: %s", err.Error())
+		return token, e.ErrUnauthorized
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(identityDB.Password), []byte(identity.Password)); err != nil {

@@ -44,7 +44,9 @@ func (s service) FindByKeyword(ctx context.Context, domain, keyword string, link
 	if err == gorm.ErrRecordNotFound {
 		logger.Infof("the link domain '%s' and keyword '%s' not found", domain, keyword)
 		return l, e.ErrLinkNotFound
-	} else if err == nil {
+	}
+
+	if err == nil {
 		if unique {
 			go func() {
 				ipLong := location2.IPv4ToLong(linkLog.RemoteAddress)

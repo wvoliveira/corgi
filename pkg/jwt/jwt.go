@@ -79,11 +79,11 @@ func GenerateAccessToken(secret string, identity entity.Identity, user entity.Us
 
 	claims := accessToken.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
-	claims["identity_id"] = identity.GetID()
+	claims["identity_id"] = identity.ID
 	claims["identity_provider"] = identity.Provider // e-mail, google, facebook, etc.
-	claims["identity_uid"] = identity.GetUID()      // e-mail address, google id, facebook id, etc.
-	claims["user_id"] = user.GetID()
-	claims["user_role"] = user.GetRole()
+	claims["identity_uid"] = identity.UID           // e-mail address, google id, facebook id, etc.
+	claims["user_id"] = user.ID
+	claims["user_role"] = user.Role
 	claims["exp"] = tokenExpires
 
 	at, err := accessToken.SignedString([]byte(secret))
@@ -94,7 +94,7 @@ func GenerateAccessToken(secret string, identity entity.Identity, user entity.Us
 	token.CreatedAt = time.Now()
 	token.AccessToken = at
 	token.AccessExpires = tokenExpires
-	token.UserID = user.GetID()
+	token.UserID = user.ID
 	return
 }
 
@@ -109,11 +109,11 @@ func GenerateRefreshToken(secret string, identity entity.Identity, user entity.U
 	claims := refreshToken.Claims.(jwt.MapClaims)
 	claims["id"] = id
 	claims["sub"] = 1
-	claims["identity_id"] = identity.GetID()
+	claims["identity_id"] = identity.ID
 	claims["identity_provider"] = identity.Provider // e-mail, google, facebook, etc.
-	claims["identity_uid"] = identity.GetUID()      // e-mail address, google id, facebook id, etc.
-	claims["user_id"] = user.GetID()
-	claims["user_role"] = user.GetRole()
+	claims["identity_uid"] = identity.UID           // e-mail address, google id, facebook id, etc.
+	claims["user_id"] = user.ID
+	claims["user_role"] = user.Role
 	claims["exp"] = tokenExpires
 
 	rt, err := refreshToken.SignedString([]byte(secret))
@@ -126,6 +126,24 @@ func GenerateRefreshToken(secret string, identity entity.Identity, user entity.U
 	token.CreatedAt = time.Now()
 	token.RefreshToken = rt
 	token.RefreshExpires = tokenExpires
-	token.UserID = user.GetID()
+	token.UserID = user.ID
 	return
+}
+
+// ValidateToken check if token is valid and return claims if true.
+func ValidateToken(tokenHash, secret string) (claims jwt.MapClaims, err error) {
+	token, err := jwt.Parse(tokenHash, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return token, e.ErrParseToken
+		}
+		return []byte(secret), nil
+	})
+	if err != nil {
+		return claims, errors.New("error to parse access token " + err.Error())
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		return claims, err
+	}
+	return claims, errors.New("invalid token")
 }

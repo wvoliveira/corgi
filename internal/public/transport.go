@@ -14,7 +14,7 @@ import (
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/",
 		middlewares.Access(s.logger),
-		sessions.SessionsMany([]string{"_corgi", "session"}, s.store))
+		sessions.Sessions("_corgi", s.store))
 
 	r.GET("/:keyword", s.HTTPFindByKeyword)
 }
@@ -39,8 +39,8 @@ func (s service) HTTPFindByKeyword(c *gin.Context) {
 	unique := true
 	var keywords []string
 
-	sessionUnique := sessions.DefaultMany(c, "_corgi")
-	domainKey := sessionUnique.Get(dr.Domain)
+	session := sessions.Default(c)
+	domainKey := session.Get(dr.Domain)
 
 	if ip.IsLoopback() {
 		unique = false
@@ -75,8 +75,8 @@ func (s service) HTTPFindByKeyword(c *gin.Context) {
 	// Set keyword in session domain key
 	if unique {
 		keywords = append(keywords, dr.Keyword)
-		sessionUnique.Set(dr.Domain, keywords)
-		_ = sessionUnique.Save()
+		session.Set(dr.Domain, keywords)
+		_ = session.Save()
 	}
 
 	// Redirect! Not encode for response.

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,7 +11,6 @@ func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth/facebook",
 		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"_corgi", "session"}, s.store),
 		middlewares.Authorizer(s.enforce, s.logger))
 
 	r.GET("/login", s.HTTPLogin)
@@ -78,14 +76,5 @@ func (s service) HTTPCallback(c *gin.Context) {
 		Err:          err,
 	}
 
-	sessionAuth := sessions.DefaultMany(c, "session")
-	sessionAuth.Set("access_token", token.AccessToken)
-	sessionAuth.Set("refresh_token_id", token.ID)
-	sessionAuth.Set("refresh_token_exp", token.RefreshExpires)
-	err = sessionAuth.Save()
-	if err != nil {
-		e.EncodeError(c, err)
-		return
-	}
 	encodeResponse(c, sr)
 }

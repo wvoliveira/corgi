@@ -4,7 +4,6 @@ import (
 	"fmt"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,7 +11,6 @@ func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth/google",
 		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"_corgi", "session"}, s.store),
 		middlewares.Authorizer(s.enforce, s.logger))
 
 	r.GET("/login", s.HTTPLogin)
@@ -40,14 +38,15 @@ func (s service) HTTPLogin(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	sr := loginResponse{
+	_ = loginResponse{
 		RedirectURL: redirectURL,
 		Err:         err,
 	}
 	if err != nil {
 		e.EncodeError(c, err)
 	}
-	encodeResponse(c, sr)
+	c.Redirect(301, redirectURL)
+	// encodeResponse(c, sr)
 }
 
 func (s service) HTTPCallback(c *gin.Context) {
@@ -71,21 +70,13 @@ func (s service) HTTPCallback(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	sr := callbackResponse{
+	_ = callbackResponse{
 		AccessToken:  token.AccessToken,
 		RefreshToken: token.RefreshToken,
 		ExpiresIn:    token.AccessExpires,
 		Err:          err,
 	}
 
-	sessionAuth := sessions.DefaultMany(c, "session")
-	sessionAuth.Set("access_token", token.AccessToken)
-	sessionAuth.Set("refresh_token_id", token.ID)
-	sessionAuth.Set("refresh_token_exp", token.RefreshExpires)
-	err = sessionAuth.Save()
-	if err != nil {
-		e.EncodeError(c, err)
-		return
-	}
-	encodeResponse(c, sr)
+	c.Redirect(301, "http://localhost:3000/")
+	//encodeResponse(c, sr)
 }

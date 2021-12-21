@@ -40,6 +40,9 @@ github.com/davecgh/go-spew/spew
 # github.com/fsnotify/fsnotify v1.5.1
 ## explicit; go 1.13
 github.com/fsnotify/fsnotify
+# github.com/gin-contrib/cors v1.3.1
+## explicit; go 1.13
+github.com/gin-contrib/cors
 # github.com/gin-contrib/sessions v0.0.4
 ## explicit; go 1.13
 github.com/gin-contrib/sessions

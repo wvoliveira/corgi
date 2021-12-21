@@ -4,7 +4,6 @@ import (
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -12,8 +11,7 @@ func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/v1/user",
 		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
-		sessions.SessionsMany([]string{"_corgi", "session"}, s.store),
-		middlewares.Auth(s.logger, s.secret, s.db),
+		middlewares.Auth(s.logger, s.secret),
 		middlewares.Authorizer(s.enforce, s.logger))
 
 	r.GET("/me", s.HTTPFind)

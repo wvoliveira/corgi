@@ -16,13 +16,3 @@ type Identity struct {
 	Verified   *bool     `json:"verified" gorm:"default:false"`
 	VerifiedAt time.Time `json:"confirmed_at"`
 }
-
-// GetID returns the user ID.
-func (i Identity) GetID() string {
-	return i.ID
-}
-
-// GetUID returns e-mail or google id or facebook id, etc.
-func (i Identity) GetUID() string {
-	return i.UID
-}

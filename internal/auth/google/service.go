@@ -112,14 +112,7 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		return
 	}
 
-	type googleUserInfo struct {
-		ID            string `json:"id"`
-		Email         string `json:"email"`
-		VerifiedEmail bool   `json:"verified_email"`
-		Name          string `json:"name"`
-	}
-
-	googleUser := googleUserInfo{}
+	googleUser := entity.GoogleUserInfo{}
 	err = json.Unmarshal(response, &googleUser)
 	if err != nil {
 		logger.Error("error to unmarshal userinfo from google", err.Error())

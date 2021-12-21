@@ -18,13 +18,3 @@ type User struct {
 
 	Tags []Tag `gorm:"many2many:user_tags;"`
 }
-
-// GetID returns the user ID.
-func (u User) GetID() string {
-	return u.ID
-}
-
-// GetRole returns the role.
-func (u User) GetRole() string {
-	return u.Role
-}
