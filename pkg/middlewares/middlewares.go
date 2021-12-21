@@ -26,26 +26,17 @@ func Access(logger log.Logger) gin.HandlerFunc {
 		ctx = log.WithRequest(ctx, c.Request)
 		c.Request = c.Request.WithContext(ctx)
 
-		// Start logging request access log.
-		logger.With(ctx,
-			"http", "request",
-			"client_ip", c.ClientIP(),
-			"start", start,
-			"method", c.Request.Method,
-			"path", c.Request.URL.Path,
-			"proto", c.Request.Proto,
-		).Info()
-
 		c.Next()
 
 		// End logging response access log.
 		logger.With(ctx,
-			"http", "response",
+			"http", "request",
 			"client_ip", c.ClientIP(),
 			"duration", time.Since(start).Milliseconds(),
 			"status", c.Writer.Status(),
 			"method", c.Request.Method,
 			"path", c.Request.URL.Path,
+			"query", c.Request.URL.RawQuery,
 			"proto", c.Request.Proto,
 			"status", c.Writer.Status(),
 			"size", c.Writer.Size(),

@@ -3,7 +3,6 @@ package public
 import (
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
-	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/ua-parser/uap-go/uaparser"
@@ -13,7 +12,6 @@ import (
 
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/",
-		middlewares.Access(s.logger),
 		sessions.Sessions("_corgi", s.store))
 
 	r.GET("/:keyword", s.HTTPFindByKeyword)

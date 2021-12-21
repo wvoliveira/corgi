@@ -16,6 +16,7 @@ import (
 	"github.com/elga-io/corgi/internal/user"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -84,10 +85,14 @@ func main() {
 	// Healthcheck services.
 	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)
 
-	// Initialize routers.
-	router := gin.New()
+	// Cors. Yes, we need this.
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowAllOrigins = true
+
+	// Initialize routers.
+	router := gin.New()
+	router.Use(middlewares.Access(logg))
+	router.Use(gin.Recovery())
 	router.Use(cors.New(corsConfig))
 
 	// Register business and needed routers.

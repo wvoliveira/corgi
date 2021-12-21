@@ -9,7 +9,6 @@ import (
 
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth/google",
-		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
 		middlewares.Authorizer(s.enforce, s.logger))
 

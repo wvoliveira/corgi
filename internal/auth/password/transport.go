@@ -9,7 +9,6 @@ import (
 
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/auth/password",
-		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger))
 
 	r.POST("/login", s.HTTPLogin)

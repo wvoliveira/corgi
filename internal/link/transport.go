@@ -9,7 +9,6 @@ import (
 
 func (s service) Routers(e *gin.Engine) {
 	r := e.Group("/api/v1/links",
-		middlewares.Access(s.logger),
 		middlewares.Checks(s.logger),
 		middlewares.Auth(s.logger, s.secret))
 
