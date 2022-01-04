@@ -4,6 +4,7 @@ import (
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func (s service) Routers(e *gin.Engine) {
@@ -33,6 +34,14 @@ func (s service) HTTPLogout(c *gin.Context) {
 		e.EncodeError(c, err)
 		return
 	}
+
+	cookieAccess := http.Cookie{Name: "access_token", MaxAge: -1}
+	cookieRefresh := http.Cookie{Name: "refresh_token_id", MaxAge: -1}
+	cookieLogged := http.Cookie{Name: "logged", MaxAge: -1}
+
+	http.SetCookie(c.Writer, &cookieAccess)
+	http.SetCookie(c.Writer, &cookieRefresh)
+	http.SetCookie(c.Writer, &cookieLogged)
 
 	// Encode object to answer request (response).
 	sr := logoutResponse{Err: err}

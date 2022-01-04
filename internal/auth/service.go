@@ -35,7 +35,7 @@ func (s service) Logout(ctx context.Context, token entity.Token) (err error) {
 	logger := s.logger.With(ctx, "user_id", token.UserID)
 	logger.Info("Logout user deleting cookie and refresh token.")
 
-	err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", token.ID).Delete(&token).Error
+	err = s.db.Debug().Model(&entity.Token{}).Where("id = ? AND user_id = ?", token.ID, token.UserID).Delete(&token).Error
 	if err != nil {
 		logger.Errorf("error to delete token in database: %s", err.Error())
 		return

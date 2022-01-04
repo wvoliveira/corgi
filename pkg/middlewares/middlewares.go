@@ -80,6 +80,9 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 		c.Set("identity_uid", claims["identity_uid"].(string))
 		c.Set("user_id", claims["user_id"].(string))
 		c.Set("user_role", claims["user_role"].(string))
+
+		tokenRefreshID, _ := c.Cookie("refresh_token_id")
+		c.Set("refresh_token_id", tokenRefreshID)
 		c.Next()
 	}
 }
