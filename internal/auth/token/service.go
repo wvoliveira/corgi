@@ -16,7 +16,7 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Refresh(ctx context.Context, token entity.Token) (entity.Token, error)
+	Refresh(ctx context.Context, token entity.Token) (entity.Token, entity.Token, error)
 	HTTPRefresh(c *gin.Context)
 	Routers(r *gin.Engine)
 }
@@ -37,25 +37,20 @@ func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration i
 
 // Refresh authenticates a user and generates a new access and refresh JWT token if needed.
 // Otherwise, an error is returned.
-func (s service) Refresh(ctx context.Context, payload entity.Token) (token entity.Token, err error) {
+func (s service) Refresh(ctx context.Context, payload entity.Token) (tokenAccess, tokenRefresh entity.Token, err error) {
 	logger := s.logger.With(ctx)
 
-	claims, ok := jwt.ValidToken(s.secret, payload.RefreshToken)
-	if !ok {
-		logger.Warnf("invalid refresh token: %s", err.Error())
-		return token, e.ErrUnauthorized
-	}
-
-	token.ID = claims["id"].(string)
-	if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).First(&token).Error; err != nil {
+	if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).First(&tokenRefresh).Error; err != nil {
 		logger.Warnf("error to get refresh token from our database: %s", err.Error())
-		return token, e.ErrUnauthorized
+		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	}
 
-	if claims, ok = jwt.ValidToken(s.secret, token.RefreshToken); !ok {
+	// Check refresh token from database.
+	claims, ok := jwt.ValidToken(s.secret, tokenRefresh.Token)
+	if !ok {
 		logger.Warnf("invalid refresh token from our database: %s", err.Error())
 		// TODO: Delete from database if not valid.
-		return token, e.ErrUnauthorized
+		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	}
 
 	exp := claims["exp"].(int64)
@@ -68,29 +63,25 @@ func (s service) Refresh(ctx context.Context, payload entity.Token) (token entit
 		genRefresh = true
 	}
 
-	accessToken, err := jwt.UpdateAccessToken(s.secret, claims)
+	tokenAccess, err = jwt.UpdateAccessToken(s.secret, claims)
 	if err != nil {
-		return token, errors.New("error to generate access token: " + err.Error())
+		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
 	}
 
-	refreshToken, err := jwt.UpdateRefreshToken(s.secret, claims)
+	tokenRefresh, err = jwt.UpdateRefreshToken(s.secret, claims)
 	if err != nil {
-		return token, errors.New("error to generate refresh token: " + err.Error())
+		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
 	}
 
 	if genRefresh {
-		if err = s.db.Debug().Model(&entity.Token{}).Create(&refreshToken).Error; err != nil {
+		if err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error; err != nil {
 			logger.Error("error to create refresh token", err.Error())
-			return token, errors.New("error to create refresh token")
+			return tokenAccess, tokenRefresh, errors.New("error to create refresh token")
 		}
-		if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).Delete(&token).Error; err != nil {
+		if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).Delete(&payload).Error; err != nil {
 			logger.Error("error to delete refresh token from database", err.Error())
-			return token, errors.New("error to delete refresh token from database")
+			return tokenAccess, tokenRefresh, errors.New("error to delete refresh token from database")
 		}
-		token.RefreshToken = refreshToken.RefreshToken
 	}
-
-	token.AccessToken = accessToken.AccessToken
-	token.AccessExpires = accessToken.AccessExpires
 	return
 }

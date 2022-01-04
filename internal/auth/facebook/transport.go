@@ -8,7 +8,7 @@ import (
 )
 
 func (s service) Routers(e *gin.Engine) {
-	r := e.Group("/api/auth/facebook",
+	r := e.Group("/auth/facebook",
 		middlewares.Checks(s.logger),
 		middlewares.Authorizer(s.enforce, s.logger))
 
@@ -61,7 +61,7 @@ func (s service) HTTPCallback(c *gin.Context) {
 		schema = "https"
 	}
 	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/facebook/callback")
-	token, err := s.Callback(c.Request.Context(), callbackURL, dr)
+	tokenAccess, tokenRefresh, err := s.Callback(c.Request.Context(), callbackURL, dr)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -69,9 +69,9 @@ func (s service) HTTPCallback(c *gin.Context) {
 
 	// Encode object to answer request (response).
 	sr := callbackResponse{
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		ExpiresIn:    token.AccessExpires,
+		AccessToken:  tokenAccess.Token,
+		RefreshToken: tokenRefresh.Token,
+		ExpiresIn:    tokenAccess.ExpiresIn,
 		Err:          err,
 	}
 

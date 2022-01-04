@@ -35,10 +35,10 @@ func NewService(logger log.Logger, db *gorm.DB, store cookie.Store, enforce *cas
 func (s service) FindByKeyword(ctx context.Context, domain, keyword string, linkLog entity.LinkLog, unique bool) (l entity.Link, err error) {
 	logger := s.logger.With(ctx, "domain", domain, "keyword", keyword)
 
-	err = checkLink(logger, entity.Link{Domain: domain, Keyword: keyword})
-	if err != nil {
-		return
-	}
+	//err = checkLink(logger, entity.Link{Domain: domain, Keyword: keyword})
+	//if err != nil {
+	//	return
+	//}
 
 	err = s.db.Model(&entity.Link{}).Where("domain = ? AND keyword = ?", domain, keyword).Take(&l).Error
 	if err == gorm.ErrRecordNotFound {

@@ -6,9 +6,7 @@ import (
 )
 
 type refreshRequest struct {
-	AccessToken  string `json:"access_token"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int64  `json:"expires_in"`
+	RefreshTokenID string `json:"refresh_token_id"`
 }
 
 func decodeRefreshRequest(r *http.Request) (req refreshRequest, err error) {

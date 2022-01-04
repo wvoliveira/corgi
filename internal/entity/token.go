@@ -9,16 +9,8 @@ type Token struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	LastUse   time.Time `json:"last_use"`
 
-	AccessToken  string `json:"access_token" gorm:"-"`
-	RefreshToken string `json:"refresh_token"`
-
-	AccessExpires int64 `json:"access_expires" gorm:"-"`
-	RefreshExpires int64 `json:"refresh_expires"`
+	Token     string    `json:"token"`
+	ExpiresIn time.Time `json:"expires_in"`
 
 	UserID string `json:"user_id" gorm:"index"`
-}
-
-// GetID returns the Token ID.
-func (t Token) GetID() string {
-	return t.ID
 }

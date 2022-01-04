@@ -18,7 +18,7 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(ctx context.Context, identity entity.Identity) (entity.Token, error)
+	Login(ctx context.Context, identity entity.Identity) (entity.Token, entity.Token, error)
 	Register(ctx context.Context, identity entity.Identity) error
 	HTTPLogin(c *gin.Context)
 	HTTPRegister(c *gin.Context)
@@ -51,7 +51,7 @@ func NewService(logger log.Logger, db *gorm.DB, secret string, tokenExpiration i
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(ctx context.Context, identity entity.Identity) (token entity.Token, err error) {
+func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAccess, tokenRefresh entity.Token, err error) {
 	logger := s.logger.With(ctx, identity.Provider, identity.UID)
 
 	identityDB := entity.Identity{}
@@ -59,46 +59,41 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (token ent
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		logger.Warnf("this provider + uid not found in database: %s", err.Error())
-		return token, e.ErrUnauthorized
+		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	} else if err != nil {
 		logger.Warnf("error when get identity from database: %s", err.Error())
-		return token, e.ErrUnauthorized
+		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(identityDB.Password), []byte(identity.Password)); err != nil {
 		logger.Infof("authentication failed")
-		return token, e.ErrUnauthorized
+		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	}
 
 	// Get user info.
 	user := entity.User{}
 	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return token, err
+		return tokenAccess, tokenRefresh, err
 	} else if err != nil {
-		return token, err
+		return tokenAccess, tokenRefresh, err
 	}
 
-	accessToken, err := jwt.GenerateAccessToken(s.secret, identityDB, user)
+	tokenAccess, err = jwt.GenerateAccessToken(s.secret, identityDB, user)
 	if err != nil {
-		return token, errors.New("error to generate access token: " + err.Error())
+		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
 	}
 
-	refreshToken, err := jwt.GenerateRefreshToken(s.secret, identityDB, user)
+	tokenRefresh, err = jwt.GenerateRefreshToken(s.secret, identityDB, user)
 	if err != nil {
-		return token, errors.New("error to generate refresh token: " + err.Error())
+		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
 	}
 
-	refreshToken.UserID = identityDB.UserID
-	err = s.db.Debug().Model(&entity.Token{}).Create(&refreshToken).Error
+	tokenRefresh.UserID = identityDB.UserID
+	err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error
 	if err != nil {
 		return
 	}
-
-	token.ID = refreshToken.ID
-	token.AccessToken = accessToken.AccessToken
-	token.RefreshToken = refreshToken.RefreshToken
-	token.AccessExpires = accessToken.AccessExpires
 	return
 }
 

@@ -23,7 +23,7 @@ import (
 // Service encapsulates the authentication logic.
 type Service interface {
 	Login(ctx context.Context, redirectURL string) (string, error)
-	Callback(ctx context.Context, callbackURL string, r callbackRequest) (entity.Token, error)
+	Callback(ctx context.Context, callbackURL string, r callbackRequest) (entity.Token, entity.Token, error)
 
 	HTTPLogin(c *gin.Context)
 	HTTPCallback(c *gin.Context)
@@ -76,7 +76,7 @@ func (s service) Login(ctx context.Context, callbackURL string) (redirectURL str
 	return
 }
 
-func (s service) Callback(ctx context.Context, callbackURL string, r callbackRequest) (token entity.Token, err error) {
+func (s service) Callback(ctx context.Context, callbackURL string, r callbackRequest) (tokenAccess, tokenRefresh entity.Token, err error) {
 	logger := s.logger.With(ctx)
 	logger.Info("Callback func to get token from Facebook")
 
@@ -167,30 +167,25 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 	user := entity.User{}
 	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return token, err
+		return tokenAccess, tokenRefresh, err
 	} else if err != nil {
-		return token, err
+		return tokenAccess, tokenRefresh, err
 	}
 
-	accessToken, err := jwt.GenerateAccessToken(s.cfg.App.SecretKey, identity, user)
+	tokenAccess, err = jwt.GenerateAccessToken(s.cfg.App.SecretKey, identity, user)
 	if err != nil {
-		return token, errors.New("error to generate access token: " + err.Error())
+		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
 	}
 
-	refreshToken, err := jwt.GenerateRefreshToken(s.cfg.App.SecretKey, identity, user)
+	tokenRefresh, err = jwt.GenerateRefreshToken(s.cfg.App.SecretKey, identity, user)
 	if err != nil {
-		return token, errors.New("error to generate refresh token: " + err.Error())
+		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
 	}
 
-	refreshToken.UserID = identity.UserID
-	err = s.db.Debug().Model(&entity.Token{}).Create(&refreshToken).Error
+	tokenRefresh.UserID = identity.UserID
+	err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error
 	if err != nil {
 		return
 	}
-
-	token.ID = refreshToken.ID
-	token.AccessToken = accessToken.AccessToken
-	token.RefreshToken = refreshToken.RefreshToken
-	token.AccessExpires = accessToken.AccessExpires
 	return
 }

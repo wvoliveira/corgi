@@ -7,7 +7,7 @@ import (
 )
 
 func (s service) Routers(e *gin.Engine) {
-	r := e.Group("/api/auth",
+	r := e.Group("/auth",
 		middlewares.Checks(s.logger),
 		middlewares.Auth(s.logger, s.secret),
 		middlewares.Authorizer(s.enforce, s.logger))

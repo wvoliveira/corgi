@@ -5,10 +5,11 @@ import (
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func (s service) Routers(e *gin.Engine) {
-	r := e.Group("/api/auth/google",
+	r := e.Group("/auth/google",
 		middlewares.Checks(s.logger),
 		middlewares.Authorizer(s.enforce, s.logger))
 
@@ -29,7 +30,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 	if c.Request.TLS != nil {
 		schema = "https"
 	}
-	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/google/callback")
+	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/auth/google/callback")
 	redirectURL, err := s.Login(c.Request.Context(), callbackURL)
 	if err != nil {
 		e.EncodeError(c, err)
@@ -61,8 +62,8 @@ func (s service) HTTPCallback(c *gin.Context) {
 	if c.Request.TLS != nil {
 		schema = "https"
 	}
-	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/google/callback")
-	token, err := s.Callback(c.Request.Context(), callbackURL, dr)
+	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/auth/google/callback")
+	tokenAccess, tokenRefresh, err := s.Callback(c.Request.Context(), callbackURL, dr)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -70,12 +71,45 @@ func (s service) HTTPCallback(c *gin.Context) {
 
 	// Encode object to answer request (response).
 	_ = callbackResponse{
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		ExpiresIn:    token.AccessExpires,
+		AccessToken:  tokenAccess.Token,
+		RefreshToken: tokenRefresh.Token,
+		ExpiresIn:    tokenRefresh.ExpiresIn,
 		Err:          err,
 	}
 
-	c.Redirect(301, "http://localhost:3000/")
-	//encodeResponse(c, sr)
+	cookieAccess := http.Cookie{
+		Name:    "access_token",
+		Value:   tokenAccess.Token,
+		Path:    "/",
+		Expires: tokenAccess.ExpiresIn,
+		// RawExpires
+		Secure:   false,
+		HttpOnly: false,
+	}
+
+	cookieRefresh := http.Cookie{
+		Name:    "refresh_token_id",
+		Value:   tokenRefresh.ID,
+		Path:    "/",
+		Expires: tokenRefresh.ExpiresIn,
+		// RawExpires
+		Secure:   false,
+		HttpOnly: false,
+	}
+
+	cookieLogged := http.Cookie{
+		Name:    "logged",
+		Value:   "yes",
+		Path:    "/",
+		Expires: tokenAccess.ExpiresIn,
+		// RawExpires
+		Secure:   false,
+		HttpOnly: false,
+	}
+
+	http.SetCookie(c.Writer, &cookieAccess)
+	http.SetCookie(c.Writer, &cookieRefresh)
+	http.SetCookie(c.Writer, &cookieLogged)
+
+	c.Redirect(301, "http://localhost:4200")
 }

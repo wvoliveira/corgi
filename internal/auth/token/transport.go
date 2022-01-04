@@ -8,7 +8,7 @@ import (
 )
 
 func (s service) Routers(e *gin.Engine) {
-	r := e.Group("/api/auth/token",
+	r := e.Group("/auth/token",
 		middlewares.Checks(s.logger),
 		middlewares.Auth(s.logger, s.secret),
 		middlewares.Authorizer(s.enforce, s.logger))
@@ -23,10 +23,10 @@ func (s service) HTTPRefresh(c *gin.Context) {
 		e.EncodeError(c, err)
 		return
 	}
-	token := entity.Token{AccessToken: dr.AccessToken, RefreshToken: dr.AccessToken, AccessExpires: dr.ExpiresIn}
+	token := entity.Token{ID: dr.RefreshTokenID}
 
 	// Business logic.
-	token, err = s.Refresh(c.Request.Context(), token)
+	tokenAccess, tokenRefresh, err := s.Refresh(c.Request.Context(), token)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -34,9 +34,9 @@ func (s service) HTTPRefresh(c *gin.Context) {
 
 	// Encode object to answer request (response).
 	sr := refreshResponse{
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		ExpiresIn:    token.AccessExpires,
+		AccessToken:  tokenAccess.Token,
+		RefreshToken: tokenRefresh.Token,
+		ExpiresIn:    tokenAccess.ExpiresIn,
 		Err:          err,
 	}
 	encodeResponse(c, sr)

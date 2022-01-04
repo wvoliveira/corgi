@@ -8,7 +8,7 @@ import (
 )
 
 func (s service) Routers(e *gin.Engine) {
-	r := e.Group("/api/auth/password",
+	r := e.Group("/auth/password",
 		middlewares.Checks(s.logger))
 
 	r.POST("/login", s.HTTPLogin)
@@ -25,7 +25,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 	identity := entity.Identity{Provider: "email", UID: dr.Email, Password: dr.Password}
 
 	// Business logic.
-	token, err := s.Login(c.Request.Context(), identity)
+	tokenAccess, tokenRefresh, err := s.Login(c.Request.Context(), identity)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -33,9 +33,9 @@ func (s service) HTTPLogin(c *gin.Context) {
 
 	// Encode object to answer request (response).
 	sr := loginResponse{
-		AccessToken:  token.AccessToken,
-		RefreshToken: token.RefreshToken,
-		ExpiresIn:    token.AccessExpires,
+		AccessToken:  tokenAccess.Token,
+		RefreshToken: tokenRefresh.Token,
+		ExpiresIn:    tokenAccess.ExpiresIn,
 		Err:          err,
 	}
 

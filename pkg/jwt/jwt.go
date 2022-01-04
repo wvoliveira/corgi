@@ -74,8 +74,8 @@ func UpdateRefreshToken(secret string, claims jwt.MapClaims) (token entity.Token
 func GenerateAccessToken(secret string, identity entity.Identity, user entity.User) (token entity.Token, err error) {
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 
-	// This system is not a security problem. So, the token expires in 2 hours.
-	tokenExpires := time.Now().Add(time.Hour * 2).Unix()
+	// This system not has a security problem. So, the token expires in 2 hours.
+	tokenExpires := time.Now().Add(time.Hour * 2)
 
 	claims := accessToken.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
@@ -92,8 +92,8 @@ func GenerateAccessToken(secret string, identity entity.Identity, user entity.Us
 		return
 	}
 	token.CreatedAt = time.Now()
-	token.AccessToken = at
-	token.AccessExpires = tokenExpires
+	token.Token = at
+	token.ExpiresIn = tokenExpires
 	token.UserID = user.ID
 	return
 }
@@ -104,7 +104,7 @@ func GenerateRefreshToken(secret string, identity entity.Identity, user entity.U
 	id := uuid.New().String()
 
 	// Refresh token expires in 7 days. But I think to increase this value.
-	tokenExpires := time.Now().AddDate(0, 0, 7).Unix()
+	tokenExpires := time.Now().AddDate(0, 0, 7)
 
 	claims := refreshToken.Claims.(jwt.MapClaims)
 	claims["id"] = id
@@ -124,8 +124,8 @@ func GenerateRefreshToken(secret string, identity entity.Identity, user entity.U
 
 	token.ID = id
 	token.CreatedAt = time.Now()
-	token.RefreshToken = rt
-	token.RefreshExpires = tokenExpires
+	token.Token = rt
+	token.ExpiresIn = tokenExpires
 	token.UserID = user.ID
 	return
 }

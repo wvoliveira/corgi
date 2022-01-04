@@ -1,10 +1,10 @@
 p, admin, /*, *
 
 p, anonymous, /health/*, GET
-p, anonymous, /api/auth/password/*, POST
-p, anonymous, /api/auth/google/*, GET
-p, anonymous, /api/auth/facebook/*, GET
+p, anonymous, /auth/password/*, POST
+p, anonymous, /auth/google/*, GET
+p, anonymous, /auth/facebook/*, GET
 
-p, user, /api/auth/logout, GET
-p, user, /api/auth/token/refresh, *
-p, user, /api/v1/*, *
+p, user, /auth/logout, GET
+p, user, /auth/token/refresh, GET|POST
+p, user, /api/v1/*, GET|POST|UPDATE|DELETE
