@@ -1,0 +1,27 @@
+<h1>Login</h1>
+<p>
+  <LinkTo @route="register" data-test-register-link>Need an account?</LinkTo>
+</p>
+{{#if this.loginErrors}}
+  <ul>
+    {{#each this.loginErrors as |error|}}
+      <li>{{error}}</li>
+    {{/each}}
+  </ul>
+{{/if}}
+<a href="http://localhost:8081/auth/google/login">Google</a>
+<form>
+    <Input
+      type="text"
+      placeholder="Email"
+      @value={{this.email}}
+      data-test-login-email />
+
+    <Input
+      type="password"
+      placeholder="Password"
+      @value={{this.password}}
+      data-test-login-password />
+
+    <button {{on "click" this.submit}} type="button" data-test-login-button>Sign in</button>
+</form>
