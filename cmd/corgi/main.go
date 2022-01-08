@@ -87,7 +87,8 @@ func main() {
 
 	// Cors. Yes, we need this.
 	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowAllOrigins = true
+	corsConfig.AllowOrigins = []string{"http://localhost:4200", "http://localhost:8081"}
+	corsConfig.AllowCredentials = true
 	corsConfig.AddAllowHeaders("*")
 	corsConfig.AddAllowHeaders("Authorization")
 

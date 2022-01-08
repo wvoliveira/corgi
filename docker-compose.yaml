@@ -14,14 +14,9 @@ services:
       - db
 
   db:
-    image: "postgres:alpine"
+    image: "cockroachdb/cockroach:v21.2.3"
+    command: start-single-node --insecure
     restart: always
-    environment:
-      POSTGRES_USER: "postgres"
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: "go_restful"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    ports:
+      - "26257:26257"
+      - "8080:8080"

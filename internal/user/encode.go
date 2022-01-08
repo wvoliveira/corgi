@@ -18,8 +18,8 @@ type userResponse struct {
 }
 
 type findResponse struct {
-	userResponse `json:"data,omitempty"`
-	Err          error `json:"error,omitempty"`
+	userResponse
+	Err error `json:"error,omitempty"`
 }
 
 func (r findResponse) Error() error { return r.Err }

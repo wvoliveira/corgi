@@ -1,6 +1,5 @@
 node_modules
 # Keep environment variables out of version control
-.env.yaml
 .env.ps1
 .next
 redirect
@@ -79,7 +78,6 @@ web_modules/
 .yarn-integrity
 
 # dotenv environment variables file
-.env.yaml
 .env.test
 .env.production
 
