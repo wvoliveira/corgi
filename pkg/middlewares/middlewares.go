@@ -1,13 +1,13 @@
 package middlewares
 
 import (
+	"fmt"
 	"github.com/casbin/casbin/v2"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/jwt"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"strings"
 	"time"
 )
 
@@ -49,25 +49,17 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		logg := logger.With(c.Request.Context())
 
-		h := authHeader{}
+		hashToken, err := c.Cookie("access_token")
+		fmt.Println("hash token: ", hashToken) // Delete.
 
-		// bind Authorization Header to h and check for validation errors
-		if err := c.ShouldBindHeader(&h); err != nil {
-			logg.Info("access token not found Headers")
+		if err == http.ErrNoCookie || hashToken == "" {
+			logg.Info("cookie with the access_token name was not found or blank")
 			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrNoTokenFound)
 			return
 		}
 
-		hashTokenHeader := strings.Split(h.IDToken, "Bearer ")
-
-		if len(hashTokenHeader) < 2 {
-			logg.Info("the Authorization header was found but weird format")
-			_ = c.AbortWithError(http.StatusUnauthorized, e.ErrAuthHeaderFormat)
-			return
-		}
-
 		// validate ID token here
-		claims, err := jwt.ValidateToken(hashTokenHeader[1], secret)
+		claims, err := jwt.ValidateToken(hashToken, secret)
 
 		if err != nil {
 			logg.Warnf("the token is invalid: %s", err.Error())
@@ -116,6 +108,8 @@ func Authorizer(en *casbin.Enforcer, logger log.Logger) gin.HandlerFunc {
 		if role == "" {
 			role = "anonymous"
 		}
+
+		fmt.Println("role:", role)
 
 		// casbin rule enforcing
 		res, err := en.Enforce(role, c.Request.URL.Path, c.Request.Method)

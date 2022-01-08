@@ -5,6 +5,7 @@ import (
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func (s service) Routers(e *gin.Engine) {
@@ -32,14 +33,37 @@ func (s service) HTTPLogin(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	sr := loginResponse{
-		AccessToken:  tokenAccess.Token,
-		RefreshToken: tokenRefresh.Token,
-		ExpiresIn:    tokenAccess.ExpiresIn,
-		Err:          err,
+	//sr := loginResponse{
+	//	AccessToken:  tokenAccess.Token,
+	//	RefreshToken: tokenRefresh.Token,
+	//	ExpiresIn:    tokenAccess.ExpiresIn,
+	//	Err:          err,
+	//}
+
+	cookieAccess := http.Cookie{
+		Name:    "access_token",
+		Value:   tokenAccess.Token,
+		Path:    "/",
+		Expires: tokenAccess.ExpiresIn,
+		// RawExpires
+		Secure:   false,
+		HttpOnly: false,
 	}
 
-	encodeResponse(c, sr)
+	cookieRefresh := http.Cookie{
+		Name:    "refresh_token_id",
+		Value:   tokenRefresh.ID,
+		Path:    "/",
+		Expires: tokenRefresh.ExpiresIn,
+		// RawExpires
+		Secure:   false,
+		HttpOnly: false,
+	}
+
+	http.SetCookie(c.Writer, &cookieAccess)
+	http.SetCookie(c.Writer, &cookieRefresh)
+
+	c.Writer.WriteHeader(200)
 }
 
 func (s service) HTTPRegister(c *gin.Context) {

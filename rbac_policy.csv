@@ -1,4 +1,4 @@
-p, admin, /*, *
+p, admin, /api/*, GET|POST|PATCH|UPDATE|DELETE
 
 p, anonymous, /health/*, GET
 p, anonymous, /auth/password/*, POST
@@ -7,4 +7,5 @@ p, anonymous, /auth/facebook/*, GET
 
 p, user, /auth/logout, GET
 p, user, /auth/token/refresh, GET|POST
-p, user, /api/v1/*, GET|POST|UPDATE|DELETE
+p, user, /api/v1/user/*, GET|POST|UPDATE|DELETE
+p, user, /api/v1/links/*, GET|POST|UPDATE|DELETE

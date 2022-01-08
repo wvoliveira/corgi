@@ -2,6 +2,7 @@ package jwt
 
 import (
 	"errors"
+	"fmt"
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/golang-jwt/jwt"
@@ -84,7 +85,7 @@ func GenerateAccessToken(secret string, identity entity.Identity, user entity.Us
 	claims["identity_uid"] = identity.UID           // e-mail address, google id, facebook id, etc.
 	claims["user_id"] = user.ID
 	claims["user_role"] = user.Role
-	claims["exp"] = tokenExpires
+	claims["exp"] = tokenExpires.Unix()
 
 	at, err := accessToken.SignedString([]byte(secret))
 	if err != nil {
@@ -114,7 +115,7 @@ func GenerateRefreshToken(secret string, identity entity.Identity, user entity.U
 	claims["identity_uid"] = identity.UID           // e-mail address, google id, facebook id, etc.
 	claims["user_id"] = user.ID
 	claims["user_role"] = user.Role
-	claims["exp"] = tokenExpires
+	claims["exp"] = tokenExpires.Unix()
 
 	rt, err := refreshToken.SignedString([]byte(secret))
 	if err != nil {
@@ -138,6 +139,10 @@ func ValidateToken(tokenHash, secret string) (claims jwt.MapClaims, err error) {
 		}
 		return []byte(secret), nil
 	})
+
+	// Delete.
+	fmt.Println("Secret:", secret)
+
 	if err != nil {
 		return claims, errors.New("error to parse access token " + err.Error())
 	}

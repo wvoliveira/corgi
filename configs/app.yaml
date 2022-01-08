@@ -1,6 +1,6 @@
 app:
   log_level: debug
-  secret_key: 12345
+  secret_key: 12345f
   admin_password: 12345
   user_password: 12345
 

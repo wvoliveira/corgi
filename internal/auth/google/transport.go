@@ -97,19 +97,8 @@ func (s service) HTTPCallback(c *gin.Context) {
 		HttpOnly: false,
 	}
 
-	cookieLogged := http.Cookie{
-		Name:    "logged",
-		Value:   "yes",
-		Path:    "/",
-		Expires: tokenAccess.ExpiresIn,
-		// RawExpires
-		Secure:   false,
-		HttpOnly: false,
-	}
-
 	http.SetCookie(c.Writer, &cookieAccess)
 	http.SetCookie(c.Writer, &cookieRefresh)
-	http.SetCookie(c.Writer, &cookieLogged)
 
 	c.Redirect(301, "http://localhost:4200")
 }

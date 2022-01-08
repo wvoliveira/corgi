@@ -8,10 +8,10 @@ import (
 )
 
 const (
-	appSecretKey  = "changeme"
-	appLogLevel   = "info"
-	adminPassword = "12345"
-	userPassword  = "12345"
+	appSecretKey     = "changeme"
+	appLogLevel      = "info"
+	appAdminPassword = "12345"
+	appUserPassword  = "12345"
 
 	serverHTTPPort = "8081"
 	serverGRPCPort = "8082"
@@ -107,8 +107,8 @@ func NewConfig(logger log.Logger, path string) (config Config) {
 	// App config.
 	viper.SetDefault("app.secret_key", appSecretKey)
 	viper.SetDefault("app.log_level", appLogLevel)
-	viper.SetDefault("app.admin_password", adminPassword)
-	viper.SetDefault("app.user_password", userPassword)
+	viper.SetDefault("app.admin_password", appAdminPassword)
+	viper.SetDefault("app.user_password", appUserPassword)
 
 	// Server config.
 	viper.SetDefault("server.http_port", serverHTTPPort)
