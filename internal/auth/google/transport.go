@@ -38,15 +38,10 @@ func (s service) HTTPLogin(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	_ = loginResponse{
-		RedirectURL: redirectURL,
-		Err:         err,
-	}
 	if err != nil {
 		e.EncodeError(c, err)
 	}
 	c.Redirect(301, redirectURL)
-	// encodeResponse(c, sr)
 }
 
 func (s service) HTTPCallback(c *gin.Context) {
@@ -70,13 +65,6 @@ func (s service) HTTPCallback(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	_ = callbackResponse{
-		AccessToken:  tokenAccess.Token,
-		RefreshToken: tokenRefresh.Token,
-		ExpiresIn:    tokenRefresh.ExpiresIn,
-		Err:          err,
-	}
-
 	cookieAccess := http.Cookie{
 		Name:    "access_token",
 		Value:   tokenAccess.Token,
@@ -100,5 +88,5 @@ func (s service) HTTPCallback(c *gin.Context) {
 	http.SetCookie(c.Writer, &cookieAccess)
 	http.SetCookie(c.Writer, &cookieRefresh)
 
-	c.Redirect(301, "http://localhost:4200")
+	c.Redirect(301, s.cfg.App.RedirectURL)
 }

@@ -9,7 +9,8 @@
     {{/each}}
   </ul>
 {{/if}}
-<a href="http://localhost:8081/auth/google/login">Google</a>
+<a href="{{this.apiHost}}/auth/google/login">Google</a> |
+<a href="{{this.apiHost}}/auth/facebook/login">Facebook</a>
 <form>
     <Input
       type="text"
@@ -25,3 +26,4 @@
 
     <button {{on "click" this.submit}} type="button" data-test-login-button>Sign in</button>
 </form>
+<a href="{{this.apiHost}}/auth/forget">Forget my password</a>

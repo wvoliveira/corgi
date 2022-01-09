@@ -11,14 +11,12 @@ export default class SessionService extends Service {
   @tracked token = null;
   @tracked user = null;
   @tracked userName = null;
+
   static STORAGE_KEY = 'realworld.ember.token';
 
   initSession() {
     //let storedToken = this.getStoredToken();
     let accessToken = this.getCookie('access_token');
-    console.log('access_token');
-    console.log(accessToken);
-
     if (accessToken) {
       this.token = this.getCookie('access_token');
       return this.fetchUser();
@@ -79,42 +77,17 @@ export default class SessionService extends Service {
     if (response.status !== 200) {
       return { status: response.status, message: data.message };
     }
-
-    console.log(response);
-    // if (userPayload.errors) {
-    //   let errors = this.processLoginErrors(userPayload.errors);
-    //   return { errors };
-    // } else {
-    //   this.store.pushPayload({
-    //     users: [userPayload.user],
-    //   });
-    //   this.setToken(userPayload.user.token);
-    //   this.user = this.store.peekRecord('user', userPayload.user.id);
-    //   return this.user;
-    // }
   }
 
   @action
   async logOut() {
-    //this.removeToken();
-    let logout = await fetch(`${ENV.APP.apiHost}/auth/logout`, {
-      method: 'GET',
-    });
-    let response = await logout;
-    console.log('Logout');
-    console.log(response);
+    this.removeToken();
   }
 
   async fetchUser() {
     let data = await this.session.fetch('/api/v1/user/me');
-    console.log('data');
-    console.log(data);
-
     this.store.set('user', data);
     this.user = this.store.get('user');
-
-    console.log('this.user');
-    console.log(this.user);
     return this.user;
   }
 
@@ -128,8 +101,8 @@ export default class SessionService extends Service {
   }
 
   removeToken() {
-    this.token = null;
-    localStorage.removeItem('realworld.ember.token');
+    document.cookie = 'access_token=; expires=-1';
+    document.cookie = 'refresh_token_id=; expires=-1';
   }
 
   processLoginErrors(errors) {

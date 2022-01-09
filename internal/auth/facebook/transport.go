@@ -5,6 +5,7 @@ import (
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 func (s service) Routers(e *gin.Engine) {
@@ -29,7 +30,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 	if c.Request.TLS != nil {
 		schema = "https"
 	}
-	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/facebook/callback")
+	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/auth/facebook/callback")
 	redirectURL, err := s.Login(c.Request.Context(), callbackURL)
 	if err != nil {
 		e.EncodeError(c, err)
@@ -37,14 +38,10 @@ func (s service) HTTPLogin(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	sr := loginResponse{
-		RedirectURL: redirectURL,
-		Err:         err,
-	}
 	if err != nil {
 		e.EncodeError(c, err)
 	}
-	encodeResponse(c, sr)
+	c.Redirect(301, redirectURL)
 }
 
 func (s service) HTTPCallback(c *gin.Context) {
@@ -60,7 +57,7 @@ func (s service) HTTPCallback(c *gin.Context) {
 	if c.Request.TLS != nil {
 		schema = "https"
 	}
-	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/facebook/callback")
+	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/auth/facebook/callback")
 	tokenAccess, tokenRefresh, err := s.Callback(c.Request.Context(), callbackURL, dr)
 	if err != nil {
 		e.EncodeError(c, err)
@@ -68,12 +65,28 @@ func (s service) HTTPCallback(c *gin.Context) {
 	}
 
 	// Encode object to answer request (response).
-	sr := callbackResponse{
-		AccessToken:  tokenAccess.Token,
-		RefreshToken: tokenRefresh.Token,
-		ExpiresIn:    tokenAccess.ExpiresIn,
-		Err:          err,
+	cookieAccess := http.Cookie{
+		Name:    "access_token",
+		Value:   tokenAccess.Token,
+		Path:    "/",
+		Expires: tokenAccess.ExpiresIn,
+		// RawExpires
+		Secure:   false,
+		HttpOnly: false,
 	}
 
-	encodeResponse(c, sr)
+	cookieRefresh := http.Cookie{
+		Name:    "refresh_token_id",
+		Value:   tokenRefresh.ID,
+		Path:    "/",
+		Expires: tokenRefresh.ExpiresIn,
+		// RawExpires
+		Secure:   false,
+		HttpOnly: false,
+	}
+
+	http.SetCookie(c.Writer, &cookieAccess)
+	http.SetCookie(c.Writer, &cookieRefresh)
+
+	c.Redirect(301, s.cfg.App.RedirectURL)
 }

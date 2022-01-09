@@ -1,11 +1,6 @@
-<nav>
-  <div>
-    <!--    <LinkTo @route="index" @query={{hash author=null page=1 tag=null}} class="navbar-brand">Corgi</LinkTo>-->
-    <ul>
-      <li>
-        <LinkTo @route="index" data-test-nav-home>Home</LinkTo>
-      </li>
-      {{#if this.session.isLoggedIn}}
+<!--    <LinkTo @route="index" @query={{hash author=null page=1 tag=null}} class="navbar-brand">Corgi</LinkTo>-->
+<LinkTo @route="index" data-test-nav-home>Home</LinkTo>
+{{#if this.session.isLoggedIn}}
 <!--        <li>-->
 <!--          <LinkTo @route="editor.index" data-test-nav-new-post>-->
 <!--            <i class="ion-compose"></i>&nbsp;New Post-->
@@ -16,22 +11,11 @@
 <!--            <i class="ion-compose"></i>&nbsp;Settings-->
 <!--          </LinkTo>-->
 <!--        </li>-->
-        <li>
-          <LinkTo @route="profile" data-test-nav-username>
-            {{this.session.user.name}}
-          </LinkTo>
-        </li>
-        <li>
-          <a href="" {{on "click" this.session.logOut}} data-test-nav-log-out>Log out</a>
-        </li>
-      {{else}}
-        <li>
-          <LinkTo @route="login" data-test-nav-sign-in>Login</LinkTo>
-        </li>
-        <li>
-          <LinkTo @route="register" data-test-nav-sign-up>Register</LinkTo>
-        </li>
-      {{/if}}
-    </ul>
-  </div>
-</nav>
+| <LinkTo @route="profile" data-test-nav-username>
+{{this.session.user.name}}
+</LinkTo>
+| <a href="" {{on "click" this.session.logOut}} data-test-nav-log-out>Log out</a>
+{{else}}
+| <LinkTo @route="login" data-test-nav-sign-in>Login</LinkTo>
+| <LinkTo @route="register" data-test-nav-sign-up>Register</LinkTo>
+{{/if}}

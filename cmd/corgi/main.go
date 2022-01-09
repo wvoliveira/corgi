@@ -88,9 +88,9 @@ func main() {
 	// Cors. Yes, we need this.
 	corsConfig := cors.DefaultConfig()
 	corsConfig.AllowOrigins = []string{"http://localhost:4200", "http://localhost:8081"}
-	corsConfig.AllowCredentials = true
+	corsConfig.AddAllowMethods("*")
 	corsConfig.AddAllowHeaders("*")
-	corsConfig.AddAllowHeaders("Authorization")
+	corsConfig.AllowCredentials = true
 
 	// Initialize routers.
 	router := gin.New()

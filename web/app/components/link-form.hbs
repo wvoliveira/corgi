@@ -1,0 +1,50 @@
+{{#if this.loginErrors}}
+  <ul>
+    {{#each this.loginErrors as |error|}}
+      <li>{{error}}</li>
+    {{/each}}
+  </ul>
+{{/if}}
+
+Create a short link:
+<form>
+  <select selected onchange={{action (mut this.payload.domain) value='target.value'}}>
+    {{#each this.domains as |domain|}}
+      <option value={{domain}}>{{domain}}</option>
+    {{/each}}
+  </select>
+
+  <Input
+    @type="text"
+    placeholder="Keyword (ex.: tutorialhyceem)"
+    @value={{this.payload.keyword}}
+    data-test-link-url />
+
+  <Input
+    @type="text"
+    placeholder="Destination URL (ex.: https://medium.com/elga-io/tutorial-how-you-can-earn-easy-money"
+    @value={{this.payload.url}}
+    data-test-link-url />
+
+  <button {{on "click" this.submit}} type="button" data-test-login-button>Create</button>
+  {{#if this.status.ok}}
+    OK
+  {{else if this.status.error}}
+    Error: {{this.status.message}}
+  {{/if}}
+</form>
+
+<br>Domain: {{this.payload.domain}}
+<br>Keyword: {{this.payload.keyword}}
+<br>URL: {{this.payload.url}}
+
+<br>
+
+<br>Status OK: {{this.status.ok}}
+<br>Status Error: {{this.status.error}}
+<br>Status Message: {{this.status.message}}
+
+<h3>Links</h3>
+{{#each this.getLinks as |link|}}
+  {{link}}<br>
+{{/each}}

@@ -42,19 +42,13 @@ func (s service) Find(ctx context.Context, userID string) (user entity.User, err
 	logger := s.logger.With(ctx, "user_id", userID)
 
 	user.ID = userID
-	fmt.Println("USER_ID:", userID)
-
 	var identities []entity.Identity
+
 	err = s.db.Debug().Model(&user).Preload("Identities").Find(&user).Error
 	if err == gorm.ErrRecordNotFound {
 		logger.Infof("the user with user_id '%s' not found", userID)
 		return user, e.ErrUserNotFound
 	} else if err == nil {
-		fmt.Println("1 user")
-		fmt.Println(user)
-
-		fmt.Println("1 identities")
-		fmt.Println(identities)
 		return
 	}
 

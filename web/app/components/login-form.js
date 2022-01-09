@@ -2,6 +2,7 @@ import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
 import { inject as service } from '@ember/service';
 import { action } from '@ember/object';
+import ENV from 'corgi/config/environment';
 
 export default class LoginFormComponent extends Component {
   @tracked email = '';
@@ -11,6 +12,8 @@ export default class LoginFormComponent extends Component {
 
   @service session;
   @service router;
+
+  apiHost = ENV.APP.apiHost;
 
   @action
   async submit(e) {

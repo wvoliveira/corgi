@@ -12,6 +12,7 @@ func (s service) Routers(e *gin.Engine) {
 		middlewares.Checks(s.logger),
 		middlewares.Auth(s.logger, s.secret))
 
+	r.OPTIONS("/", nil)
 	r.POST("/", s.HTTPAdd)
 	r.GET("/:id", s.HTTPFindByID)
 	r.GET("/", s.HTTPFindAll)

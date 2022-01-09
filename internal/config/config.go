@@ -12,6 +12,7 @@ const (
 	appLogLevel      = "info"
 	appAdminPassword = "12345"
 	appUserPassword  = "12345"
+	appRedirectURL   = "http://localhost:4200"
 
 	serverHTTPPort = "8081"
 	serverGRPCPort = "8082"
@@ -41,6 +42,7 @@ type Config struct {
 		LogLevel      string `mapstructure:"log_level"`
 		AdminPassword string `mapstructure:"admin_password"`
 		UserPassword  string `mapstructure:"user_password"`
+		RedirectURL   string `mapstructure:"redirect_url"`
 	}
 
 	Auth struct {
@@ -109,6 +111,7 @@ func NewConfig(logger log.Logger, path string) (config Config) {
 	viper.SetDefault("app.log_level", appLogLevel)
 	viper.SetDefault("app.admin_password", appAdminPassword)
 	viper.SetDefault("app.user_password", appUserPassword)
+	viper.SetDefault("app.redirect_url", appRedirectURL)
 
 	// Server config.
 	viper.SetDefault("server.http_port", serverHTTPPort)
