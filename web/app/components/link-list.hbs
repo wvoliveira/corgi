@@ -1,13 +1,15 @@
-{{#if this.loadArticles.isRunning}}
+{{#each this.links as |link|}}
+  <div>
+    {{link}}
+  </div>
+{{/each}}
+
+{{#if this.loadLinks.isRunning}}
   Loading...
 {{else}}
-  {{#each this.articles as | article |}}
-    <ArticlePreview @article={{article}} />
+  {{#each this.links as | link |}}
+    {{link}}
   {{else}}
-    No articles are here... yet.
+    No links are here... yet.
   {{/each}}
-  {{#if this.articles}}
-    <Pagination @total={{this.articles.meta.articlesCount}} @perPage={{10}} @current={{@page}}
-                @existingParams={{hash author=@feed tag=@tag}} />
-  {{/if}}
 {{/if}}

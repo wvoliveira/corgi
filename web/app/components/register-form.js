@@ -15,7 +15,11 @@ export default class RegisterFormComponent extends Component {
   @action
   async submit(e) {
     e.preventDefault();
-    this.user = await this.session.register(this.username, this.email, this.password);
+    this.user = await this.session.register(
+      this.username,
+      this.email,
+      this.password
+    );
     if (this.user.isValid) {
       this.router.transitionTo('index');
     }

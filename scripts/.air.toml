@@ -1,0 +1,13 @@
+root = "."
+tmp_dir = ".air"
+
+[build]
+  bin = "./.air/corgi"
+  cmd = "go build -o ./.air/corgi ./cmd/corgi/main.go"
+  delay = 1000
+  exclude_dir = [".air", "vendor", "web", "docs"]
+  exclude_file = ["README.md", "docker-compose.yaml"]
+  exclude_regex = []
+  exclude_unchanged = false
+  follow_symlink = false
+  full_bin = ""

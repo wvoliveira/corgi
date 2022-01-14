@@ -5,12 +5,15 @@ import { action } from '@ember/object';
 import ENV from 'corgi/config/environment';
 
 export default class LoginFormComponent extends Component {
-  domains = ['elga.io', 'cor.gi'];
+  @service session;
+  @service router;
+
+  domains = ['cor.gi', 'ali.nk'];
   domainDefault = 'elga.io';
 
   @tracked payload = {
     title: '',
-    domain: '',
+    domain: 'cor.gi',
     keyword: '',
     url: '',
   };
@@ -21,11 +24,22 @@ export default class LoginFormComponent extends Component {
     message: '',
   };
 
-  @service session;
-  @service router;
+  @tracked isCreating = null;
 
   @action
   async submit(e) {
+    e.preventDefault();
+    this.isCreating = true;
+
+    sleep(5000).then(() => {
+      console.log('2 isCreating');
+      console.log(this.isCreating);
+      this.isCreating = null;
+    });
+  }
+
+  @action
+  async submitE(e) {
     e.preventDefault();
 
     if (this.payload.domain === '') {
@@ -65,12 +79,6 @@ export default class LoginFormComponent extends Component {
 
     console.log('this.status');
     console.log(this.status);
-
-    // if (this.errors) {
-    //   this.linkErrors = this.data.errors;
-    // } else {
-    //   this.router.transitionTo('index');
-    // }
   }
 
   @action
@@ -90,4 +98,8 @@ export default class LoginFormComponent extends Component {
     console.log('data:');
     console.log(data);
   }
+}
+
+function sleep(time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
 }

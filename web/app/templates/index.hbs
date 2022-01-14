@@ -2,9 +2,13 @@
 <p>A tiny shortener app.</p>
 
 {{#if this.session.isLoggedIn}}
-  <LinkForm />
+  <LinkForm></LinkForm>
+
+  <h3>Links</h3>
+  <LinkList></LinkList>
+
 {{/if}}
 
 <!--<ArticleList @feed={{this.feed}} @page={{this.page}} @tag={{this.tag}} />-->
 
-<!--<TagList/>-->
+<!--<Footer></Footer>-->

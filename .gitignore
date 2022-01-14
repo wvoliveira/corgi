@@ -125,3 +125,8 @@ out
 
 # ignore docs generated for services
 api/v1/**docs
+
+# Air (hot reload) generated
+.air
+
+.DS_Store

@@ -66,5 +66,8 @@
   },
   "ember": {
     "edition": "octane"
+  },
+  "dependencies": {
+    "jquery": "^3.6.0"
   }
 }

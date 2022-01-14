@@ -32,14 +32,6 @@ func (s service) HTTPLogin(c *gin.Context) {
 		return
 	}
 
-	// Encode object to answer request (response).
-	//sr := loginResponse{
-	//	AccessToken:  tokenAccess.Token,
-	//	RefreshToken: tokenRefresh.Token,
-	//	ExpiresIn:    tokenAccess.ExpiresIn,
-	//	Err:          err,
-	//}
-
 	cookieAccess := http.Cookie{
 		Name:    "access_token",
 		Value:   tokenAccess.Token,
