@@ -1,6 +1,5 @@
 import Component from '@glimmer/component';
 import { tracked } from '@glimmer/tracking';
-import { action } from '@ember/object';
 import { inject as service } from '@ember/service';
 
 export default class LinkListComponent extends Component {
@@ -18,12 +17,12 @@ export default class LinkListComponent extends Component {
   async loadLinks() {
     this.isRunning = true;
 
-    this.links = await this.store.findAll('link').then(function (links) {
-      console.log('links');
-      console.log(links);
-      return links;
-    });
-    console.log('this.links');
-    console.log(this.links);
+    let link = await this.store.findAll('link');
+    console.log('link');
+    console.log(link);
+
+    return {
+      links: links,
+    };
   }
 }

@@ -1,32 +1,16 @@
-import ENV from 'corgi/config/environment';
-import RESTAdapter from '@ember-data/adapter/rest';
-import RSVP from 'rsvp';
-import $ from 'jquery';
+import ApplicationAdapter from './application';
+import { inject as service } from '@ember/service';
 
-export default class LinkAdapter extends RESTAdapter {
-  namespace = 'api/v1';
-
-  buildURL(...args) {
-    return `${ENV.APP.apiHost}${super.buildURL(...args)}/`;
-  }
+export default class LinkAdapter extends ApplicationAdapter {
+  @service session;
 
   findAll(store, type) {
-    let url = 'http://localhost:8081/api/v1/links/';
+    let url = this.buildURL('links');
+    console.log('url: ' + url);
 
-    $.ajaxSetup({
-      dataType: 'json',
-      xhrFields: {
-        withCredentials: true,
-      },
-      crossDomain: true,
-    });
-
-    return new RSVP.Promise(function(resolve, reject) {
-      $.getJSON(url).then(function(data) {
-        resolve(data);
-      }, function(jqXHR) {
-        reject(jqXHR);
-      });
+    return fetch(url, {
+      method: 'GET',
+      credentials: 'include',
     });
   }
 }
