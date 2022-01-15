@@ -1,14 +1,9 @@
-{{#each this.links as |link|}}
-  <div>
-    {{link}}
-  </div>
-{{/each}}
-
 {{#if this.loadLinks.isRunning}}
   Loading...
 {{else}}
-  {{#each this.links as | link |}}
-    {{link}}
+  {{#each this.links.data as | link |}}
+    keyword: {{link.keyword}}
+    <br/>
   {{else}}
     No links are here... yet.
   {{/each}}

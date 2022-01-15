@@ -24,29 +24,18 @@ export default class LoginFormComponent extends Component {
     message: '',
   };
 
-  @tracked isCreating = null;
+  @tracked isLoading = false;
 
   @action
   async submit(e) {
     e.preventDefault();
-    this.isCreating = true;
-
-    sleep(5000).then(() => {
-      console.log('2 isCreating');
-      console.log(this.isCreating);
-      this.isCreating = null;
-    });
-  }
-
-  @action
-  async submitE(e) {
-    e.preventDefault();
+    this.isLoading = true;
 
     if (this.payload.domain === '') {
       this.payload.domain = this.domainDefault;
     }
 
-    let createLink = await fetch(`${ENV.APP.apiHost}/api/v1/links/`, {
+    let response = await fetch(`${ENV.APP.apiHost}/api/v1/links/`, {
       method: 'POST',
       credentials: 'include',
       headers: {
@@ -60,7 +49,6 @@ export default class LoginFormComponent extends Component {
       }),
     });
 
-    let response = await createLink;
     let data = await response.json();
 
     // Delete.
@@ -79,6 +67,8 @@ export default class LoginFormComponent extends Component {
 
     console.log('this.status');
     console.log(this.status);
+
+    this.isLoading = false;
   }
 
   @action

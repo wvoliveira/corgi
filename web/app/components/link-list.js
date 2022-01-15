@@ -4,10 +4,9 @@ import { inject as service } from '@ember/service';
 
 export default class LinkListComponent extends Component {
   @service session;
-  @service store;
 
-  @tracked isRunning = null;
-  @tracked links = [];
+  @tracked links = {};
+  @tracked isLoading = false;
 
   constructor() {
     super(...arguments);
@@ -15,14 +14,10 @@ export default class LinkListComponent extends Component {
   }
 
   async loadLinks() {
-    this.isRunning = true;
+    this.isLoading = true;
+    this.links = await this.session.fetch('/api/v1/links/');
+    this.isLoading = false;
 
-    let link = await this.store.findAll('link');
-    console.log('link');
-    console.log(link);
-
-    return {
-      links: links,
-    };
+    console.log(this.links);
   }
 }

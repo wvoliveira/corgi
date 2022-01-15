@@ -1,21 +1,14 @@
 <!--    <LinkTo @route="index" @query={{hash author=null page=1 tag=null}} class="navbar-brand">Corgi</LinkTo>-->
 <LinkTo @route="index" data-test-nav-home>Home</LinkTo>
 {{#if this.session.isLoggedIn}}
-<!--        <li>-->
-<!--          <LinkTo @route="editor.index" data-test-nav-new-post>-->
-<!--            <i class="ion-compose"></i>&nbsp;New Post-->
-<!--          </LinkTo>-->
-<!--        </li>-->
-<!--        <li>-->
-<!--          <LinkTo @route="settings" data-test-nav-settings>-->
-<!--            <i class="ion-compose"></i>&nbsp;Settings-->
-<!--          </LinkTo>-->
-<!--        </li>-->
-| <LinkTo @route="profile" data-test-nav-username>
-{{this.session.user.name}}
-</LinkTo>
-| <a href="" {{on "click" this.session.logOut}} data-test-nav-log-out>Log out</a>
+  |
+  <LinkTo @route="profile" data-test-nav-username>
+    {{this.session.user.name}}
+  </LinkTo>
+  | <a href="" {{on "click" this.session.logOut}} data-test-nav-log-out>Log out</a>
 {{else}}
-| <LinkTo @route="login" data-test-nav-sign-in>Login</LinkTo>
-| <LinkTo @route="register" data-test-nav-sign-up>Register</LinkTo>
+  |
+  <LinkTo @route="login" data-test-nav-sign-in>Login</LinkTo>
+  |
+  <LinkTo @route="register" data-test-nav-sign-up>Register</LinkTo>
 {{/if}}

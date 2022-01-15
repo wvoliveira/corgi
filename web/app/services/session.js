@@ -6,6 +6,7 @@ import ENV from 'corgi/config/environment';
 export default class SessionService extends Service {
   @service store;
   @service session;
+  @service router;
 
   @tracked logged = null;
   @tracked token = null;
