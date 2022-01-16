@@ -14,17 +14,17 @@ export default class LinkListComponent extends Component {
     this.loadLinks();
   }
 
-  async loadLinks() {
+  loadLinks() {
     this.isLoading = true;
-    this.links = await this.store.findAll('link').then(function (link) {
-      console.log('link: ' + link);
-      let data = link.get('data');
-      console.log('data: ' + data);
-      return data;
-    });
+    let allLinks;
 
-    console.log('this.links ' + this.links);
+    this.store.findAll('link').then(function (links) {
+      console.log('link');
+      console.log(links);
+      allLinks = links;
+    });
     this.isLoading = false;
-    console.log('this.links ' + this.links);
+
+    this.links = allLinks;
   }
 }

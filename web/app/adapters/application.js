@@ -7,4 +7,12 @@ export default class ApplicationAdapter extends RESTAdapter {
   buildURL(...args) {
     return `${ENV.APP.apiHost}${super.buildURL(...args)}/`;
   }
+
+  shouldReloadAll(store, snapshotsArray) {
+    return false;
+  }
+
+  shouldBackgroundReloadAll(store, snapshotsArray) {
+    return true;
+  }
 }
