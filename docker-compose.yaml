@@ -1,10 +1,8 @@
 version: '3.5'
 services:
-  server:
-    image: server
+  app:
     build:
       context: .
-      dockerfile: cmd/server/Dockerfile
     ports:
       - "8081:8081"
     environment:

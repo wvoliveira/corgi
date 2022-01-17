@@ -3,7 +3,24 @@ package main
 import (
 	"context"
 	"embed"
+	"github.com/casbin/casbin/v2"
+	"github.com/elga-io/corgi/internal/auth"
+	"github.com/elga-io/corgi/internal/auth/facebook"
+	"github.com/elga-io/corgi/internal/auth/google"
+	"github.com/elga-io/corgi/internal/auth/password"
+	"github.com/elga-io/corgi/internal/auth/token"
+	"github.com/elga-io/corgi/internal/config"
+	"github.com/elga-io/corgi/internal/entity"
+	"github.com/elga-io/corgi/internal/health"
+	"github.com/elga-io/corgi/internal/link"
+	"github.com/elga-io/corgi/internal/public"
+	"github.com/elga-io/corgi/internal/user"
+	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
+	"github.com/elga-io/corgi/pkg/middlewares"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gin-gonic/gin"
 	"io/fs"
 	"net/http"
 	"os"
@@ -15,10 +32,8 @@ import (
 // version indicates the current version of the application.
 var version = "0.0.1"
 
-////go:embed web/dist
-////go:embed web/dist/_next
-////go:embed web/dist/_next/static/chunks/pages/*.js
-////go:embed web/dist/_next/static/*/*.js
+//go:embed web/dist
+//go:embed web/dist/*
 var nextFS embed.FS
 
 func main() {
@@ -29,16 +44,96 @@ func main() {
 	// Create root logger tagged with server version.
 	logg := log.New().With(ctx, "version", version)
 
+	// Load application configurations.
+	cfg := config.NewConfig(logg, "configs")
+
+	// Connect to the database and seed first users.
+	db := database.NewDatabase(logg, cfg)
+	if err := db.AutoMigrate(
+		&entity.User{},
+		&entity.Identity{},
+		&entity.Link{},
+		&entity.LinkLog{},
+		&entity.Token{},
+		&entity.Tag{},
+		&entity.LocationIPv4{},
+		&entity.LocationIPv6{},
+	); err != nil {
+		logg.Error("error in auto migrate", "err", err.Error())
+		os.Exit(1)
+	}
+	database.SeedUsers(logg, db, cfg)
+
+	// Setup Casbin auth rules.
+	authEnforcer, err := casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
+	if err != nil {
+		logg.Error("error to get Casbin enforce rules")
+		os.Exit(2)
+	}
+
+	// Start sessions.
+	store := cookie.NewStore([]byte(cfg.App.SecretKey))
+
+	// Auth services like login, register, logout, etc.
+	authService := auth.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
+	authToken := token.NewService(logg, db, cfg.App.SecretKey, 30, store, authEnforcer)
+	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30, store, authEnforcer)
+	authGoogleService := google.NewService(logg, db, cfg, store, authEnforcer)
+	authFacebookService := facebook.NewService(logg, db, cfg, store, authEnforcer)
+
+	// Business services like links, users, etc.
+	linkService := link.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
+	userService := user.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
+
+	// Public routes, like links?
+	publicService := public.NewService(logg, db, store, authEnforcer)
+
+	// Healthcheck services.
+	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)
+
+	// Cors. Yes, we need this.
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowOrigins = []string{"http://localhost:4200", "http://localhost:8081"}
+	corsConfig.AddAllowMethods("*")
+	corsConfig.AddAllowHeaders("*")
+	corsConfig.AllowCredentials = true
+
+	// Init web app.
 	ui := initWebUI(logg)
-	//	middlewares := server.NewMiddlewares(*logger, config)
 
-	mux := http.NewServeMux()
-	mux.Handle("/", ui)
+	// Initialize routers.
+	router := gin.New()
+	router.Use(middlewares.Access(logg))
+	router.Use(gin.Recovery())
+	router.Use(cors.New(corsConfig))
 
-	//	http.Handle("/", middlewares.AccessControl(mux))
+	// Register business and needed routers.
+	healthService.Routers(router)
+	authService.Routers(router)
+	authToken.Routers(router)
+	authPasswordService.Routers(router)
+	authGoogleService.Routers(router)
+	authFacebookService.Routers(router)
+
+	linkService.Routers(router)
+	userService.Routers(router)
+
+	router.StaticFS("/app", ui)
+
+	// Redirect if root and /app (without slash) request.
+	// TODO: arrumar isso, pelo amor.
+	router.GET("/", gin.HandlerFunc(func(c *gin.Context) {
+		c.Redirect(301, "/app/")
+	}))
+	router.GET("/app", gin.HandlerFunc(func(c *gin.Context) {
+		c.Redirect(301, "/app/")
+	}))
+
+	publicService.Routers(router)
+
 	srv := &http.Server{
-		Addr:         ":8081",
-		Handler:      mux,
+		Addr:         ":" + cfg.Server.HTTPPort,
+		Handler:      router,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
@@ -46,7 +141,7 @@ func main() {
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
-		logg.Info("server listening :8081")
+		logg.Info("server listening :", cfg.Server.HTTPPort)
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			logg.Info("listen: %s", err)
 		}
@@ -69,9 +164,9 @@ func main() {
 	logg.Info("Server exiting")
 }
 
-func initWebUI(logger log.Logger) (ui http.Handler) {
-	distFS, err := fs.Sub(nextFS, "ui/dist")
-	ui = http.FileServer(http.FS(distFS))
+func initWebUI(logger log.Logger) (ui http.FileSystem) {
+	distFS, err := fs.Sub(nextFS, "web/dist")
+	ui = http.FS(distFS)
 
 	if err != nil {
 		logger.Info("error to start web UI", "err", err)
