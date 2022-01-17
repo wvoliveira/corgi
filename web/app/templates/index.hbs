@@ -5,9 +5,5 @@
   <LinkForm></LinkForm>
 
   <h3>Links</h3>
-  <LinkList @page={{this.page}} @limit={{this.limit}}></LinkList>
+  <LinkList @query={{hash page=this.page limit=this.limit}}></LinkList>
 {{/if}}
-
-<!--<ArticleList @feed={{this.feed}} @page={{this.page}} @tag={{this.tag}} />-->
-
-<!--<Footer></Footer>-->

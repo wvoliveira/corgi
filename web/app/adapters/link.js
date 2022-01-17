@@ -1,8 +1,8 @@
 import ApplicationAdapter from './application';
 
 export default class LinkAdapter extends ApplicationAdapter {
-  async fetch(url, method = 'GET') {
-    let response = await fetch(url, { method: method, credentials: 'include' });
+  async fetch(url, method = 'GET', options) {
+    let response = await fetch(url, { method: method, credentials: 'include', options });
     console.log(response);
     return response.json();
   }
@@ -13,23 +13,12 @@ export default class LinkAdapter extends ApplicationAdapter {
   }
 
   query(store, type, query, recordArray, adapterOptions) {
-    console.log('adapter query');
-    console.log('store');
-    console.log(store);
+    let URLparams = new URLSearchParams({
+      page: query.page,
+      limit: query.limit,
+    });
 
-    console.log('type');
-    console.log(type);
-
-    console.log('query');
-    console.log(query);
-
-    console.log('recordArray');
-    console.log(recordArray);
-
-    console.log('adapterOptions');
-    console.log(adapterOptions);
-
-    let url = this.buildURL('links');
+    let url = this.buildURL('links?' + URLparams);
     return this.fetch(url);
   }
 }
