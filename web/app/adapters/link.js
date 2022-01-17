@@ -11,4 +11,25 @@ export default class LinkAdapter extends ApplicationAdapter {
     let url = this.buildURL('links');
     return this.fetch(url);
   }
+
+  query(store, type, query, recordArray, adapterOptions) {
+    console.log('adapter query');
+    console.log('store');
+    console.log(store);
+
+    console.log('type');
+    console.log(type);
+
+    console.log('query');
+    console.log(query);
+
+    console.log('recordArray');
+    console.log(recordArray);
+
+    console.log('adapterOptions');
+    console.log(adapterOptions);
+
+    let url = this.buildURL('links');
+    return this.fetch(url);
+  }
 }

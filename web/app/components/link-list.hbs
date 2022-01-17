@@ -1,7 +1,7 @@
 {{#if this.loadLinks.isRunning}}
   Loading...
 {{else}}
-  {{#each this.links.data as | link |}}
+  {{#each this.links as | link |}}
     keyword: {{link.keyword}}
     <br/>
   {{else}}
