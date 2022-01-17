@@ -20,3 +20,9 @@ services:
     ports:
       - "26257:26257"
       - "8080:8080"
+
+  db-init:
+    image: "cockroachdb/cockroach:v21.2.3"
+    command: sql --insecure --host="db:26257" --execute="CREATE DATABASE IF NOT EXISTS corgi"
+    depends_on:
+      - db
