@@ -1,0 +1,439 @@
+{
+	"info": {
+		"_postman_id": "92466c8c-2608-4f04-90d4-e8245598c59b",
+		"name": "Corgi",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Password",
+					"item": [
+						{
+							"name": "POST /auth/password/login",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"email\":\"admin@local\",\"password\":\"12345\"}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:8081/auth/password/login",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"auth",
+										"password",
+										"login"
+									]
+								}
+							},
+							"response": []
+						},
+						{
+							"name": "POST /api/auth/password/register",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"email\":\"oliveira@live.it\",\"password\":\"12345\"}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "localhost:8000/api/auth/password/register",
+									"host": [
+										"localhost"
+									],
+									"port": "8000",
+									"path": [
+										"api",
+										"auth",
+										"password",
+										"register"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Google",
+					"item": [
+						{
+							"name": "GET /api/auth/google/login",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/api/auth/google/login",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"api",
+										"auth",
+										"google",
+										"login"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "Facebook",
+					"item": [
+						{
+							"name": "GET /api/auth/facebook/login",
+							"request": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/api/auth/facebook/login",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"api",
+										"auth",
+										"facebook",
+										"login"
+									]
+								}
+							},
+							"response": []
+						}
+					]
+				},
+				{
+					"name": "GET /api/auth/logout",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/api/auth/logout",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"auth",
+								"logout"
+							],
+							"query": [
+								{
+									"key": "access_token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Mzg5ODU2MDksImlkZW50aXR5X2lkIjoiZTZmZjJkNjktYjVmZi00N2IwLTg0NjAtZWY3OWY3M2U2YzA4IiwiaWRlbnRpdHlfcHJvdmlkZXIiOiJmYWNlYm9vayIsImlkZW50aXR5X3VpZCI6IjI3MDQ2MDM5ODMxODI2NDkiLCJ1c2VyX2lkIjoiNjg5MWQyM2YtNTE4Ny00N2Y4LWIwNjktZWI1YzQ4NDgzNWRiIiwidXNlcl9yb2xlIjoidXNlciJ9.8nQCiKbWIyJJxAuuCgl1rY_XoznXODz7yY4tlnjNOsI",
+									"disabled": true
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Links",
+			"item": [
+				{
+					"name": "GET /api/v1/links",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/api/v1/links?page=1&limit=10",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"links"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1"
+								},
+								{
+									"key": "limit",
+									"value": "10"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /api/v1/links",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"domain\": \"elga.io\",\r\n    \"keyword\": \"Asdferz10aaaaa\",\r\n    \"url\": \"https://elga.io\",\r\n    \"title\": \"ELGA home\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8081/api/v1/links",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"links"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /api/v1/links/:id",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/api/v1/links/03f6133a-73ce-42fd-b4b1-695150216b26",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"links",
+								"03f6133a-73ce-42fd-b4b1-695150216b26"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "PATCH /api/v1/links/:id",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"url_short\": \"elga.io/teste\",\r\n    \"url_full\": \"https://elga.io\",\r\n    \"title\": \"elga home page\",\r\n    \"active\": \"true\"\r\n}\r\n",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8081/api/v1/links/03f6133a-73ce-42fd-b4b1-695150216b26",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"links",
+								"03f6133a-73ce-42fd-b4b1-695150216b26"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "DELETE /api/v1/links/:id",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/api/v1/links/03f6133a-73ce-42fd-b4b1-695150216b26",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"links",
+								"03f6133a-73ce-42fd-b4b1-695150216b26"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Token",
+			"item": [
+				{
+					"name": "POST /api/v1/token/refresh",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/api/auth/token/refresh",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"auth",
+								"token",
+								"refresh"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"item": [
+				{
+					"name": "GET /health/ping",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/health/ping",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"health",
+								"ping"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "User",
+			"item": [
+				{
+					"name": "GET /api/v1/user/me",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/api/v1/user/me",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"me"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "POST /api/v1/user/me",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Admin\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "localhost:8081/api/v1/user/me",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"api",
+								"v1",
+								"user",
+								"me"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Public",
+			"item": [
+				{
+					"name": "GET /:keyword",
+					"protocolProfileBehavior": {
+						"followRedirects": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Host",
+								"value": "elga.io",
+								"type": "text"
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "localhost:8081/abecedo122312",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"abecedo122312"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}
