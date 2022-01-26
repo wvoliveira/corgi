@@ -106,7 +106,7 @@ func main() {
 	authGoogleService.Routers(router)
 	authFacebookService.Routers(router)
 
-	linkService.Routers(router)
+	linkService.HTTPRouters(router)
 	userService.Routers(router)
 	publicService.Routers(router)
 

@@ -1,5 +1,5 @@
 database:
-	docker-compose up db-init
+	docker-compose up db-init broker
 
 backend:
 	air -c scripts/.air.toml

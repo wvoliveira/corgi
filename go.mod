@@ -11,6 +11,7 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/google/uuid v1.3.0
 	github.com/lib/pq v1.10.3
+	github.com/nats-io/nats.go v1.13.0
 	github.com/spf13/viper v1.9.0
 	github.com/stretchr/testify v1.7.0
 	github.com/swaggo/swag v1.7.4
@@ -56,6 +57,8 @@ require (
 	github.com/mitchellh/mapstructure v1.4.2 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.1 // indirect
+	github.com/nats-io/nkeys v0.3.0 // indirect
+	github.com/nats-io/nuid v1.0.1 // indirect
 	github.com/pelletier/go-toml v1.9.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/spf13/afero v1.6.0 // indirect

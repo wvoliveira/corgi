@@ -10,6 +10,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/nats-io/nats.go"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 	"math"
@@ -29,21 +30,24 @@ type Service interface {
 	HTTPFindAll(c *gin.Context)
 	HTTPUpdate(c *gin.Context)
 	HTTPDelete(c *gin.Context)
+	HTTPRouters(r *gin.Engine)
 
-	Routers(r *gin.Engine)
+	NatsSubscriber()
+	NatsAdd()
 }
 
 type service struct {
 	logger  log.Logger
 	db      *gorm.DB
+	broker  *nats.Conn
 	secret  string
 	store   cookie.Store
 	enforce *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB, secret string, store cookie.Store, enforce *casbin.Enforcer) Service {
-	return service{logger, db, secret, store, enforce}
+func NewService(logger log.Logger, db *gorm.DB, broker *nats.Conn, secret string, store cookie.Store, enforce *casbin.Enforcer) Service {
+	return service{logger, db, broker, secret, store, enforce}
 }
 
 // Add create a new shortener link.

@@ -10,6 +10,7 @@ services:
       - APP_DSN=postgres://db/corgi?sslmode=disable&user=postgres&password=postgres
     depends_on:
       - db
+      - broker
 
   db:
     image: "cockroachdb/cockroach:v21.2.3"
@@ -24,3 +25,11 @@ services:
     command: sql --insecure --host="db:26257" --execute="CREATE DATABASE IF NOT EXISTS corgi"
     depends_on:
       - db
+
+  broker:
+    image: "nats:2.7.1"
+    restart: always
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+      #- "6222:6222" # is a routing port for clustering.

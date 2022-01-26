@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func (s service) Routers(e *gin.Engine) {
+func (s service) HTTPRouters(e *gin.Engine) {
 	r := e.Group("/api/v1/links",
 		middlewares.Checks(s.logger),
 		middlewares.Auth(s.logger, s.secret))
@@ -15,6 +15,7 @@ func (s service) Routers(e *gin.Engine) {
 	r.OPTIONS("", nil)
 	r.POST("", s.HTTPAdd)
 	r.GET(":id", s.HTTPFindByID)
+	r.GET("/status/:id", s.HTTPFindByID)
 	r.GET("", s.HTTPFindAll)
 	r.PATCH(":id", s.HTTPUpdate)
 	r.DELETE(":id", s.HTTPDelete)
