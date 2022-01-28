@@ -124,25 +124,13 @@ func (s service) Update(ctx context.Context, link entity.Link) (l entity.Link, e
 	logger := s.logger.With(ctx, "user_id", link.UserID)
 	logger.Infof("updating link with id '%s'", link.ID)
 
-	link.UpdatedAt = time.Now()
-
-	err = s.db.Model(&entity.Link{}).Where("id = ? AND user_id = ?", link.ID, link.UserID).Updates(&link).Error
+	err = s.db.Model(&entity.Link{}).Where("id = ? AND user_id = ?", link.ID, link.UserID).Updates(&link).First(&l).Error
 	if err == gorm.ErrRecordNotFound {
 		logger.Infof("the link id '%s' not found from user_id '%s'", link.ID, link.UserID)
 		return l, e.ErrLinkNotFound
-	} else if err == nil {
-		l.ID = link.ID
-		l.CreatedAt = link.CreatedAt
-		l.UpdatedAt = link.UpdatedAt
-		l.Domain = link.Domain
-		l.Keyword = link.Keyword
-		l.URL = link.URL
-		l.Title = link.Title
-		l.Active = link.Active
-		return
+	} else if err != nil {
+		return l, e.ErrInternalServerError
 	}
-
-	logger.Errorf("oh crap, an errors occurred: %s", err.Error())
 	return
 }
 

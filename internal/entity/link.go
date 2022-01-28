@@ -8,9 +8,9 @@ import (
 
 // Link represents a link record.
 type Link struct {
-	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        string     `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
 
 	Domain  string `json:"domain" gorm:"index"`
 	Keyword string `json:"keyword" gorm:"index"`
@@ -23,9 +23,9 @@ type Link struct {
 }
 
 type LinkLog struct {
-	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
-	CreatedAt time.Time `json:"created_at" gorm:"index"`
-	UpdatedAt time.Time `json:"updated_at" gorm:"default:null"`
+	ID        string     `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	CreatedAt time.Time  `json:"created_at"`
+	UpdatedAt *time.Time `json:"updated_at"`
 
 	RemoteAddress         string `json:"remote_address"`
 	UserAgentRaw          string `json:"user_agent_raw"`
@@ -41,6 +41,12 @@ type LinkLog struct {
 func (l *LinkLog) BeforeCreate(tx *gorm.DB) (err error) {
 	l.ID = uuid.New().String()
 	l.CreatedAt = time.Now()
+	return
+}
+
+func (l *LinkLog) BeforeUpdate(tx *gorm.DB) (err error) {
+	t := time.Now()
+	l.UpdatedAt = &t
 	return
 }
 
