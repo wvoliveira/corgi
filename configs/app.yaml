@@ -19,14 +19,14 @@ server:
   write_timeout: 60
 
 database:
-  host: localhost
+  host: 127.0.0.1
   port: 26257
   user:
   password:
   database: corgi
 
 cache:
-  host: localhost
+  host: 127.0.0.1
   port: 6379
   user:
   password:
@@ -36,7 +36,13 @@ cache:
   idle_timeout: 200
 
 search:
-  host: localhost
+  host: 127.0.0.1
   port: 9200
+  user:
+  password:
+
+broker:
+  host: 127.0.0.1
+  port: 4222
   user:
   password:

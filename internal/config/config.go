@@ -17,22 +17,27 @@ const (
 	serverHTTPPort = "8081"
 	serverGRPCPort = "8082"
 
-	dbHost     = "localhost"
+	dbHost     = "127.0.0.1"
 	dbPort     = 26257
 	dbUser     = "root"
 	dbPassword = ""
 	dbDatabase = "corgi"
 
-	cacheHost     = "localhost"
+	cacheHost     = "127.0.0.1"
 	cachePort     = 6379
 	cacheUser     = ""
 	cachePassword = ""
 	cacheDatabase = 0
 
-	searchHost     = "localhost"
+	searchHost     = "127.0.0.1"
 	searchPort     = 9200
 	searchUser     = ""
 	searchPassword = ""
+
+	brokerHost     = "127.0.0.1"
+	brokerPort     = 4222
+	brokerUser     = ""
+	brokerPassword = ""
 )
 
 // Config a struct for app configuration.
@@ -78,6 +83,13 @@ type Config struct {
 	}
 
 	Search struct {
+		Host     string `mapstructure:"host"`
+		Port     int    `mapstructure:"port"`
+		User     string `mapstructure:"user"`
+		Password string `mapstructure:"password"`
+	}
+
+	Broker struct {
 		Host     string `mapstructure:"host"`
 		Port     int    `mapstructure:"port"`
 		User     string `mapstructure:"user"`
@@ -136,6 +148,12 @@ func NewConfig(logger log.Logger, path string) (config Config) {
 	viper.SetDefault("search.port", searchPort)
 	viper.SetDefault("search.user", searchUser)
 	viper.SetDefault("search.password", searchPassword)
+
+	// Broker config.
+	viper.SetDefault("broker.host", brokerHost)
+	viper.SetDefault("broker.port", brokerPort)
+	viper.SetDefault("broker.user", brokerUser)
+	viper.SetDefault("broker.password", brokerPassword)
 
 	if err := viper.Unmarshal(&config); err != nil {
 		logger.Errorf("error to load config", "method", "NewConfig", "err", err.Error())
