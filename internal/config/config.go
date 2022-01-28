@@ -5,6 +5,7 @@ import (
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/spf13/viper"
 	"os"
+	"strings"
 )
 
 const (
@@ -67,7 +68,7 @@ type Config struct {
 	}
 
 	Database struct {
-		Host     string `mapstructure:"host"`
+		Host     string `mapstructure:"host" mapstructure:"DATABASE_HOST"`
 		Port     int    `mapstructure:"port"`
 		User     string `mapstructure:"user"`
 		Password string `mapstructure:"password"`
@@ -99,63 +100,72 @@ type Config struct {
 
 // NewConfig load the configuration app.
 func NewConfig(logger log.Logger, path string) (config Config) {
-	viper.AutomaticEnv()
-	viper.SetEnvPrefix("CORGI_")
+	conf := viper.New()
 
-	viper.SetConfigName("app")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(path)
+	conf.AutomaticEnv()
+	conf.SetEnvPrefix("CORGI")
+	conf.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	err := viper.ReadInConfig()
+	conf.SetConfigName("app")
+	conf.SetConfigType("yaml")
+	conf.AddConfigPath(path)
+
+	err := conf.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %w\n", err))
+		fmt.Printf("Error to read config file: %s\n", err.Error())
 	}
 
-	viper.SetConfigFile(".env.yaml")
-	viper.AddConfigPath(".")
-	err = viper.MergeInConfig()
+	conf.SetConfigFile(".env.yaml")
+	conf.AddConfigPath(".")
+	err = conf.MergeInConfig()
 	if err != nil {
-		panic(fmt.Errorf("Fatal error config file: %w\n", err))
+		fmt.Printf("Fatal error config file: %s\n", err.Error())
 	}
 
 	// App config.
-	viper.SetDefault("app.secret_key", appSecretKey)
-	viper.SetDefault("app.log_level", appLogLevel)
-	viper.SetDefault("app.admin_password", appAdminPassword)
-	viper.SetDefault("app.user_password", appUserPassword)
-	viper.SetDefault("app.redirect_url", appRedirectURL)
+	conf.SetDefault("app.secret_key", appSecretKey)
+	conf.SetDefault("app.log_level", appLogLevel)
+	conf.SetDefault("app.admin_password", appAdminPassword)
+	conf.SetDefault("app.user_password", appUserPassword)
+	conf.SetDefault("app.redirect_url", appRedirectURL)
 
 	// Server config.
-	viper.SetDefault("server.http_port", serverHTTPPort)
-	viper.SetDefault("server.grpc_port", serverGRPCPort)
+	conf.SetDefault("server.http_port", serverHTTPPort)
+	conf.SetDefault("server.grpc_port", serverGRPCPort)
 
 	// Database config.
-	viper.SetDefault("database.host", dbHost)
-	viper.SetDefault("database.port", dbPort)
-	viper.SetDefault("database.user", dbUser)
-	viper.SetDefault("database.password", dbPassword)
-	viper.SetDefault("database.database", dbDatabase)
+	conf.SetDefault("database.host", dbHost)
+	conf.SetDefault("database.port", dbPort)
+	conf.SetDefault("database.user", dbUser)
+	conf.SetDefault("database.password", dbPassword)
+	conf.SetDefault("database.database", dbDatabase)
 
 	// Cache config.
-	viper.SetDefault("cache.host", cacheHost)
-	viper.SetDefault("cache.port", cachePort)
-	viper.SetDefault("cache.user", cacheUser)
-	viper.SetDefault("cache.password", cachePassword)
-	viper.SetDefault("cache.database", cacheDatabase)
+	conf.SetDefault("cache.host", cacheHost)
+	conf.SetDefault("cache.port", cachePort)
+	conf.SetDefault("cache.user", cacheUser)
+	conf.SetDefault("cache.password", cachePassword)
+	conf.SetDefault("cache.database", cacheDatabase)
 
 	// Search engine config.
-	viper.SetDefault("search.host", searchHost)
-	viper.SetDefault("search.port", searchPort)
-	viper.SetDefault("search.user", searchUser)
-	viper.SetDefault("search.password", searchPassword)
+	conf.SetDefault("search.host", searchHost)
+	conf.SetDefault("search.port", searchPort)
+	conf.SetDefault("search.user", searchUser)
+	conf.SetDefault("search.password", searchPassword)
 
 	// Broker config.
-	viper.SetDefault("broker.host", brokerHost)
-	viper.SetDefault("broker.port", brokerPort)
-	viper.SetDefault("broker.user", brokerUser)
-	viper.SetDefault("broker.password", brokerPassword)
+	conf.SetDefault("broker.host", brokerHost)
+	conf.SetDefault("broker.port", brokerPort)
+	conf.SetDefault("broker.user", brokerUser)
+	conf.SetDefault("broker.password", brokerPassword)
 
-	if err := viper.Unmarshal(&config); err != nil {
+	// workaround because viper does not treat env vars the same as other config
+	for _, key := range conf.AllKeys() {
+		val := conf.Get(key)
+		conf.Set(key, val)
+	}
+
+	if err := conf.Unmarshal(&config); err != nil {
 		logger.Errorf("error to load config", "method", "NewConfig", "err", err.Error())
 		os.Exit(1)
 	}

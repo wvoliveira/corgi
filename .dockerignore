@@ -1,4 +1,5 @@
 .git
 Dockerfile
-gorm.db
-Makefile
+.github
+README.md
+.air

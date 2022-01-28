@@ -104,8 +104,7 @@ func (s service) FindByID(ctx context.Context, linkID, userID string) (l entity.
 func (s service) FindAll(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, links []entity.Link, err error) {
 	logger := s.logger.With(ctx, "user_id", userID)
 
-	s.db.Model(&entity.Link{}).Where("user_id = ?", userID).Count(&total)
-	err = s.db.Model(&entity.Link{}).Where("user_id = ?", userID).Offset(offset).Limit(limit).Order(sort).Find(&links).Error
+	err = s.db.Model(&entity.Link{}).Where("user_id = ?", userID).Count(&total).Offset(offset).Limit(limit).Order(sort).Find(&links).Error
 
 	if err == gorm.ErrRecordNotFound {
 		logger.Infof("the links with '%d' offset and '%d' limit not found from user_id '%s'", offset, limit, userID)

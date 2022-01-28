@@ -1,10 +1,42 @@
 version: '3.5'
 services:
+
+  proxy:
+    image: "traefik:v2.6"
+    container_name: "proxy"
+    command:
+      - "--log.level=DEBUG"
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+
+  backend:
+    build:
+      context: .
+      dockerfile: cmd/corgi/Dockerfile
+    deploy:
+      replicas: 3
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.backend.rule=Host(`localhost`)"
+    environment:
+      - CORGI_BROKER_HOST=broker
+      - CORGI_DATABASE_HOST=db
+    depends_on:
+      - broker
+      - db
+
   app:
     build:
       context: .
     ports:
-      - "8081:8081"
+      - "8083:8081"
     environment:
       - APP_ENV=local
       - APP_DSN=postgres://db/corgi?sslmode=disable&user=postgres&password=postgres
@@ -18,7 +50,7 @@ services:
     restart: always
     ports:
       - "26257:26257"
-      - "8080:8080"
+      - "8084:8080"
 
   db-init:
     image: "cockroachdb/cockroach:v21.2.3"

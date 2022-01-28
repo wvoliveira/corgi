@@ -7,3 +7,6 @@ backend:
 
 frontend:
 	cd web && ember serve
+
+docker-backend:
+	docker build -t corgi:local -f cmd\corgi\Dockerfile .
