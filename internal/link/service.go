@@ -25,28 +25,29 @@ type Service interface {
 	Update(ctx context.Context, payload entity.Link) (link entity.Link, err error)
 	Delete(ctx context.Context, linkID, userID string) (err error)
 
+	HTTPNewTransport(r *gin.Engine)
 	HTTPAdd(c *gin.Context)
 	HTTPFindByID(c *gin.Context)
 	HTTPFindAll(c *gin.Context)
 	HTTPUpdate(c *gin.Context)
 	HTTPDelete(c *gin.Context)
-	HTTPRouters(r *gin.Engine)
 
-	NatsSubscriber()
-	NatsAdd()
+	NatsNewTransport()
+	NatsAdd(ctx context.Context)
+	NatsFindByID(ctx context.Context)
 }
 
 type service struct {
 	logger  log.Logger
 	db      *gorm.DB
-	broker  *nats.Conn
+	broker  *nats.EncodedConn
 	secret  string
 	store   cookie.Store
 	enforce *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(logger log.Logger, db *gorm.DB, broker *nats.Conn, secret string, store cookie.Store, enforce *casbin.Enforcer) Service {
+func NewService(logger log.Logger, db *gorm.DB, broker *nats.EncodedConn, secret string, store cookie.Store, enforce *casbin.Enforcer) Service {
 	return service{logger, db, broker, secret, store, enforce}
 }
 

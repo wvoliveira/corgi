@@ -16,8 +16,8 @@ type addRequest struct {
 }
 
 type findByIDRequest struct {
-	ID     string `json:"-"`
-	UserID string `json:"-"`
+	ID     string `json:"id"`
+	UserID string `json:"user_id"`
 }
 
 type findAllRequest struct {

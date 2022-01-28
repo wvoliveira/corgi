@@ -50,7 +50,6 @@ func Auth(logger log.Logger, secret string) gin.HandlerFunc {
 		logg := logger.With(c.Request.Context())
 
 		hashToken, err := c.Cookie("access_token")
-		fmt.Println("hash token: ", hashToken) // Delete.
 
 		if err == http.ErrNoCookie || hashToken == "" {
 			logg.Info("cookie with the access_token name was not found or blank")

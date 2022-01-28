@@ -2,7 +2,6 @@ package jwt
 
 import (
 	"errors"
-	"fmt"
 	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/golang-jwt/jwt"
@@ -139,9 +138,6 @@ func ValidateToken(tokenHash, secret string) (claims jwt.MapClaims, err error) {
 		}
 		return []byte(secret), nil
 	})
-
-	// Delete.
-	fmt.Println("Secret:", secret)
 
 	if err != nil {
 		return claims, errors.New("error to parse access token " + err.Error())

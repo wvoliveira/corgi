@@ -5,9 +5,10 @@ import (
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-gonic/gin"
+	"time"
 )
 
-func (s service) HTTPRouters(e *gin.Engine) {
+func (s service) HTTPNewTransport(e *gin.Engine) {
 	r := e.Group("/api/v1/links",
 		middlewares.Checks(s.logger),
 		middlewares.Auth(s.logger, s.secret))
@@ -57,7 +58,14 @@ func (s service) HTTPFindByID(c *gin.Context) {
 	}
 
 	// Business logic.
-	link, err := s.FindByID(c.Request.Context(), dr.ID, dr.UserID)
+	//link, err := s.FindByID(c.Request.Context(), dr.ID, dr.UserID)
+	//if err != nil {
+	//	e.EncodeError(c, err)
+	//	return
+	//}
+
+	var link entity.Link
+	err = s.broker.Request("link.findbyid", findByIDRequest{dr.ID, dr.UserID}, &link, 5*time.Second)
 	if err != nil {
 		e.EncodeError(c, err)
 		return

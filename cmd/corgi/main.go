@@ -14,6 +14,7 @@ import (
 	"github.com/elga-io/corgi/internal/link"
 	"github.com/elga-io/corgi/internal/public"
 	"github.com/elga-io/corgi/internal/user"
+	"github.com/elga-io/corgi/pkg/broker"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/elga-io/corgi/pkg/middlewares"
@@ -58,6 +59,9 @@ func main() {
 	}
 	database.SeedUsers(logg, db, cfg)
 
+	// Connect to Broker.
+	bk := broker.NewBroker(logg, cfg)
+
 	// Setup Casbin auth rules.
 	authEnforcer, err := casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
 	if err != nil {
@@ -76,7 +80,7 @@ func main() {
 	authFacebookService := facebook.NewService(logg, db, cfg, store, authEnforcer)
 
 	// Business services like links, users, etc.
-	linkService := link.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
+	linkService := link.NewService(logg, db, bk, cfg.App.SecretKey, store, authEnforcer)
 	userService := user.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
 
 	// Public routes, like links?
@@ -106,7 +110,10 @@ func main() {
 	authGoogleService.Routers(router)
 	authFacebookService.Routers(router)
 
-	linkService.HTTPRouters(router)
+	// HTTP and Nats transports.
+	linkService.HTTPNewTransport(router)
+	linkService.NatsNewTransport()
+
 	userService.Routers(router)
 	publicService.Routers(router)
 
