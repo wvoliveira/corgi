@@ -35,6 +35,7 @@ type Service interface {
 	NatsNewTransport()
 	NatsAdd(ctx context.Context)
 	NatsFindByID(ctx context.Context)
+	NatsFindAll(ctx context.Context)
 }
 
 type service struct {

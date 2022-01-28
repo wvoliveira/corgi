@@ -12,7 +12,7 @@ type addRequest struct {
 	Keyword string `json:"keyword"`
 	URL     string `json:"url"`
 	Title   string `json:"title"`
-	UserID  string `json:"-"`
+	UserID  string `json:"user_id"`
 }
 
 type findByIDRequest struct {
@@ -22,10 +22,10 @@ type findByIDRequest struct {
 
 type findAllRequest struct {
 	Page   int    `json:"page"`
-	Sort   string `json:"-"`
-	Offset int    `json:"-"`
+	Sort   string `json:"sort"`
+	Offset int    `json:"offset"`
 	Limit  int    `json:"limit"`
-	UserID string `json:"-"`
+	UserID string `json:"user_id"`
 }
 
 type updateRequest struct {
