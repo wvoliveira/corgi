@@ -1,7 +1,6 @@
 package link
 
 import (
-	"github.com/elga-io/corgi/internal/entity"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/middlewares"
 	"github.com/gin-gonic/gin"
@@ -30,30 +29,19 @@ func (s service) HTTPAdd(c *gin.Context) {
 		return
 	}
 
-	// Business logic.
-	//link, err := s.Add(c.Request.Context(), entity.Link{Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, UserID: dr.UserID})
-	//if err != nil {
-	//	e.EncodeError(c, err)
-	//	return
-	//}
+	request := dr
+	response := addResponse{}
 
-	var link entity.Link
-	err = s.broker.Request("link.add", addRequest{Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, UserID: dr.UserID}, &link, 5*time.Second)
+	// Get data from broker.
+	// TODO: get error from NATS response.
+	err = s.broker.Request("link.add", request, &response, 5*time.Second)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := addResponse{
-		ID:      link.ID,
-		Domain:  link.Domain,
-		Keyword: link.Keyword,
-		URL:     link.URL,
-		Title:   link.Title,
-		Err:     err,
-	}
-	encodeResponse(c, sr)
+	encodeResponse(c, response)
 }
 
 func (s service) HTTPFindByID(c *gin.Context) {
@@ -64,26 +52,18 @@ func (s service) HTTPFindByID(c *gin.Context) {
 		return
 	}
 
-	// Business logic.
-	//link, err := s.FindByID(c.Request.Context(), dr.ID, dr.UserID)
-	//if err != nil {
-	//	e.EncodeError(c, err)
-	//	return
-	//}
+	request := dr
+	response := findByIDResponse{}
 
-	var link entity.Link
-	err = s.broker.Request("link.findbyid", findByIDRequest{dr.ID, dr.UserID}, &link, 5*time.Second)
+	// Get data from broker.
+	err = s.broker.Request("link.findbyid", request, &response, 5*time.Second)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := findByIDResponse{
-		Link: link,
-		Err:  err,
-	}
-	encodeResponse(c, sr)
+	encodeResponse(c, response)
 }
 
 func (s service) HTTPFindAll(c *gin.Context) {
@@ -94,31 +74,19 @@ func (s service) HTTPFindAll(c *gin.Context) {
 		return
 	}
 
-	// Business logic.
-	//total, pages, links, err := s.FindAll(c.Request.Context(), dr.Offset, dr.Limit, dr.Sort, dr.UserID)
-	//if err != nil {
-	//	e.EncodeError(c, err)
-	//	return
-	//}
+	request := dr
+	response := findAllResponse{}
 
-	var response findAllResponse
-	err = s.broker.Request("link.findall", findAllRequest{dr.Page, dr.Sort, dr.Offset, dr.Limit, dr.UserID}, &response, 5*time.Second)
+	// Get data from broker.
+	// TODO: get error from NATS response.
+	err = s.broker.Request("link.findall", request, &response, 5*time.Second)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := findAllResponse{
-		Links: response.Links,
-		Limit: dr.Limit,
-		Page:  dr.Page,
-		Sort:  dr.Sort,
-		Total: response.Total,
-		Pages: response.Pages,
-		Err:   err,
-	}
-	encodeResponse(c, sr)
+	encodeResponse(c, response)
 }
 
 func (s service) HTTPUpdate(c *gin.Context) {
@@ -129,22 +97,18 @@ func (s service) HTTPUpdate(c *gin.Context) {
 		return
 	}
 
-	// Business logic.
-	link, err := s.Update(
-		c.Request.Context(),
-		entity.Link{ID: dr.ID, Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, Active: dr.Active, UserID: dr.UserID},
-	)
+	request := dr
+	response := updateResponse{}
+
+	// Get data from broker.
+	err = s.broker.Request("link.update", request, &response, 5*time.Second)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := updateResponse{
-		Link: link,
-		Err:  err,
-	}
-	encodeResponse(c, sr)
+	encodeResponse(c, response)
 }
 
 func (s service) HTTPDelete(c *gin.Context) {
@@ -156,15 +120,16 @@ func (s service) HTTPDelete(c *gin.Context) {
 	}
 
 	// Business logic.
-	err = s.Delete(c.Request.Context(), dr.ID, dr.UserID)
+	request := dr
+	response := deleteResponse{}
+
+	// Get data from broker.
+	err = s.broker.Request("link.delete", request, &response, 5*time.Second)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	// Encode object to answer request (response).
-	sr := deleteResponse{
-		Err: err,
-	}
-	encodeResponse(c, sr)
+	encodeResponse(c, response)
 }

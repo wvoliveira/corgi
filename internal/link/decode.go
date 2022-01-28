@@ -29,21 +29,21 @@ type findAllRequest struct {
 }
 
 type updateRequest struct {
-	ID        string    `json:"-"`
-	CreatedAt time.Time `json:"-"`
-	UpdatedAt time.Time `json:"-"`
+	ID        string    `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 	Domain    string    `json:"domain"`
 	Keyword   string    `json:"keyword"`
 	URL       string    `json:"url"`
 	Title     string    `json:"title"`
 	Active    string    `json:"active"`
-	UserID    string    `json:"-"`
+	UserID    string    `json:"user_id"`
 }
 
 type deleteRequest struct {
-	ID      string `json:"-"`
-	Domain  string `json:"-"`
-	Keyword string `json:"-"`
+	ID      string `json:"id"`
+	Domain  string `json:"domain"`
+	Keyword string `json:"keyword"`
 	UserID  string `json:"user_id"`
 }
 
