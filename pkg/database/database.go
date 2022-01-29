@@ -3,6 +3,7 @@
 package database
 
 import (
+	"context"
 	"fmt"
 	"github.com/elga-io/corgi/internal/config"
 	"github.com/elga-io/corgi/internal/entity"
@@ -26,7 +27,7 @@ func InitDatabase(logger log.Logger, c config.Config) (db *gorm.DB) {
 	connString := fmt.Sprintf("postgres://%s@%s:%d/%s", c.Database.User, c.Database.Host, c.Database.Port, c.Database.Base)
 	db, err := gorm.Open(postgres.Open(connString), &gorm.Config{})
 	if err != nil {
-		logger.Error("error configuring the database", "method", "initDatabase", "err", err.Error())
+		logger.With(context.TODO(), "method", "initDatabase").Error(err.Error())
 		os.Exit(1)
 	}
 	return db

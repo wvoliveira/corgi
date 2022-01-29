@@ -38,6 +38,18 @@ type LinkLog struct {
 	LocationIPv4ID string `json:"-" gorm:"index"`
 }
 
+func (l *Link) BeforeCreate(tx *gorm.DB) (err error) {
+	l.ID = uuid.New().String()
+	l.CreatedAt = time.Now()
+	return
+}
+
+func (l *Link) BeforeUpdate(tx *gorm.DB) (err error) {
+	t := time.Now()
+	l.UpdatedAt = &t
+	return
+}
+
 func (l *LinkLog) BeforeCreate(tx *gorm.DB) (err error) {
 	l.ID = uuid.New().String()
 	l.CreatedAt = time.Now()

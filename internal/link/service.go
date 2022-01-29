@@ -56,8 +56,7 @@ func NewService(logger log.Logger, db *gorm.DB, broker *nats.EncodedConn, secret
 
 // Add create a new shortener link.
 func (s service) Add(ctx context.Context, link entity.Link) (l entity.Link, err error) {
-	logger := s.logger.With(ctx, "user_id", link.UserID)
-	logger.Infof("add link with url short with domain '%s' and keyword '%s'", link.Domain, link.Keyword)
+	logger := s.logger.With(ctx, "user_id", link.UserID, "link_domain", link.Domain, "link_keyword", link.Keyword)
 
 	if err = checkLink(logger, link); err != nil {
 		return
@@ -77,40 +76,39 @@ func (s service) Add(ctx context.Context, link entity.Link) (l entity.Link, err 
 		err = s.db.Model(&entity.Link{}).Create(&l).Error
 		return l, err
 	} else if err == nil {
-		logger.Warnf("domain '%s' with keyword '%s' already exists", link.Domain, link.Keyword)
+		logger.Warnf("domain with keyword already exists")
 		return l, e.ErrLinkAlreadyExists
 	}
-	logger.Errorf("error when creating a new shortener link, look: %s", err.Error())
+	logger.Error(err.Error())
 	return l, e.ErrInternalServerError
 }
 
 // FindByID get a shortener link from ID.
 func (s service) FindByID(ctx context.Context, linkID, userID string) (l entity.Link, err error) {
-	logger := s.logger.With(ctx, "user_id", userID)
-	logger.Infof("find link with id '%s'", linkID)
+	logger := s.logger.With(ctx, "user_id", userID, "link_id", linkID)
 
 	err = s.db.Model(&entity.Link{}).Where("id = ? AND user_id = ?", linkID, userID).Take(&l).Error
 	if err == gorm.ErrRecordNotFound {
-		logger.Infof("the link id '%s' not found from user_id '%s'", linkID, userID)
+		logger.Info("link not found")
 		return l, e.ErrLinkNotFound
 	} else if err == nil {
 		return
 	}
-	logger.Errorf("oh crap, an errors occurred: %s", err.Error())
+	logger.Error(err.Error())
 	return
 }
 
 // FindAll get a list of links from database.
 func (s service) FindAll(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, links []entity.Link, err error) {
-	logger := s.logger.With(ctx, "user_id", userID)
+	logger := s.logger.With(ctx, "user_id", userID, "offset", offset, "limit", limit, "sort", sort)
 
 	err = s.db.Model(&entity.Link{}).Where("user_id = ?", userID).Count(&total).Offset(offset).Limit(limit).Order(sort).Find(&links).Error
 
 	if err == gorm.ErrRecordNotFound {
-		logger.Infof("the links with '%d' offset and '%d' limit not found from user_id '%s'", offset, limit, userID)
+		logger.Info("links not found", offset, limit, userID)
 		return total, pages, links, e.ErrLinkNotFound
 	} else if err != nil {
-		logger.Errorf("oh crap, an errors occurred: %s", err.Error())
+		logger.Error(err.Error())
 		return
 	}
 
@@ -120,12 +118,11 @@ func (s service) FindAll(ctx context.Context, offset, limit int, sort, userID st
 
 // Update change specific link by ID.
 func (s service) Update(ctx context.Context, link entity.Link) (l entity.Link, err error) {
-	logger := s.logger.With(ctx, "user_id", link.UserID)
-	logger.Infof("updating link with id '%s'", link.ID)
+	logger := s.logger.With(ctx, "id", link.ID, "user_id", link.UserID)
 
 	err = s.db.Model(&entity.Link{}).Where("id = ? AND user_id = ?", link.ID, link.UserID).Updates(&link).First(&l).Error
 	if err == gorm.ErrRecordNotFound {
-		logger.Infof("the link id '%s' not found from user_id '%s'", link.ID, link.UserID)
+		logger.Info("link not found")
 		return l, e.ErrLinkNotFound
 	} else if err != nil {
 		return l, e.ErrInternalServerError
@@ -135,8 +132,7 @@ func (s service) Update(ctx context.Context, link entity.Link) (l entity.Link, e
 
 // Delete delete a link by ID.
 func (s service) Delete(ctx context.Context, linkID, userID string) (err error) {
-	logger := s.logger.With(ctx, "user_id", userID)
-	logger.Infof("deleting link with id '%s'", linkID)
+	logger := s.logger.With(ctx, "user_id", userID, "link_id", linkID)
 
 	err = s.db.Debug().
 		Model(&entity.Link{}).
@@ -145,11 +141,11 @@ func (s service) Delete(ctx context.Context, linkID, userID string) (err error) 
 		Delete(&entity.Link{ID: linkID, UserID: userID}).Error
 
 	if err == gorm.ErrRecordNotFound {
-		logger.Infof("the link id '%s' not found from user_id '%s'", linkID, userID)
+		logger.Info("link not found")
 		return e.ErrLinkNotFound
 	} else if err == nil {
 		return
 	}
-	logger.Errorf("oh crap, an errors occurred: %s", err.Error())
+	logger.Error(err.Error())
 	return
 }

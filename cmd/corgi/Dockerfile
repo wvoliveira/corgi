@@ -7,7 +7,13 @@ COPY go.sum ./
 RUN go mod download
 
 COPY . .
-RUN go build -o /corgi /app/cmd/corgi/main.go
+RUN CGO_ENABLED=0 go build -o /corgi /app/cmd/corgi/main.go
+
+FROM scratch
+
+COPY --from=builder /corgi /corgi
+COPY rbac_model.conf /
+COPY rbac_policy.csv /
 
 EXPOSE 8081
 
