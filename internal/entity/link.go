@@ -18,24 +18,29 @@ type Link struct {
 	Title   string `json:"title"`
 	Active  string `json:"active"`
 
-	UserID    string `json:"-" gorm:"index"`
-	LinkLogID string `json:"-" gorm:"index"`
+	UserID string `json:"-" gorm:"index"`
 }
 
+// LinkLog model to store redirections logs.
 type LinkLog struct {
-	ID        string     `json:"id" gorm:"primaryKey;autoIncrement:false"`
-	CreatedAt time.Time  `json:"created_at"`
-	UpdatedAt *time.Time `json:"updated_at"`
+	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	CreatedAt time.Time `json:"created_at"`
 
+	// Log object content.
+	Domain  string `json:"domain"`
+	Keyword string `json:"keyword"`
+	URL     string `json:"url"`
+	Title   string `json:"title"`
+
+	// Client "requester" content.
 	RemoteAddress         string `json:"remote_address"`
-	UserAgentRaw          string `json:"user_agent_raw"`
+	UserAgent             string `json:"user_agent"`
 	UserAgentFamily       string `json:"user_agent_family"`
 	UserAgentOSFamily     string `json:"user_agent_os_family"`
 	UserAgentDeviceFamily string `json:"user_agent_device_family"`
 	Referer               string `json:"referer"`
 
-	LinkID         string `json:"-" gorm:"index"`
-	LocationIPv4ID string `json:"-" gorm:"index"`
+	LinkID string `json:"link_id" gorm:"index"`
 }
 
 func (l *Link) BeforeCreate(tx *gorm.DB) (err error) {
@@ -52,13 +57,6 @@ func (l *Link) BeforeUpdate(tx *gorm.DB) (err error) {
 
 func (l *LinkLog) BeforeCreate(tx *gorm.DB) (err error) {
 	l.ID = uuid.New().String()
-	l.CreatedAt = time.Now()
-	return
-}
-
-func (l *LinkLog) BeforeUpdate(tx *gorm.DB) (err error) {
-	t := time.Now()
-	l.UpdatedAt = &t
 	return
 }
 

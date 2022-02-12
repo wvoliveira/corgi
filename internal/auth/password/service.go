@@ -55,7 +55,7 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAcce
 	logger := s.logger.With(ctx, identity.Provider, identity.UID)
 
 	identityDB := entity.Identity{}
-	err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
+	err = s.db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		logger.Warnf("this provider + uid not found in database: %s", err.Error())
@@ -72,7 +72,7 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAcce
 
 	// Get user info.
 	user := entity.User{}
-	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
+	err = s.db.Model(&entity.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return tokenAccess, tokenRefresh, err
 	} else if err != nil {
@@ -90,7 +90,7 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAcce
 	}
 
 	tokenRefresh.UserID = identityDB.UserID
-	err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error
+	err = s.db.Model(&entity.Token{}).Create(&tokenRefresh).Error
 	if err != nil {
 		return
 	}
@@ -119,6 +119,6 @@ func (s service) Register(ctx context.Context, identity entity.Identity) (err er
 	user.Active = &t
 	user.Identities = append(user.Identities, identity)
 
-	err = s.db.Debug().Model(&entity.User{}).Create(&user).Error
+	err = s.db.Model(&entity.User{}).Create(&user).Error
 	return
 }

@@ -12,7 +12,7 @@ import (
 	"github.com/elga-io/corgi/internal/entity"
 	"github.com/elga-io/corgi/internal/health"
 	"github.com/elga-io/corgi/internal/link"
-	"github.com/elga-io/corgi/internal/public"
+	"github.com/elga-io/corgi/internal/redirect"
 	"github.com/elga-io/corgi/internal/user"
 	"github.com/elga-io/corgi/pkg/broker"
 	"github.com/elga-io/corgi/pkg/database"
@@ -59,7 +59,7 @@ func main() {
 	}
 	database.SeedUsers(logg, db, cfg)
 
-	// Connect to Broker.
+	// Connect to Broker and Stream.
 	bk := broker.NewBroker(logg, cfg)
 
 	// Setup Casbin auth rules.
@@ -84,7 +84,7 @@ func main() {
 	userService := user.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
 
 	// Public routes, like links?
-	publicService := public.NewService(logg, db, store, authEnforcer)
+	redirectService := redirect.NewService(logg, db, bk, store, authEnforcer)
 
 	// Healthcheck services.
 	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)
@@ -113,9 +113,10 @@ func main() {
 	// HTTP and Nats transports.
 	linkService.HTTPNewTransport(router)
 	linkService.NatsNewTransport()
+	redirectService.NatsNewTransport()
 
 	userService.Routers(router)
-	publicService.Routers(router)
+	redirectService.Routers(router)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.HTTPPort,

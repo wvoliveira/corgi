@@ -19,10 +19,19 @@ func NewBroker(logger log.Logger, c config.Config) (broker *nats.EncodedConn) {
 func InitBroker(logger log.Logger, c config.Config) (broker *nats.EncodedConn) {
 	connURL := fmt.Sprintf("nats://%v:%v", c.Broker.Host, c.Broker.Port)
 	nc, err := nats.Connect(connURL,
-		nats.UserInfo("foo", "bar"),
+		nats.UserInfo("foo", "bar"), // TODO: change stream auth
 		nats.RetryOnFailedConnect(true),
 		nats.MaxReconnects(10),
 		nats.ReconnectWait(time.Second),
+		nats.DisconnectErrHandler(func(nc *nats.Conn, err error) {
+			logger.Warnf("Got disconnected! Reason: %s", err.Error())
+		}),
+		nats.ReconnectHandler(func(nc *nats.Conn) {
+			logger.Infof("Got reconnected to %v", nc.ConnectedUrl())
+		}),
+		nats.ClosedHandler(func(nc *nats.Conn) {
+			logger.Infof("Connection closed. Reason: %q", nc.LastError())
+		}),
 	)
 	if err != nil {
 		logger.With(context.TODO(), "err", err.Error()).Error("error configuring broker")

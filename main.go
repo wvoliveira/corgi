@@ -13,7 +13,6 @@ import (
 	"github.com/elga-io/corgi/internal/entity"
 	"github.com/elga-io/corgi/internal/health"
 	"github.com/elga-io/corgi/internal/link"
-	"github.com/elga-io/corgi/internal/public"
 	"github.com/elga-io/corgi/internal/user"
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
@@ -86,7 +85,7 @@ func main() {
 	userService := user.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
 
 	// Public routes, like links?
-	publicService := public.NewService(logg, db, store, authEnforcer)
+	publicService := redirect.NewService(logg, db, store, authEnforcer)
 
 	// Healthcheck services.
 	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)

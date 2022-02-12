@@ -31,8 +31,9 @@ services:
       - CORGI_BROKER_HOST=broker
       - CORGI_DATABASE_HOST=db
     depends_on:
-      - broker
       - db
+      - broker
+      - queue
 
 #  frontend:
 #    ports:
@@ -49,6 +50,7 @@ services:
     depends_on:
       - db
       - broker
+      - amqp
 
   db:
     image: "cockroachdb/cockroach:v21.2.3"
@@ -65,6 +67,7 @@ services:
 
   broker:
     image: "nats:2.7.1"
+    command: "-js"
     ports:
       - "4222:4222"
       - "8222:8222"

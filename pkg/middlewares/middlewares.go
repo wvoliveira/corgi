@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"github.com/casbin/casbin/v2"
 	e "github.com/elga-io/corgi/pkg/errors"
 	"github.com/elga-io/corgi/pkg/jwt"
@@ -40,6 +39,7 @@ func Access(logger log.Logger) gin.HandlerFunc {
 			"proto", c.Request.Proto,
 			"status", c.Writer.Status(),
 			"size", c.Writer.Size(),
+			"user-agent", c.Request.UserAgent(),
 		).Info()
 	}
 }
@@ -107,8 +107,6 @@ func Authorizer(en *casbin.Enforcer, logger log.Logger) gin.HandlerFunc {
 		if role == "" {
 			role = "anonymous"
 		}
-
-		fmt.Println("role:", role)
 
 		// casbin rule enforcing
 		res, err := en.Enforce(role, c.Request.URL.Path, c.Request.Method)
