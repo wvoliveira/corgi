@@ -18,6 +18,7 @@ import (
 	"github.com/elga-io/corgi/pkg/database"
 	"github.com/elga-io/corgi/pkg/log"
 	"github.com/elga-io/corgi/pkg/middlewares"
+	"github.com/elga-io/corgi/pkg/queue"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
@@ -62,6 +63,9 @@ func main() {
 	// Connect to Broker and Stream.
 	bk := broker.NewBroker(logg, cfg)
 
+	// Client to Queuer.
+	mq := queue.NewQueuer(logg, cfg)
+
 	// Setup Casbin auth rules.
 	authEnforcer, err := casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
 	if err != nil {
@@ -84,7 +88,7 @@ func main() {
 	userService := user.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
 
 	// Public routes, like links?
-	redirectService := redirect.NewService(logg, db, bk, store, authEnforcer)
+	redirectService := redirect.NewService(logg, db, bk, mq, store, authEnforcer)
 
 	// Healthcheck services.
 	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)
@@ -110,13 +114,15 @@ func main() {
 	authGoogleService.Routers(router)
 	authFacebookService.Routers(router)
 
-	// HTTP and Nats transports.
+	// Link HTTP and NATS transports.
 	linkService.HTTPNewTransport(router)
 	linkService.NatsNewTransport()
-	redirectService.NatsNewTransport()
+
+	// Redirect HTTP, NATS transports.
+	redirectService.HTTPNewTransport(router)
+	redirectService.NATSNewTransport()
 
 	userService.Routers(router)
-	redirectService.Routers(router)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.HTTPPort,
@@ -124,6 +130,16 @@ func main() {
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,
 	}
+
+	// MQ consumers.
+	go func() {
+		redirectService.MQNewTransport(mq, redirect.ConsumerConfig{
+			Type:      redirect.AsyncConsumer,
+			QueueURL:  "http://localhost:9324/queue/default",
+			MaxWorker: 2,
+			MaxMsg:    10,
+		}).Start(ctx)
+	}()
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below

@@ -71,4 +71,9 @@ services:
     ports:
       - "4222:4222"
       - "8222:8222"
-      #- "6222:6222" # is a routing port for clustering.
+
+  queue:
+    image: roribio16/alpine-sqs:1.2.0
+    ports:
+      - "9324:9324"
+      - "9325:9325"
