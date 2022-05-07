@@ -5,14 +5,15 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/elga-io/corgi/internal/config"
-	"github.com/elga-io/corgi/internal/entity"
-	"github.com/elga-io/corgi/pkg/database"
-	"github.com/elga-io/corgi/pkg/log"
-	"github.com/google/uuid"
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/elga-io/corgi/internal/app/config"
+	"github.com/elga-io/corgi/internal/app/entity"
+	"github.com/elga-io/corgi/internal/pkg/database"
+	"github.com/google/uuid"
+	"log"
 )
 
 var (

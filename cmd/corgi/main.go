@@ -2,96 +2,86 @@ package main
 
 import (
 	"context"
-	"github.com/casbin/casbin/v2"
-	"github.com/elga-io/corgi/internal/auth"
-	"github.com/elga-io/corgi/internal/auth/facebook"
-	"github.com/elga-io/corgi/internal/auth/google"
-	"github.com/elga-io/corgi/internal/auth/password"
-	"github.com/elga-io/corgi/internal/auth/token"
-	"github.com/elga-io/corgi/internal/config"
-	"github.com/elga-io/corgi/internal/entity"
-	"github.com/elga-io/corgi/internal/health"
-	"github.com/elga-io/corgi/internal/link"
-	"github.com/elga-io/corgi/internal/redirect"
-	"github.com/elga-io/corgi/internal/user"
-	"github.com/elga-io/corgi/pkg/broker"
-	"github.com/elga-io/corgi/pkg/database"
-	"github.com/elga-io/corgi/pkg/log"
-	"github.com/elga-io/corgi/pkg/middlewares"
-	"github.com/elga-io/corgi/pkg/queue"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
+	"embed"
+	"errors"
+	"flag"
+	"fmt"
+	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
+
+	"github.com/casbin/casbin/v2"
+	"github.com/elga-io/corgi/internal/app/auth"
+	"github.com/elga-io/corgi/internal/app/auth/facebook"
+	"github.com/elga-io/corgi/internal/app/auth/google"
+	"github.com/elga-io/corgi/internal/app/auth/password"
+	"github.com/elga-io/corgi/internal/app/auth/token"
+	"github.com/elga-io/corgi/internal/app/config"
+	"github.com/elga-io/corgi/internal/app/entity"
+	"github.com/elga-io/corgi/internal/app/health"
+	"github.com/elga-io/corgi/internal/app/link"
+	"github.com/elga-io/corgi/internal/app/redirect"
+	"github.com/elga-io/corgi/internal/app/user"
+	"github.com/elga-io/corgi/internal/pkg/database"
+	"github.com/gin-contrib/cors"
+	"github.com/gin-contrib/sessions/cookie"
+	"github.com/gorilla/mux"
+	"github.com/rs/zerolog"
+	"github.com/rs/zerolog/log"
 )
 
 // version indicates the current version of the application.
 var version = "0.0.1"
 
+//go:embed web
+//go:embed web/_next/static
+//go:embed web/_next/static/chunks/pages/*.js
+//go:embed web/_next/static/*/*.js
+var nextFS embed.FS
+
 func main() {
-	// Create context that listens for the interrupt signal from the OS.
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
+	migrate := flag.Bool("m", false, "Enable GORM migration")
+	flag.Parse()
 
-	// Create root logger tagged with server version.
-	logg := log.New().With(ctx, "version", version)
+	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	log.Info().Msg("Initializing app...")
 
-	// Load application configurations.
-	cfg := config.NewConfig(logg, "configs")
-
-	// Connect to the database and seed first users.
-	db := database.NewDatabase(logg, cfg)
-	if err := db.AutoMigrate(
-		&entity.User{},
-		&entity.Identity{},
-		&entity.Link{},
-		&entity.LinkLog{},
-		&entity.Token{},
-		&entity.Tag{},
-		&entity.LocationIPv4{},
-		&entity.LocationIPv6{},
-	); err != nil {
-		logg.Error("error in auto migrate", "err", err.Error())
-		os.Exit(1)
+	// Create database and cache folder in $HOME/.corgi path.
+	folder, err := createDataFolder(".corgi")
+	if err != nil {
+		log.Fatal().Caller().Msg(err.Error())
 	}
-	database.SeedUsers(logg, db, cfg)
 
-	// Connect to Broker and Stream.
-	bk := broker.NewBroker(logg, cfg)
+	var (
+		cfg = config.NewConfig("configs")
+		db  = database.NewSQLDatabase("sqlite", filepath.Join(folder, "data"))
+	)
 
-	// Client to Queuer.
-	mq := queue.NewQueuer(logg, cfg)
+	if *migrate {
+		// Seed first users. Most admins.
+		if err := db.AutoMigrate(
+			&entity.User{},
+			&entity.Identity{},
+			&entity.Link{},
+			&entity.Token{},
+		); err != nil {
+			log.Fatal().Caller().Msg(err.Error())
+			os.Exit(1)
+		}
+	}
+
+	database.SeedUsers(db, cfg)
 
 	// Setup Casbin auth rules.
 	authEnforcer, err := casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
 	if err != nil {
-		logg.Error("error to get Casbin enforce rules")
+		log.Fatal().Caller().Msg("error to get Casbin enforce rules")
 		os.Exit(2)
 	}
-
-	// Start sessions.
-	store := cookie.NewStore([]byte(cfg.App.SecretKey))
-
-	// Auth services like login, register, logout, etc.
-	authService := auth.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
-	authToken := token.NewService(logg, db, cfg.App.SecretKey, 30, store, authEnforcer)
-	authPasswordService := password.NewService(logg, db, cfg.App.SecretKey, 30, store, authEnforcer)
-	authGoogleService := google.NewService(logg, db, cfg, store, authEnforcer)
-	authFacebookService := facebook.NewService(logg, db, cfg, store, authEnforcer)
-
-	// Business services like links, users, etc.
-	linkService := link.NewService(logg, db, bk, cfg.App.SecretKey, store, authEnforcer)
-	userService := user.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer)
-
-	// Public routes, like links?
-	redirectService := redirect.NewService(logg, db, bk, mq, store, authEnforcer)
-
-	// Healthcheck services.
-	healthService := health.NewService(logg, db, cfg.App.SecretKey, store, authEnforcer, version)
 
 	// Cors. Yes, we need this.
 	corsConfig := cors.DefaultConfig()
@@ -100,29 +90,80 @@ func main() {
 	corsConfig.AddAllowHeaders("*")
 	corsConfig.AllowCredentials = true
 
-	// Initialize routers.
-	router := gin.New()
-	router.Use(middlewares.Access(logg))
-	router.Use(gin.Recovery())
-	router.Use(cors.New(corsConfig))
+	// mw := middleware.Middleware{Cache: cache, Logger: log.Logger}
 
-	// Register business and needed routers.
-	healthService.Routers(router)
-	authService.Routers(router)
-	authToken.Routers(router)
-	authPasswordService.Routers(router)
-	authGoogleService.Routers(router)
-	authFacebookService.Routers(router)
+	router := mux.NewRouter().SkipClean(true)
+	// router.Use(mw.CorrelationID)
+	// router.Use(mw.Log)
 
-	// Link HTTP and NATS transports.
-	linkService.HTTPNewTransport(router)
-	linkService.NatsNewTransport()
+	apiRouter := router.PathPrefix("/api").Subrouter().StrictSlash(true)
+	webRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
 
-	// Redirect HTTP, NATS transports.
-	redirectService.HTTPNewTransport(router)
-	redirectService.NATSNewTransport()
+	// Start sessions.
+	store := cookie.NewStore([]byte(cfg.App.SecretKey))
 
-	userService.Routers(router)
+	{
+		// Auth service: logout and check.
+		service := auth.NewService(db, cfg.App.SecretKey, store, authEnforcer)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// Token refresh route.
+		service := token.NewService(db, cfg.App.SecretKey, 30, store, authEnforcer)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// Auth password service.
+		service := password.NewService(db, cfg.App.SecretKey, 30, store, authEnforcer)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// Auth with Google provider.
+		service := google.NewService(db, cfg, store, authEnforcer)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// Auth with Facebook provider.
+		service := facebook.NewService(db, cfg, store, authEnforcer)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// Central business service: manage link shortener.
+		service := link.NewService(db, cfg.App.SecretKey, store, authEnforcer)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// User service. Like profile view and edit.
+		service := user.NewService(db, cfg.App.SecretKey, store, authEnforcer)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// Central business service: redirect short link.
+		service := redirect.NewService(db, store, authEnforcer)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// Healthcheck endpoints.
+		service := health.NewService(db, cfg.App.SecretKey, store, authEnforcer, version)
+		service.NewHTTP(apiRouter)
+	}
+
+	// Start web UI.
+	distFS, err := fs.Sub(nextFS, "web")
+	if err != nil {
+		log.Fatal().Caller().Msg(err.Error())
+		os.Exit(2)
+	}
+	webHandler := http.FileServer(http.FS(distFS))
+	webRouter.PathPrefix("").Handler(webHandler)
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.HTTPPort,
@@ -131,22 +172,16 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	// MQ consumers.
-	go func() {
-		redirectService.MQNewTransport(mq, redirect.ConsumerConfig{
-			Type:      redirect.AsyncConsumer,
-			QueueURL:  "http://localhost:9324/queue/default",
-			MaxWorker: 2,
-			MaxMsg:    10,
-		}).Start(ctx)
-	}()
+	// Create context that listens for the interrupt signal from the OS.
+	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	defer stop()
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
-		logg.Info("server listening :", cfg.Server.HTTPPort)
+		log.Info().Caller().Msg(fmt.Sprintf("server listening :%s", cfg.Server.HTTPPort))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			logg.Info("listen: %s", err)
+			log.Error().Caller().Msg(err.Error())
 		}
 	}()
 
@@ -155,14 +190,67 @@ func main() {
 
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	stop()
-	logg.Info("shutting down gracefully, press Ctrl+C again to force")
+	log.Info().Caller().Msg("shutting down gracefully, press Ctrl+C again to force")
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		logg.Info("Server forced to shutdown: ", err)
+		log.Info().Caller().Msg(fmt.Sprintf("Server forced to shutdown: %s", err.Error()))
 	}
-	logg.Info("Server exiting")
+	log.Info().Caller().Msg("Server exiting")
+}
+
+func initWebUI() (ui http.FileSystem) {
+	distFS, err := fs.Sub(nextFS, "web/dist")
+	ui = http.FS(distFS)
+
+	if err != nil {
+		log.Info().Caller().Msg(err.Error())
+		os.Exit(2)
+	}
+	return
+}
+
+func createDataFolder(name string) (folder string, err error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return
+	}
+
+	folder = filepath.Join(home, name)
+	if _, err = os.Stat(folder); os.IsNotExist(err) {
+		err = os.Mkdir(folder, os.ModePerm)
+		if err != nil {
+			return
+		}
+	} else if err != nil {
+		return
+	}
+	return
+}
+
+func printRoutes(rs []*mux.Router) {
+	for _, r := range rs {
+		_ = r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+			uri, err := route.GetPathTemplate()
+			if err != nil {
+				log.Error().Msg(fmt.Sprintf("with get path template: %s", err.Error()))
+				return err
+			}
+
+			method, err := route.GetMethods()
+			if err != nil {
+				if errors.Is(err, mux.ErrMethodMismatch) {
+					return err
+				}
+			}
+
+			if uri != "" && len(method) != 0 {
+				log.Info().Msg(fmt.Sprintf("%s %s", uri, method))
+			}
+			return nil
+		})
+	}
 }
