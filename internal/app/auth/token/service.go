@@ -3,6 +3,7 @@ package token
 import (
 	"context"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -10,7 +11,7 @@ import (
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/elga-io/corgi/internal/pkg/jwt"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -19,8 +20,8 @@ import (
 type Service interface {
 	Refresh(ctx context.Context, token entity.Token) (entity.Token, entity.Token, error)
 
-	NewHTTP(r *gin.Engine)
-	HTTPRefresh(c *gin.Context)
+	NewHTTP(r *mux.Router)
+	HTTPRefresh(w http.ResponseWriter, r *http.Request)
 }
 
 type service struct {

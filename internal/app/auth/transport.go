@@ -4,36 +4,36 @@ import (
 	"net/http"
 
 	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/middlewares"
-	"github.com/gin-gonic/gin"
+	"github.com/elga-io/corgi/internal/pkg/response"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 )
 
-func (s service) NewHTTP(e *gin.Engine) {
-	r := e.Group("/auth",
-		middlewares.Checks(),
-		middlewares.Auth(s.secret),
-		middlewares.Authorizer(s.enforce))
+func (s service) NewHTTP(r *mux.Router) {
+	rr := r.PathPrefix("/auth").Subrouter()
+	// middlewares.Checks(),
+	// middlewares.Auth(s.secret),
+	// middlewares.Authorizer(s.enforce))
 
-	r.GET("/logout", s.HTTPLogout)
+	rr.HandleFunc("/logout", s.HTTPLogout).Methods("GET")
 }
 
-func (s service) HTTPLogout(c *gin.Context) {
-	l := log.Ctx(c)
+func (s service) HTTPLogout(w http.ResponseWriter, r *http.Request) {
+	l := log.Ctx(r.Context())
 
 	// Decode request to object.
-	dr, err := decodeLogout(c)
+	dr, err := decodeLogout(r)
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
 	// Business logic.
-	err = s.Logout(c.Request.Context(), dr.Token)
+	err = s.Logout(r.Context(), dr.Token)
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
@@ -41,11 +41,11 @@ func (s service) HTTPLogout(c *gin.Context) {
 	cookieRefresh := http.Cookie{Name: "refresh_token_id", MaxAge: -1}
 	cookieLogged := http.Cookie{Name: "logged", MaxAge: -1}
 
-	http.SetCookie(c.Writer, &cookieAccess)
-	http.SetCookie(c.Writer, &cookieRefresh)
-	http.SetCookie(c.Writer, &cookieLogged)
+	http.SetCookie(w, &cookieAccess)
+	http.SetCookie(w, &cookieRefresh)
+	http.SetCookie(w, &cookieLogged)
 
 	// Encode object to answer request (response).
 	sr := logoutResponse{Err: err}
-	encodeResponse(c, sr)
+	response.Default(w, sr, "", http.StatusNoContent)
 }

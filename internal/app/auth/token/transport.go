@@ -1,34 +1,36 @@
 package token
 
 import (
+	"net/http"
+
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/middlewares"
-	"github.com/gin-gonic/gin"
+	"github.com/elga-io/corgi/internal/pkg/response"
+	"github.com/gorilla/mux"
 )
 
-func (s service) NewHTTP(e *gin.Engine) {
-	r := e.Group("/auth/token",
-		middlewares.Checks(),
-		middlewares.Auth(s.secret),
-		middlewares.Authorizer(s.enforce))
+func (s service) NewHTTP(r *mux.Router) {
+	rr := r.PathPrefix("/auth/token").Subrouter()
+	// middlewares.Checks(),
+	// middlewares.Auth(s.secret),
+	// middlewares.Authorizer(s.enforce))
 
-	r.POST("/refresh", s.HTTPRefresh)
+	rr.HandleFunc("/refresh", s.HTTPRefresh).Methods("POST")
 }
 
-func (s service) HTTPRefresh(c *gin.Context) {
+func (s service) HTTPRefresh(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	dr, err := decodeRefreshRequest(c.Request)
+	dr, err := decodeRefreshRequest(r)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 	token := entity.Token{ID: dr.RefreshTokenID}
 
 	// Business logic.
-	tokenAccess, tokenRefresh, err := s.Refresh(c.Request.Context(), token)
+	tokenAccess, tokenRefresh, err := s.Refresh(r.Context(), token)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
@@ -39,5 +41,6 @@ func (s service) HTTPRefresh(c *gin.Context) {
 		ExpiresIn:    tokenAccess.ExpiresIn,
 		Err:          err,
 	}
-	encodeResponse(c, sr)
+	// encodeResponse(w, sr)
+	response.Default(w, sr, "", http.StatusNoContent)
 }

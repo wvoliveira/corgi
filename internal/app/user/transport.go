@@ -1,34 +1,36 @@
 package user
 
 import (
+	"net/http"
+
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/middlewares"
-	"github.com/gin-gonic/gin"
+	"github.com/elga-io/corgi/internal/pkg/response"
+	"github.com/gorilla/mux"
 )
 
-func (s service) NewHTTP(e *gin.Engine) {
-	r := e.Group("/api/v1/user",
-		middlewares.Checks(),
-		middlewares.Auth(s.secret),
-		middlewares.Authorizer(s.enforce))
+func (s service) NewHTTP(r *mux.Router) {
+	rr := r.PathPrefix("/api/v1/user").Subrouter()
+	// middlewares.Checks(),
+	// middlewares.Auth(s.secret),
+	// middlewares.Authorizer(s.enforce))
 
-	r.GET("/me", s.HTTPFind)
-	r.PATCH("/me", s.HTTPUpdate)
+	rr.HandleFunc("/me", s.HTTPFind).Methods("GET")
+	rr.HandleFunc("/me", s.HTTPUpdate).Methods("PATCH")
 }
 
-func (s service) HTTPFind(c *gin.Context) {
+func (s service) HTTPFind(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	dr, err := decodeFind(c)
+	dr, err := decodeFind(r)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
 	// Business logic.
-	user, err := s.Find(c.Request.Context(), dr.UserID)
+	user, err := s.Find(r.Context(), dr.UserID)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
@@ -43,25 +45,21 @@ func (s service) HTTPFind(c *gin.Context) {
 	}
 
 	ur := userResponse{Name: user.Name, Role: user.Role, Identities: identities}
-	sr := findResponse{
-		userResponse: ur,
-		Err:          err,
-	}
-	encodeResponse(c, sr)
+	response.Default(w, ur, "", http.StatusOK)
 }
 
-func (s service) HTTPUpdate(c *gin.Context) {
+func (s service) HTTPUpdate(w http.ResponseWriter, r *http.Request) {
 	// Decode request to request object.
-	dr, err := decodeUpdate(c)
+	dr, err := decodeUpdate(r)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
 	// Business logic.
-	user, err := s.Update(c.Request.Context(), entity.User{ID: dr.UserID, Name: dr.Name})
+	user, err := s.Update(r.Context(), entity.User{ID: dr.UserID, Name: dr.Name})
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
@@ -71,5 +69,5 @@ func (s service) HTTPUpdate(c *gin.Context) {
 		Name:      user.Name,
 		Err:       err,
 	}
-	encodeResponse(c, sr)
+	response.Default(w, sr, "", http.StatusOK)
 }

@@ -3,6 +3,7 @@ package password
 import (
 	"context"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -10,8 +11,8 @@ import (
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/elga-io/corgi/internal/pkg/jwt"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -22,19 +23,9 @@ type Service interface {
 	Login(ctx context.Context, identity entity.Identity) (entity.Token, entity.Token, error)
 	Register(ctx context.Context, identity entity.Identity) error
 
-	NewHTTP(r *gin.Engine)
-	HTTPLogin(c *gin.Context)
-	HTTPRegister(c *gin.Context)
-}
-
-// Identity represents an authenticated user identity.
-type Identity interface {
-	// GetID returns the user ID.
-	GetID() string
-	// GetUID returns the e-mail, google id, facebook id, etc.
-	GetUID() string
-	// GetRole returns the role.
-	GetRole() string
+	NewHTTP(r *mux.Router)
+	HTTPLogin(w http.ResponseWriter, r *http.Request)
+	HTTPRegister(w http.ResponseWriter, r *http.Request)
 }
 
 type service struct {

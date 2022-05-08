@@ -1,0 +1,36 @@
+package redirect
+
+import (
+	"net/http"
+
+	e "github.com/elga-io/corgi/internal/pkg/errors"
+	"github.com/gorilla/mux"
+)
+
+func (s service) NewHTTP(r *mux.Router) {
+	rr := r.PathPrefix("/").Subrouter()
+
+	// rr.Use(sessions.Sessions("_corgi", s.store))
+	rr.HandleFunc("/:keyword", s.HTTPFind).Methods("GET")
+}
+
+func (s service) HTTPFind(w http.ResponseWriter, r *http.Request) {
+	// Decode request to request object.
+	dr, err := decodeFindByKeyword(r)
+	if err != nil {
+		e.EncodeError(w, err)
+		return
+	}
+
+	link, err := s.Find(r.Context(), dr.Domain, dr.Keyword)
+	if err != nil {
+		e.EncodeError(w, err)
+		return
+	}
+
+	// Pass decode request to from gin context to use in middleware.
+	// c.Set("findByKeywordResponse", link)
+
+	// Redirect! Not encode for response.
+	http.Redirect(w, r, link.URL, http.StatusMovedPermanently)
+}

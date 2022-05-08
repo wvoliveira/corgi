@@ -2,23 +2,26 @@ package auth
 
 import (
 	"errors"
+	"net/http"
 
 	"github.com/elga-io/corgi/internal/app/entity"
-	"github.com/gin-gonic/gin"
 )
 
 type logoutRequest struct {
 	Token entity.Token
 }
 
-func decodeLogout(c *gin.Context) (req logoutRequest, err error) {
-	userID, ok := c.Get("user_id")
-	if !ok {
-		return req, errors.New("impossible to get user_id from gin context")
+func decodeLogout(r *http.Request) (req logoutRequest, err error) {
+	ctx := r.Context()
+
+	userID := ctx.Value("user_id")
+	if userID == nil {
+		return req, errors.New("impossible to get user_id from context")
 	}
-	refreshTokenID, ok := c.Get("refresh_token_id")
-	if !ok || refreshTokenID.(string) == "" {
-		return req, errors.New("impossible to get refresh_token_id from gin context")
+
+	refreshTokenID := ctx.Value("refresh_token_id")
+	if refreshTokenID == nil {
+		return req, errors.New("impossible to get refresh_token_id from context")
 	}
 
 	req.Token.ID = refreshTokenID.(string)

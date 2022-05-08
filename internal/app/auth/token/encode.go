@@ -2,9 +2,6 @@ package token
 
 import (
 	"time"
-
-	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/gin-gonic/gin"
 )
 
 type refreshResponse struct {
@@ -15,10 +12,3 @@ type refreshResponse struct {
 }
 
 func (r refreshResponse) Error() error { return r.Err }
-
-func encodeResponse(c *gin.Context, response interface{}) {
-	if err, ok := response.(e.Errorer); ok && err.Error() != nil {
-		e.EncodeError(c, err.Error())
-	}
-	c.JSON(200, response)
-}

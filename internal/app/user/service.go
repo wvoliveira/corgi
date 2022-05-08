@@ -3,13 +3,14 @@ package user
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -19,9 +20,9 @@ type Service interface {
 	Find(ctx context.Context, userID string) (entity.User, error)
 	Update(ctx context.Context, user entity.User) (entity.User, error)
 
-	NewHTTP(r *gin.Engine)
-	HTTPFind(c *gin.Context)
-	HTTPUpdate(c *gin.Context)
+	NewHTTP(r *mux.Router)
+	HTTPFind(w http.ResponseWriter, r *http.Request)
+	HTTPUpdate(w http.ResponseWriter, r *http.Request)
 }
 
 type service struct {

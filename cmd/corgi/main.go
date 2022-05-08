@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"embed"
-	"errors"
 	"flag"
 	"fmt"
 	"io/fs"
@@ -27,6 +26,7 @@ import (
 	"github.com/elga-io/corgi/internal/app/redirect"
 	"github.com/elga-io/corgi/internal/app/user"
 	"github.com/elga-io/corgi/internal/pkg/database"
+	"github.com/elga-io/corgi/internal/pkg/util"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gorilla/mux"
@@ -44,14 +44,14 @@ var version = "0.0.1"
 var nextFS embed.FS
 
 func main() {
+	debug := flag.Bool("d", false, "Enable DEBUG mode")
 	migrate := flag.Bool("m", false, "Enable GORM migration")
 	flag.Parse()
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	log.Info().Msg("Initializing app...")
 
 	// Create database and cache folder in $HOME/.corgi path.
-	folder, err := createDataFolder(".corgi")
+	folder, err := util.CreateDataFolder(".corgi")
 	if err != nil {
 		log.Fatal().Caller().Msg(err.Error())
 	}
@@ -165,6 +165,11 @@ func main() {
 	webHandler := http.FileServer(http.FS(distFS))
 	webRouter.PathPrefix("").Handler(webHandler)
 
+	// Help func to get endpoints.
+	if *debug {
+		util.PrintRoutes([]*mux.Router{apiRouter})
+	}
+
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.HTTPPort,
 		Handler:      router,
@@ -200,57 +205,4 @@ func main() {
 		log.Info().Caller().Msg(fmt.Sprintf("Server forced to shutdown: %s", err.Error()))
 	}
 	log.Info().Caller().Msg("Server exiting")
-}
-
-func initWebUI() (ui http.FileSystem) {
-	distFS, err := fs.Sub(nextFS, "web/dist")
-	ui = http.FS(distFS)
-
-	if err != nil {
-		log.Info().Caller().Msg(err.Error())
-		os.Exit(2)
-	}
-	return
-}
-
-func createDataFolder(name string) (folder string, err error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return
-	}
-
-	folder = filepath.Join(home, name)
-	if _, err = os.Stat(folder); os.IsNotExist(err) {
-		err = os.Mkdir(folder, os.ModePerm)
-		if err != nil {
-			return
-		}
-	} else if err != nil {
-		return
-	}
-	return
-}
-
-func printRoutes(rs []*mux.Router) {
-	for _, r := range rs {
-		_ = r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
-			uri, err := route.GetPathTemplate()
-			if err != nil {
-				log.Error().Msg(fmt.Sprintf("with get path template: %s", err.Error()))
-				return err
-			}
-
-			method, err := route.GetMethods()
-			if err != nil {
-				if errors.Is(err, mux.ErrMethodMismatch) {
-					return err
-				}
-			}
-
-			if uri != "" && len(method) != 0 {
-				log.Info().Msg(fmt.Sprintf("%s %s", uri, method))
-			}
-			return nil
-		})
-	}
 }

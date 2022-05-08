@@ -1,19 +1,21 @@
 package health
 
 import (
-	"github.com/elga-io/corgi/internal/pkg/middlewares"
-	"github.com/gin-gonic/gin"
+	"net/http"
+
+	"github.com/elga-io/corgi/internal/pkg/response"
+	"github.com/gorilla/mux"
 )
 
-func (s service) NewHTTP(e *gin.Engine) {
-	r := e.Group("/health",
-		middlewares.Authorizer(s.enforce))
+func (s service) NewHTTP(r *mux.Router) {
+	rr := r.PathPrefix("/health").Subrouter()
+	// middlewares.Authorizer(s.enforce))
 
-	r.GET("/ping", s.HTTPHealth)
+	rr.HandleFunc("/ping", s.HTTPHealth).Methods("GET")
 	//r.GET("/live", s.httpLive)
 	//r.GET("/ready", s.httpReady)
 }
 
-func (s service) HTTPHealth(c *gin.Context) {
-	c.JSON(200, "pong "+s.version)
+func (s service) HTTPHealth(w http.ResponseWriter, r *http.Request) {
+	response.Default(w, "pong "+s.version, "", http.StatusOK)
 }

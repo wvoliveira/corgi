@@ -2,9 +2,6 @@ package user
 
 import (
 	"time"
-
-	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/gin-gonic/gin"
 )
 
 type identity struct {
@@ -18,13 +15,6 @@ type userResponse struct {
 	Identities []identity `json:"identities"`
 }
 
-type findResponse struct {
-	userResponse
-	Err error `json:"error,omitempty"`
-}
-
-func (r findResponse) Error() error { return r.Err }
-
 type updateResponse struct {
 	UpdatedAt time.Time `json:"updated_at"`
 	Name      string    `json:"name"`
@@ -32,10 +22,3 @@ type updateResponse struct {
 }
 
 func (r updateResponse) Error() error { return r.Err }
-
-func encodeResponse(c *gin.Context, response interface{}) {
-	if err, ok := response.(e.Errorer); ok && err.Error() != nil {
-		e.EncodeError(c, err.Error())
-	}
-	c.JSON(200, response)
-}

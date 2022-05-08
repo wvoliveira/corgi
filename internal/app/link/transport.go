@@ -1,72 +1,74 @@
 package link
 
 import (
+	"net/http"
+
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/middlewares"
-	"github.com/gin-gonic/gin"
+	"github.com/elga-io/corgi/internal/pkg/response"
+	"github.com/gorilla/mux"
 )
 
-func (s service) NewHTTP(e *gin.Engine) {
-	r := e.Group("/api/v1/links",
-		middlewares.Checks(),
-		middlewares.Auth(s.secret))
+func (s service) NewHTTP(r *mux.Router) {
+	rr := r.PathPrefix("/api/v1/links").Subrouter()
+	// middlewares.Checks(),
+	// middlewares.Auth(s.secret))
 
-	r.OPTIONS("", nil)
-	r.POST("", s.HTTPAdd)
-	r.GET(":id", s.HTTPFindByID)
-	r.GET("/status/:id", s.HTTPFindByID)
-	r.GET("", s.HTTPFindAll)
-	r.PATCH(":id", s.HTTPUpdate)
-	r.DELETE(":id", s.HTTPDelete)
+	rr.HandleFunc("", nil).Methods("OPTIONS")
+	rr.HandleFunc("", s.HTTPAdd).Methods("POST")
+	rr.HandleFunc("/:id", s.HTTPFindByID).Methods("GET")
+	rr.HandleFunc("/status/:id", s.HTTPFindByID).Methods("GET")
+	rr.HandleFunc("", s.HTTPFindAll).Methods("GET")
+	rr.HandleFunc("/:id", s.HTTPUpdate).Methods("PATCH")
+	rr.HandleFunc("/:id", s.HTTPDelete).Methods("DELETE")
 }
 
-func (s service) HTTPAdd(c *gin.Context) {
-	dr, err := decodeAdd(c)
+func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {
+	dr, err := decodeAdd(r)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	link, err := s.Add(c, entity.Link{Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, UserID: dr.UserID})
+	link, err := s.Add(r.Context(), entity.Link{Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, UserID: dr.UserID})
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	encodeResponse(c, link)
+	response.Default(w, link, "", http.StatusCreated)
 }
 
-func (s service) HTTPFindByID(c *gin.Context) {
-	dr, err := decodeFindByID(c)
+func (s service) HTTPFindByID(w http.ResponseWriter, r *http.Request) {
+	dr, err := decodeFindByID(r)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	link, err := s.FindByID(c, dr.ID, dr.UserID)
+	link, err := s.FindByID(r.Context(), dr.ID, dr.UserID)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	encodeResponse(c, link)
+	response.Default(w, link, "", http.StatusOK)
 }
 
-func (s service) HTTPFindAll(c *gin.Context) {
-	dr, err := decodeFindAll(c)
+func (s service) HTTPFindAll(w http.ResponseWriter, r *http.Request) {
+	dr, err := decodeFindAll(r)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	total, pages, links, err := s.FindAll(c, dr.Offset, dr.Limit, dr.Sort, dr.UserID)
+	total, pages, links, err := s.FindAll(r.Context(), dr.Offset, dr.Limit, dr.Sort, dr.UserID)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	encodeResponse(c, findAllResponse{
+	sr := findAllResponse{
 		Links: links,
 		Limit: dr.Limit,
 		Page:  dr.Page,
@@ -74,17 +76,19 @@ func (s service) HTTPFindAll(c *gin.Context) {
 		Total: total,
 		Pages: pages,
 		Err:   err,
-	})
+	}
+
+	response.Default(w, sr, "", http.StatusOK)
 }
 
-func (s service) HTTPUpdate(c *gin.Context) {
-	dr, err := decodeUpdate(c)
+func (s service) HTTPUpdate(w http.ResponseWriter, r *http.Request) {
+	dr, err := decodeUpdate(r)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	link, err := s.Update(c, entity.Link{
+	link, err := s.Update(r.Context(), entity.Link{
 		ID:      dr.ID,
 		Domain:  dr.Domain,
 		Keyword: dr.Keyword,
@@ -94,25 +98,25 @@ func (s service) HTTPUpdate(c *gin.Context) {
 		UserID:  dr.UserID,
 	})
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	encodeResponse(c, link)
+	response.Default(w, link, "", http.StatusOK)
 }
 
-func (s service) HTTPDelete(c *gin.Context) {
-	dr, err := decodeDelete(c)
+func (s service) HTTPDelete(w http.ResponseWriter, r *http.Request) {
+	dr, err := decodeDelete(r)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	err = s.Delete(c, dr.ID, dr.UserID)
+	err = s.Delete(r.Context(), dr.ID, dr.UserID)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(w, err)
 		return
 	}
 
-	encodeResponse(c, nil)
+	response.Default(w, nil, "", http.StatusOK)
 }

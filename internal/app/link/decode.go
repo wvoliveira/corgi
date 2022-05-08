@@ -2,9 +2,12 @@ package link
 
 import (
 	"encoding/json"
-	"github.com/gin-gonic/gin"
+	"errors"
+	"net/http"
 	"strconv"
 	"time"
+
+	"github.com/gorilla/mux"
 )
 
 type addRequest struct {
@@ -47,30 +50,54 @@ type deleteRequest struct {
 	UserID  string `json:"user_id"`
 }
 
-func decodeAdd(c *gin.Context) (req addRequest, err error) {
-	userID, _ := c.Get("user_id")
-	if err = json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+func decodeAdd(r *http.Request) (req addRequest, err error) {
+	ctx := r.Context()
+
+	userID := ctx.Value("user_id")
+	if userID == nil {
+		return req, errors.New("impossible to get user_id from context")
+	}
+
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return req, err
 	}
+
 	req.UserID = userID.(string)
 	return req, nil
 }
 
-func decodeFindByID(c *gin.Context) (req findByIDRequest, err error) {
-	userID, _ := c.Get("user_id")
-	linkID := c.Param("id")
+func decodeFindByID(r *http.Request) (req findByIDRequest, err error) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	userID := ctx.Value("user_id")
+	if userID == nil {
+		return req, errors.New("impossible to get user_id from context")
+	}
+
+	linkID := vars["id"]
+	if linkID == "" {
+		return req, errors.New("impossible to get link id")
+	}
 
 	req.ID = linkID
 	req.UserID = userID.(string)
 	return req, nil
 }
 
-func decodeFindAll(c *gin.Context) (req findAllRequest, err error) {
-	userID, _ := c.Get("user_id")
+func decodeFindAll(r *http.Request) (req findAllRequest, err error) {
+	ctx := r.Context()
+	params := r.URL.Query()
 
-	page, _ := strconv.Atoi(c.Query("page"))
-	limit, _ := strconv.Atoi(c.Query("limit"))
-	sort := c.Query("sort")
+	userID := ctx.Value("user_id")
+	if userID == nil {
+		return req, errors.New("impossible to get user_id from context")
+	}
+
+	page, _ := strconv.Atoi(params.Get("page"))
+	limit, _ := strconv.Atoi(params.Get("limit"))
+	sort := params.Get("sort")
+
 	if page == 0 {
 		page = 1
 	}
@@ -94,21 +121,43 @@ func decodeFindAll(c *gin.Context) (req findAllRequest, err error) {
 	return req, nil
 }
 
-func decodeUpdate(c *gin.Context) (req updateRequest, err error) {
-	userID, _ := c.Get("user_id")
-	linkID := c.Param("id")
+func decodeUpdate(r *http.Request) (req updateRequest, err error) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
 
-	if err = json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
+	userID := ctx.Value("user_id")
+	if userID == nil {
+		return req, errors.New("impossible to get user_id from context")
+	}
+
+	linkID := vars["id"]
+	if linkID == "" {
+		return req, errors.New("impossible to get link id")
+	}
+
+	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return req, err
 	}
+
 	req.ID = linkID
 	req.UserID = userID.(string)
 	return req, nil
 }
 
-func decodeDelete(c *gin.Context) (req deleteRequest, err error) {
-	userID, _ := c.Get("user_id")
-	linkID := c.Param("id")
+func decodeDelete(r *http.Request) (req deleteRequest, err error) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	userID := ctx.Value("user_id")
+	if userID == nil {
+		return req, errors.New("impossible to get user_id from context")
+	}
+
+	linkID := vars["id"]
+	if linkID == "" {
+		return req, errors.New("impossible to get link id")
+	}
+
 	req.ID = linkID
 	req.UserID = userID.(string)
 	return req, nil

@@ -3,12 +3,13 @@ package redirect
 import (
 	"context"
 	"fmt"
+	"net/http"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -17,8 +18,8 @@ import (
 type Service interface {
 	Find(ctx context.Context, domain, keyword string) (link entity.Link, err error)
 
-	NewHTTP(r *gin.Engine)
-	HTTPFind(c *gin.Context)
+	NewHTTP(r *mux.Router)
+	HTTPFind(w http.ResponseWriter, r *http.Request)
 }
 
 type service struct {

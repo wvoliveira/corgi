@@ -2,10 +2,11 @@ package health
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"gorm.io/gorm"
 )
 
@@ -13,8 +14,8 @@ import (
 type Service interface {
 	Health(ctx context.Context) error
 
-	NewHTTP(r *gin.Engine)
-	HTTPHealth(c *gin.Context)
+	NewHTTP(r *mux.Router)
+	HTTPHealth(w http.ResponseWriter, r *http.Request)
 }
 
 type service struct {

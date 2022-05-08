@@ -4,14 +4,15 @@ import (
 	"context"
 	"errors"
 	"math"
+	"net/http"
 	"time"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -25,12 +26,12 @@ type Service interface {
 	Update(ctx context.Context, payload entity.Link) (link entity.Link, err error)
 	Delete(ctx context.Context, linkID, userID string) (err error)
 
-	NewHTTP(r *gin.Engine)
-	HTTPAdd(c *gin.Context)
-	HTTPFindByID(c *gin.Context)
-	HTTPFindAll(c *gin.Context)
-	HTTPUpdate(c *gin.Context)
-	HTTPDelete(c *gin.Context)
+	NewHTTP(r *mux.Router)
+	HTTPAdd(w http.ResponseWriter, r *http.Request)
+	HTTPFindByID(w http.ResponseWriter, r *http.Request)
+	HTTPFindAll(w http.ResponseWriter, r *http.Request)
+	HTTPUpdate(w http.ResponseWriter, r *http.Request)
+	HTTPDelete(w http.ResponseWriter, r *http.Request)
 }
 
 type service struct {

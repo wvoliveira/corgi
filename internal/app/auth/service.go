@@ -2,11 +2,12 @@ package auth
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	"github.com/gin-contrib/sessions/cookie"
-	"github.com/gin-gonic/gin"
+	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -15,8 +16,8 @@ import (
 type Service interface {
 	Logout(ctx context.Context, token entity.Token) error
 
-	NewHTTP(r *gin.Engine)
-	HTTPLogout(c *gin.Context)
+	NewHTTP(r *mux.Router)
+	HTTPLogout(w http.ResponseWriter, r *http.Request)
 }
 
 type service struct {
