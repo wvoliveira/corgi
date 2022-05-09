@@ -8,9 +8,9 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
+	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -35,7 +35,7 @@ func NewService(db *gorm.DB, store *sessions.CookieStore, enforce *casbin.Enforc
 
 // Find get a shortener link from keyword.
 func (s service) Find(ctx context.Context, domain, keyword string) (li entity.Link, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	err = s.db.Model(&entity.Link{}).Where("domain = ? AND keyword = ?", domain, keyword).Take(&li).Error
 	if err == gorm.ErrRecordNotFound {
@@ -52,7 +52,7 @@ func (s service) Find(ctx context.Context, domain, keyword string) (li entity.Li
 
 // Log store a log metadata to database.
 func (s service) Log(ctx context.Context, payload entity.LinkLog) (err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	err = s.db.Debug().Model(&entity.LinkLog{}).Create(&payload).Error
 	if err != nil {

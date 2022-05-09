@@ -33,6 +33,6 @@ func NewService(db *gorm.DB, secret string, store *sessions.CookieStore, enforce
 
 // Health create a new shortener link.
 func (s service) Health(_ context.Context) (err error) {
-	// l := log.Ctx(ctx)
+	// l := logger.Logger(ctx)
 	return
 }

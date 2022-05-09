@@ -15,7 +15,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -46,7 +45,7 @@ func NewService(db *gorm.DB, secret string, tokenExpiration int, store *sessions
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
 func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAccess, tokenRefresh entity.Token, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	identityDB := entity.Identity{}
 	err = s.db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
@@ -90,7 +89,6 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAcce
 
 // Register a new user to our database.
 func (s service) Register(ctx context.Context, identity entity.Identity) (err error) {
-	// TODO: use function to insert correlaton ID, user ID, etc and return log.Logger
 	l := logger.Logger(ctx)
 
 	user := entity.User{}

@@ -13,10 +13,10 @@ import (
 	"github.com/elga-io/corgi/internal/app/config"
 	"github.com/elga-io/corgi/internal/app/entity"
 	"github.com/elga-io/corgi/internal/pkg/jwt"
+	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"gorm.io/gorm"
@@ -75,7 +75,7 @@ func (s service) Login(ctx context.Context, callbackURL string) (redirectURL str
 }
 
 func (s service) Callback(ctx context.Context, callbackURL string, r callbackRequest) (tokenAccess, tokenRefresh entity.Token, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	conf := &oauth2.Config{
 		ClientID:     s.cfg.Auth.Google.ClientID,

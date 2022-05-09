@@ -9,9 +9,9 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
+	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -39,7 +39,7 @@ func NewService(db *gorm.DB, secret string, store *sessions.CookieStore, enforce
 
 // Find get a shortener link from ID.
 func (s service) Find(ctx context.Context, userID string) (user entity.User, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	user.ID = userID
 	err = s.db.Debug().
@@ -60,7 +60,7 @@ func (s service) Find(ctx context.Context, userID string) (user entity.User, err
 
 // Update change specific link by ID.
 func (s service) Update(ctx context.Context, req entity.User) (user entity.User, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	req.UpdatedAt = time.Now()
 	err = s.db.Model(&entity.User{}).

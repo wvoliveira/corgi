@@ -6,9 +6,9 @@ import (
 
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
+	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -34,8 +34,7 @@ func NewService(db *gorm.DB, secret string, store *sessions.CookieStore, enforce
 
 // Logout remove cookie and refresh token from database.
 func (s service) Logout(ctx context.Context, token entity.Token) (err error) {
-	l := log.Ctx(ctx)
-	l.Info().Caller().Msg("Logout user deleting cookie and refresh token.")
+	l := logger.Logger(ctx)
 
 	err = s.db.Debug().Model(&entity.Token{}).Where("id = ? AND user_id = ?", token.ID, token.UserID).Delete(&token).Error
 	if err != nil {

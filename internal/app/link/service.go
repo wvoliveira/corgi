@@ -10,10 +10,10 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
+	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -48,7 +48,7 @@ func NewService(db *gorm.DB, secret string, store *sessions.CookieStore, enforce
 
 // Add create a new shortener link.
 func (s service) Add(ctx context.Context, link entity.Link) (li entity.Link, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	if err = checkLink(link); err != nil {
 		return
@@ -77,7 +77,7 @@ func (s service) Add(ctx context.Context, link entity.Link) (li entity.Link, err
 
 // FindByID get a shortener link from ID.
 func (s service) FindByID(ctx context.Context, linkID, userID string) (li entity.Link, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	err = s.db.Model(&entity.Link{}).
 		Where("id = ? AND user_id = ?", linkID, userID).
@@ -95,7 +95,7 @@ func (s service) FindByID(ctx context.Context, linkID, userID string) (li entity
 
 // FindAll get a list of links from database.
 func (s service) FindAll(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, links []entity.Link, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	err = s.db.Model(&entity.Link{}).Where("user_id = ?", userID).
 		Count(&total).
@@ -118,7 +118,7 @@ func (s service) FindAll(ctx context.Context, offset, limit int, sort, userID st
 
 // Update change specific link by ID.
 func (s service) Update(ctx context.Context, link entity.Link) (li entity.Link, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	err = s.db.Model(&entity.Link{}).
 		Where("id = ? AND user_id = ?", link.ID, link.UserID).
@@ -136,7 +136,7 @@ func (s service) Update(ctx context.Context, link entity.Link) (li entity.Link, 
 
 // Delete delete a link by ID.
 func (s service) Delete(ctx context.Context, linkID, userID string) (err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	err = s.db.Debug().
 		Model(&entity.Link{}).

@@ -10,9 +10,9 @@ import (
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/elga-io/corgi/internal/pkg/jwt"
+	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
 
@@ -40,7 +40,7 @@ func NewService(db *gorm.DB, secret string, tokenExpiration int, store *sessions
 // Refresh authenticates a user and generates a new access and refresh JWT token if needed.
 // Otherwise, an error is returned.
 func (s service) Refresh(ctx context.Context, payload entity.Token) (tokenAccess, tokenRefresh entity.Token, err error) {
-	l := log.Ctx(ctx)
+	l := logger.Logger(ctx)
 
 	if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).First(&tokenRefresh).Error; err != nil {
 		l.Warn().Caller().Msg(err.Error())
