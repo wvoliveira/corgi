@@ -38,6 +38,9 @@ var (
 	ErrLinkInvalidKeyword = errors.New("try to input a valid keyword between 6 and 15 chars")
 	ErrLinkInvalidURL     = errors.New("try to input a valid destination (URL)")
 
+	// With anonymous access, we can not create a shortener link with same URL.
+	ErrAnonymousURLAlreadyExists = errors.New("with anonymous access, we can not create a shortener link with same URL")
+
 	// Internal errors.
 	ErrInternalServerError = errors.New("internal server error")
 	ErrBadRouting          = errors.New("inconsistent mapping between route and handler (programmer error)")
