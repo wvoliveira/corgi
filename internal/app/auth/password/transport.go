@@ -6,8 +6,8 @@ import (
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/elga-io/corgi/internal/pkg/middleware"
-	"github.com/elga-io/corgi/internal/pkg/response"
 	"github.com/gorilla/mux"
+	"github.com/rs/zerolog/log"
 )
 
 func (s service) NewHTTP(r *mux.Router) {
@@ -61,12 +61,15 @@ func (s service) HTTPLogin(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s service) HTTPRegister(w http.ResponseWriter, r *http.Request) {
+	// Decode request and create a object with it.
 	dr, err := decodeRegisterRequest(r)
 	if err != nil {
+		log.Error().Caller().Msg(err.Error())
 		e.EncodeError(w, err)
 		return
 	}
 
+	// Business logic.
 	err = s.Register(r.Context(), entity.Identity{
 		Provider: "email",
 		UID:      dr.Email,
@@ -77,6 +80,11 @@ func (s service) HTTPRegister(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sr := registerResponse{Err: err}
-	response.Default(w, sr, "", http.StatusNoContent)
+	// Encode response to send to final-user.
+	err = encodeRegister(w)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		e.EncodeError(w, err)
+		return
+	}
 }

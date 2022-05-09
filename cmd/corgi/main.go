@@ -26,6 +26,7 @@ import (
 	"github.com/elga-io/corgi/internal/app/redirect"
 	"github.com/elga-io/corgi/internal/app/user"
 	"github.com/elga-io/corgi/internal/pkg/database"
+	"github.com/elga-io/corgi/internal/pkg/middleware"
 	"github.com/elga-io/corgi/internal/pkg/util"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -93,7 +94,7 @@ func main() {
 
 	router := mux.NewRouter().SkipClean(true)
 	// router.Use(mw.CorrelationID)
-	// router.Use(mw.Log)
+	router.Use(middleware.Access)
 
 	apiRouter := router.PathPrefix("/api").Subrouter().StrictSlash(true)
 	webRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)

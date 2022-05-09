@@ -1,7 +1,16 @@
 package password
 
-type registerResponse struct {
-	Err error `json:"err,omitempty"`
-}
+import (
+	"encoding/json"
+	"net/http"
 
-func (r registerResponse) Error() error { return r.Err }
+	"github.com/elga-io/corgi/internal/pkg/response"
+)
+
+func encodeRegister(w http.ResponseWriter) (err error) {
+	w.Header().Set("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(response.Response{
+		Status: "successful",
+	})
+	return
+}

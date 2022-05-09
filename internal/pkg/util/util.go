@@ -47,7 +47,7 @@ func PrintRoutes(rs []*mux.Router) {
 			}
 
 			if uri != "" && len(method) != 0 {
-				log.Info().Msg(fmt.Sprintf("%s %s", uri, method))
+				log.Debug().Caller().Msg(fmt.Sprintf("%s %s", uri, method))
 			}
 			return nil
 		})

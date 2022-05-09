@@ -3,6 +3,7 @@ package password
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/elga-io/corgi/internal/pkg/jwt"
+	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -48,11 +50,7 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAcce
 
 	identityDB := entity.Identity{}
 	err = s.db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		l.Warn().Caller().Msg(err.Error())
-		return tokenAccess, tokenRefresh, e.ErrUnauthorized
-	} else if err != nil {
+	if err != nil {
 		l.Warn().Caller().Msg(err.Error())
 		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	}
@@ -65,35 +63,48 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAcce
 	// Get user info.
 	user := entity.User{}
 	err = s.db.Model(&entity.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return tokenAccess, tokenRefresh, err
-	} else if err != nil {
+	if err != nil {
+		l.Error().Caller().Msg(err.Error())
 		return tokenAccess, tokenRefresh, err
 	}
 
 	tokenAccess, err = jwt.GenerateAccessToken(s.secret, identityDB, user)
 	if err != nil {
+		l.Error().Caller().Msg(err.Error())
 		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
 	}
 
 	tokenRefresh, err = jwt.GenerateRefreshToken(s.secret, identityDB, user)
 	if err != nil {
+		l.Error().Caller().Msg(err.Error())
 		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
 	}
 
 	tokenRefresh.UserID = identityDB.UserID
 	err = s.db.Model(&entity.Token{}).Create(&tokenRefresh).Error
 	if err != nil {
-		return
+		l.Error().Caller().Msg(err.Error())
 	}
 	return
 }
 
 // Register a new user to our database.
 func (s service) Register(ctx context.Context, identity entity.Identity) (err error) {
-	l := log.Ctx(ctx)
+	// TODO: use function to insert correlaton ID, user ID, etc and return log.Logger
+	l := logger.Logger(ctx)
 
 	user := entity.User{}
+	identityDB := entity.Identity{}
+
+	err = s.db.Model(&entity.Identity{}).
+		Where("provider = ? AND uid = ?", identity.Provider, identity.UID).
+		First(&identityDB).Error
+
+	if err == nil {
+		l.Warn().Caller().Msg(fmt.Sprintf("provider '%s' and uid '%s' already exists", identity.Provider, identity.UID))
+		return e.ErrAlreadyExists
+	}
+
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(identity.Password), 8)
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
@@ -112,5 +123,8 @@ func (s service) Register(ctx context.Context, identity entity.Identity) (err er
 	user.Identities = append(user.Identities, identity)
 
 	err = s.db.Model(&entity.User{}).Create(&user).Error
+	if err != nil {
+		l.Error().Caller().Msg(err.Error())
+	}
 	return
 }

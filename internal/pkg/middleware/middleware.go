@@ -1,9 +1,10 @@
 package middleware
 
 import (
+	"bytes"
 	"context"
 	"fmt"
-	"io"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -11,36 +12,68 @@ import (
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/elga-io/corgi/internal/pkg/jwt"
+	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/elga-io/corgi/internal/pkg/request"
+	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
 )
+
+type loggingResponseWriter struct {
+	http.ResponseWriter
+	statusCode int
+}
+
+func NewLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
+	return &loggingResponseWriter{w, http.StatusOK}
+}
+
+func (lrw *loggingResponseWriter) WriteHeader(code int) {
+	lrw.statusCode = code
+	lrw.ResponseWriter.WriteHeader(code)
+}
 
 // Access returns a middleware that records an access log message for every HTTP request being processed.
 func Access(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		start := time.Now()
 
-		body, _ := io.Copy(w, r.Body)
+		// Copy body payload to get length.
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+		}
+
+		// Insert body again to use in another handlers.
+		r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+		lrw := NewLoggingResponseWriter(w)
 
 		// associate request ID and session ID with the request context
 		// so that they can be added to the log messages
 		ctx := r.Context()
+		if v := ctx.Value(entity.CorrelationID{}); v == nil {
+			ctx = context.WithValue(ctx, entity.CorrelationID{}, entity.CorrelationID{ID: uuid.New().String()})
+		}
 		r = r.WithContext(ctx)
-		next.ServeHTTP(w, r)
+
+		// Start logger with context.
+		l := logger.Logger(ctx)
+
+		// Call next handler.
+		next.ServeHTTP(lrw, r)
 
 		// End logging response access log.
-		log.Info().
-			Str("http", "request").
+		l.Info().
+			Caller().
 			Str("client_ip", request.IP(r)).
-			Int64("duration", time.Since(start).Milliseconds()).
-			Int("status", r.Response.StatusCode).
+			Float64("duration", time.Since(start).Seconds()).
+			Int("status", lrw.statusCode).
 			Str("method", r.Method).
 			Str("path", r.URL.Path).
 			Str("query", r.URL.RawQuery).
 			Str("proto", r.Proto).
-			Int64("size", body).
-			Str("user-agent", r.UserAgent()).Discard().Send()
+			Int("size", len(body)).
+			Str("user-agent", r.UserAgent()).Msg("request")
 	})
 }
 
@@ -89,12 +122,11 @@ func Auth(secret string) func(http.Handler) http.Handler {
 // Checks returns a middleware that verify some points before business logic.
 func Checks(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		l := log.Ctx(r.Context())
-
 		if r.Method == "POST" || r.Method == "PATCH" {
 			if r.Body == http.NoBody {
-				l.Warn().Caller().Msg("Empty body in POST or PATCH request")
+				log.Warn().Caller().Msg("Empty body in POST or PATCH request")
 				e.EncodeError(w, e.ErrRequestNeedBody)
+				return
 			}
 		}
 		next.ServeHTTP(w, r)
@@ -106,7 +138,6 @@ func Authorizer(en *casbin.Enforcer) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			l := log.Ctx(ctx)
 
 			var (
 				role string
@@ -126,7 +157,7 @@ func Authorizer(en *casbin.Enforcer) func(http.Handler) http.Handler {
 			// casbin rule enforcing
 			ok, err := en.Enforce(role, r.URL.Path, r.Method)
 			if err != nil {
-				l.Error().Caller().Msg(err.Error())
+				log.Error().Caller().Msg(err.Error())
 				e.EncodeError(w, err)
 				return
 			}
