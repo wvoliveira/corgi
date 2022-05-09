@@ -11,7 +11,7 @@ import (
 )
 
 func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/api/v1/links").Subrouter()
+	rr := r.PathPrefix("/v1/links").Subrouter()
 	rr.Use(middleware.Checks)
 	rr.Use(middleware.Auth(s.secret))
 

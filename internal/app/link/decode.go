@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/elga-io/corgi/internal/app/entity"
 	"github.com/gorilla/mux"
 )
 
@@ -53,16 +54,18 @@ type deleteRequest struct {
 func decodeAdd(r *http.Request) (req addRequest, err error) {
 	ctx := r.Context()
 
-	userID := ctx.Value("user_id")
-	if userID == nil {
-		return req, errors.New("impossible to get user_id from context")
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
 	}
+
+	ii := data.(entity.IdentityInfo)
 
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return req, err
 	}
 
-	req.UserID = userID.(string)
+	req.UserID = ii.UserID
 	return req, nil
 }
 
@@ -70,10 +73,12 @@ func decodeFindByID(r *http.Request) (req findByIDRequest, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	userID := ctx.Value("user_id")
-	if userID == nil {
-		return req, errors.New("impossible to get user_id from context")
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
 	}
+
+	ii := data.(entity.IdentityInfo)
 
 	linkID := vars["id"]
 	if linkID == "" {
@@ -81,7 +86,7 @@ func decodeFindByID(r *http.Request) (req findByIDRequest, err error) {
 	}
 
 	req.ID = linkID
-	req.UserID = userID.(string)
+	req.UserID = ii.UserID
 	return req, nil
 }
 
@@ -89,10 +94,12 @@ func decodeFindAll(r *http.Request) (req findAllRequest, err error) {
 	ctx := r.Context()
 	params := r.URL.Query()
 
-	userID := ctx.Value("user_id")
-	if userID == nil {
-		return req, errors.New("impossible to get user_id from context")
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
 	}
+
+	ii := data.(entity.IdentityInfo)
 
 	page, _ := strconv.Atoi(params.Get("page"))
 	limit, _ := strconv.Atoi(params.Get("limit"))
@@ -117,7 +124,7 @@ func decodeFindAll(r *http.Request) (req findAllRequest, err error) {
 	req.Sort = sort
 	req.Limit = limit
 	req.Offset = offset
-	req.UserID = userID.(string)
+	req.UserID = ii.UserID
 	return req, nil
 }
 
@@ -125,10 +132,12 @@ func decodeUpdate(r *http.Request) (req updateRequest, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	userID := ctx.Value("user_id")
-	if userID == nil {
-		return req, errors.New("impossible to get user_id from context")
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
 	}
+
+	ii := data.(entity.IdentityInfo)
 
 	linkID := vars["id"]
 	if linkID == "" {
@@ -140,7 +149,7 @@ func decodeUpdate(r *http.Request) (req updateRequest, err error) {
 	}
 
 	req.ID = linkID
-	req.UserID = userID.(string)
+	req.UserID = ii.UserID
 	return req, nil
 }
 
@@ -148,10 +157,12 @@ func decodeDelete(r *http.Request) (req deleteRequest, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	userID := ctx.Value("user_id")
-	if userID == nil {
-		return req, errors.New("impossible to get user_id from context")
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
 	}
+
+	ii := data.(entity.IdentityInfo)
 
 	linkID := vars["id"]
 	if linkID == "" {
@@ -159,6 +170,6 @@ func decodeDelete(r *http.Request) (req deleteRequest, err error) {
 	}
 
 	req.ID = linkID
-	req.UserID = userID.(string)
+	req.UserID = ii.UserID
 	return req, nil
 }

@@ -14,17 +14,14 @@ type logoutRequest struct {
 func decodeLogout(r *http.Request) (req logoutRequest, err error) {
 	ctx := r.Context()
 
-	userID := ctx.Value("user_id")
-	if userID == nil {
-		return req, errors.New("impossible to get user_id from context")
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
 	}
 
-	refreshTokenID := ctx.Value("refresh_token_id")
-	if refreshTokenID == nil {
-		return req, errors.New("impossible to get refresh_token_id from context")
-	}
+	ii := data.(entity.IdentityInfo)
 
-	req.Token.ID = refreshTokenID.(string)
-	req.Token.UserID = userID.(string)
+	req.Token.ID = ii.RefreshTokenID
+	req.Token.UserID = ii.UserID
 	return req, nil
 }

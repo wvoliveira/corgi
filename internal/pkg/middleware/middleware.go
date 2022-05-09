@@ -100,7 +100,13 @@ func Auth(secret string) func(http.Handler) http.Handler {
 				return
 			}
 
-			tokenRefreshID, _ := r.Cookie("refresh_token_id")
+			tokenRefreshID, err := r.Cookie("refresh_token_id")
+			if err != nil {
+				l.Warn().Caller().Msg(fmt.Sprintf("error to get refresh_token_id from cookie: %s", err.Error()))
+				e.EncodeError(w, e.ErrTokenInvalid)
+				return
+			}
+
 			ii := entity.IdentityInfo{
 				ID:             claims["identity_id"].(string),
 				Provider:       claims["identity_provider"].(string),

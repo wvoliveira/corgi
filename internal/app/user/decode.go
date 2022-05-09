@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+
+	"github.com/elga-io/corgi/internal/app/entity"
 )
 
 type findRequest struct {
@@ -18,26 +20,30 @@ type updateRequest struct {
 func decodeFind(r *http.Request) (req findRequest, err error) {
 	ctx := r.Context()
 
-	userID := ctx.Value("user_id")
-	if userID == nil {
-		return req, errors.New("impossible to get user_id from context")
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
 	}
 
-	req.UserID = userID.(string)
+	ii := data.(entity.IdentityInfo)
+
+	req.UserID = ii.UserID
 	return req, nil
 }
 
 func decodeUpdate(r *http.Request) (req updateRequest, err error) {
 	ctx := r.Context()
 
-	userID := ctx.Value("user_id")
-	if userID == nil {
-		return req, errors.New("impossible to get user_id from context")
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
 	}
+
+	ii := data.(entity.IdentityInfo)
 
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return req, err
 	}
-	req.UserID = userID.(string)
+	req.UserID = ii.UserID
 	return req, nil
 }
