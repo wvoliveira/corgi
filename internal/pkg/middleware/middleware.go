@@ -81,39 +81,62 @@ func Access(next http.Handler) http.Handler {
 func Auth(secret string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			l := log.Ctx(r.Context())
+			l := logger.Logger(r.Context())
+
+			// In this app, we can create link without authentication.
+			// So, in some routes we can forward without user_id.
+			// But only for period of time, like expiration in database/cache.
+			// Rules:
+			// - /api/v1/links and POST
+			// - /api/v1/links and GET
+			anonymousAccess := false
+			if (r.URL.Path == "/api/v1/links" && r.Method == "POST") ||
+				(r.URL.Path == "/api/v1/links/" && r.Method == "POST") ||
+				(r.URL.Path == "/api/v1/links" && r.Method == "GET") ||
+				(r.URL.Path == "/api/v1/links/" && r.Method == "GET") {
+				anonymousAccess = true
+			}
 
 			hashToken, err := r.Cookie("access_token")
-
-			if err == http.ErrNoCookie || hashToken.Value == "" {
+			if (err == http.ErrNoCookie || hashToken.Value == "") && !anonymousAccess {
 				l.Info().Caller().Msg("cookie with the access_token name was not found or blank")
 				e.EncodeError(w, e.ErrNoTokenFound)
 				return
 			}
 
-			// validate ID token here
-			claims, err := jwt.ValidateToken(hashToken.Value, secret)
+			ii := entity.IdentityInfo{}
 
-			if err != nil {
-				l.Warn().Caller().Msg(fmt.Sprintf("the token is invalid: %s", err.Error()))
-				e.EncodeError(w, e.ErrTokenInvalid)
-				return
+			if !anonymousAccess {
+				// validate ID token here
+				claims, err := jwt.ValidateToken(hashToken.Value, secret)
+
+				if err != nil {
+					l.Warn().Caller().Msg(fmt.Sprintf("the token is invalid: %s", err.Error()))
+					e.EncodeError(w, e.ErrTokenInvalid)
+					return
+				}
+
+				tokenRefreshID, err := r.Cookie("refresh_token_id")
+				if err != nil {
+					l.Warn().Caller().Msg(fmt.Sprintf("error to get refresh_token_id from cookie: %s", err.Error()))
+					e.EncodeError(w, e.ErrTokenInvalid)
+					return
+				}
+
+				ii = entity.IdentityInfo{
+					ID:             claims["identity_id"].(string),
+					Provider:       claims["identity_provider"].(string),
+					UID:            claims["identity_uid"].(string),
+					UserID:         claims["user_id"].(string),
+					UserRole:       claims["user_role"].(string),
+					RefreshTokenID: tokenRefreshID.Value,
+				}
 			}
 
-			tokenRefreshID, err := r.Cookie("refresh_token_id")
-			if err != nil {
-				l.Warn().Caller().Msg(fmt.Sprintf("error to get refresh_token_id from cookie: %s", err.Error()))
-				e.EncodeError(w, e.ErrTokenInvalid)
-				return
-			}
-
-			ii := entity.IdentityInfo{
-				ID:             claims["identity_id"].(string),
-				Provider:       claims["identity_provider"].(string),
-				UID:            claims["identity_uid"].(string),
-				UserID:         claims["user_id"].(string),
-				UserRole:       claims["user_role"].(string),
-				RefreshTokenID: tokenRefreshID.Value,
+			if anonymousAccess {
+				ii = entity.IdentityInfo{
+					UserID: "anonymous",
+				}
 			}
 
 			ctx := r.Context()
