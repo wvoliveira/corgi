@@ -13,9 +13,9 @@ import (
 	"github.com/elga-io/corgi/internal/app/config"
 	"github.com/elga-io/corgi/internal/app/entity"
 	"github.com/elga-io/corgi/internal/pkg/jwt"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -45,12 +45,12 @@ type Identity interface {
 type service struct {
 	db      *gorm.DB
 	cfg     config.Config
-	store   cookie.Store
+	store   *sessions.CookieStore
 	enforce *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, cfg config.Config, store cookie.Store, enforce *casbin.Enforcer) Service {
+func NewService(db *gorm.DB, cfg config.Config, store *sessions.CookieStore, enforce *casbin.Enforcer) Service {
 	return service{db, cfg, store, enforce}
 }
 

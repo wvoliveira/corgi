@@ -10,9 +10,9 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -37,12 +37,12 @@ type Service interface {
 type service struct {
 	db      *gorm.DB
 	secret  string
-	store   cookie.Store
+	store   *sessions.CookieStore
 	enforce *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, secret string, store cookie.Store, enforce *casbin.Enforcer) Service {
+func NewService(db *gorm.DB, secret string, store *sessions.CookieStore, enforce *casbin.Enforcer) Service {
 	return service{db, secret, store, enforce}
 }
 

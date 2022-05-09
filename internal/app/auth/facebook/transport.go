@@ -5,13 +5,14 @@ import (
 	"net/http"
 
 	e "github.com/elga-io/corgi/internal/pkg/errors"
+	"github.com/elga-io/corgi/internal/pkg/middleware"
 	"github.com/gorilla/mux"
 )
 
 func (s service) NewHTTP(r *mux.Router) {
 	rr := r.PathPrefix("/auth/facebook").Subrouter()
-	// middlewares.Checks(),
-	// middlewares.Authorizer(s.enforce))
+	rr.Use(middleware.Checks)
+	rr.Use(middleware.Authorizer(s.enforce))
 
 	rr.HandleFunc("/login", s.HTTPLogin).Methods("GET")
 	rr.HandleFunc("/callback", s.HTTPCallback).Methods("GET")

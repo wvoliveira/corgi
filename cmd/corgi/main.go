@@ -27,9 +27,8 @@ import (
 	"github.com/elga-io/corgi/internal/app/user"
 	"github.com/elga-io/corgi/internal/pkg/database"
 	"github.com/elga-io/corgi/internal/pkg/util"
-	"github.com/gin-contrib/cors"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 )
@@ -83,12 +82,12 @@ func main() {
 		os.Exit(2)
 	}
 
-	// Cors. Yes, we need this.
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowOrigins = []string{"http://localhost:4200", "http://localhost:8081"}
-	corsConfig.AddAllowMethods("*")
-	corsConfig.AddAllowHeaders("*")
-	corsConfig.AllowCredentials = true
+	// // Cors. Yes, we need this.
+	// corsConfig := cors.DefaultConfig()
+	// corsConfig.AllowOrigins = []string{"http://localhost:4200", "http://localhost:8081"}
+	// corsConfig.AddAllowMethods("*")
+	// corsConfig.AddAllowHeaders("*")
+	// corsConfig.AllowCredentials = true
 
 	// mw := middleware.Middleware{Cache: cache, Logger: log.Logger}
 
@@ -100,7 +99,7 @@ func main() {
 	webRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
 
 	// Start sessions.
-	store := cookie.NewStore([]byte(cfg.App.SecretKey))
+	store := sessions.NewCookieStore([]byte(cfg.App.SecretKey))
 
 	{
 		// Auth service: logout and check.

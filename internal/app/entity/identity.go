@@ -16,3 +16,13 @@ type Identity struct {
 	Verified   *bool     `json:"verified" gorm:"default:false"`
 	VerifiedAt time.Time `json:"confirmed_at"`
 }
+
+// IdentityInfo pass these info in middleware.
+type IdentityInfo struct {
+	ID             string
+	Provider       string
+	UID            string
+	UserID         string
+	UserRole       string
+	RefreshTokenID string
+}

@@ -5,13 +5,14 @@ import (
 
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
+	"github.com/elga-io/corgi/internal/pkg/middleware"
 	"github.com/elga-io/corgi/internal/pkg/response"
 	"github.com/gorilla/mux"
 )
 
 func (s service) NewHTTP(r *mux.Router) {
 	rr := r.PathPrefix("/auth/password").Subrouter()
-	// middlewares.Checks())
+	rr.Use(middleware.Checks)
 
 	rr.HandleFunc("/login", s.HTTPLogin).Methods("POST")
 	rr.HandleFunc("/register", s.HTTPRegister).Methods("POST")

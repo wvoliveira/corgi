@@ -4,13 +4,14 @@ import (
 	"net/http"
 
 	e "github.com/elga-io/corgi/internal/pkg/errors"
+	"github.com/elga-io/corgi/internal/pkg/middleware"
 	"github.com/gorilla/mux"
 )
 
 func (s service) NewHTTP(r *mux.Router) {
 	rr := r.PathPrefix("/").Subrouter()
+	rr.Use(middleware.SesssionRedirect(s.store, "_corgi"))
 
-	// rr.Use(sessions.Sessions("_corgi", s.store))
 	rr.HandleFunc("/:keyword", s.HTTPFind).Methods("GET")
 }
 

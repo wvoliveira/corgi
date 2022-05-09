@@ -8,8 +8,8 @@ import (
 	"github.com/casbin/casbin/v2"
 	"github.com/elga-io/corgi/internal/app/entity"
 	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gorilla/mux"
+	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
 	"gorm.io/gorm"
 )
@@ -24,12 +24,12 @@ type Service interface {
 
 type service struct {
 	db      *gorm.DB
-	store   cookie.Store
+	store   *sessions.CookieStore
 	enforce *casbin.Enforcer
 }
 
 // NewService creates a new public service.
-func NewService(db *gorm.DB, store cookie.Store, enforce *casbin.Enforcer) Service {
+func NewService(db *gorm.DB, store *sessions.CookieStore, enforce *casbin.Enforcer) Service {
 	return service{db, store, enforce}
 }
 
