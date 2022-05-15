@@ -1,12 +1,14 @@
 name: Test
+
 on:
   push:
-    tags:
-      - v*
     branches:
-      - develop
+      - '*'
+  pull_request:
+
 permissions:
   contents: read
+
 jobs:
   test:
     name: Test
