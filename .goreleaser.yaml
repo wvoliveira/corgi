@@ -1,2 +1,17 @@
+project_name: Corgi
+
 builds:
-- main: ./cmd/corgi/main.go
+  - id: "corgi"
+    main: ./cmd/corgi/main.go
+
+    # Disable CGO
+    env: [CGO_ENABLED=0]
+
+    # Build for most SO and arch.
+    goos:
+      - linux
+      - windows
+      - darwin
+    goarch:
+      - amd64
+      - arm64
