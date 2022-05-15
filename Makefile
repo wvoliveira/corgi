@@ -3,7 +3,7 @@ export NEXT_TELEMETRY_DISABLED = 1
 
 .PHONY: build
 build: build-web
-	go build ./cmd/corgi
+	go build ./cmd/corgi -o corgi
 
 .PHONY: build-web
 build-web:
