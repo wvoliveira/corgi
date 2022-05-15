@@ -84,17 +84,9 @@ func main() {
 		os.Exit(2)
 	}
 
-	// // Cors. Yes, we need this.
-	// corsConfig := cors.DefaultConfig()
-	// corsConfig.AllowOrigins = []string{"http://localhost:4200", "http://localhost:8081"}
-	// corsConfig.AddAllowMethods("*")
-	// corsConfig.AddAllowHeaders("*")
-	// corsConfig.AllowCredentials = true
-
-	// mw := middleware.Middleware{Cache: cache, Logger: log.Logger}
+	// TODO: setup a properly CORS.
 
 	router := mux.NewRouter().SkipClean(true)
-	// router.Use(mw.CorrelationID)
 	router.Use(middleware.Access)
 
 	rootRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
