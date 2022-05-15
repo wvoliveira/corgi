@@ -70,7 +70,7 @@ type Config struct {
 	}
 
 	Database struct {
-		Host     string `mapstructure:"host" mapstructure:"DATABASE_HOST"`
+		Host     string `mapstructure:"host"`
 		Port     int    `mapstructure:"port"`
 		User     string `mapstructure:"user"`
 		Password string `mapstructure:"password"`
