@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -96,8 +97,16 @@ func main() {
 	// router.Use(mw.CorrelationID)
 	router.Use(middleware.Access)
 
+	rootRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
 	apiRouter := router.PathPrefix("/api").Subrouter().StrictSlash(true)
-	webRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
+	webRouter := router.MatcherFunc(func(req *http.Request, match *mux.RouteMatch) bool {
+		// Serve local web routes when either:
+		// - The request is not for theses URIs:
+		// - /api, /health or /:keyword
+		return (!strings.HasPrefix(req.URL.Path, "/api") ||
+			!strings.HasPrefix(req.URL.Path, "/health")) &&
+			req.Method == "GET"
+	}).Subrouter().StrictSlash(true)
 
 	// Start sessions.
 	store := sessions.NewCookieStore([]byte(cfg.App.SecretKey))
@@ -145,15 +154,16 @@ func main() {
 	}
 
 	{
-		// Central business service: redirect short link.
-		service := redirect.NewService(db, store, authEnforcer)
-		service.NewHTTP(apiRouter)
+		// Healthcheck endpoints.
+		service := health.NewService(db, cfg.App.SecretKey, store, authEnforcer, version)
+		service.NewHTTP(rootRouter)
 	}
 
 	{
-		// Healthcheck endpoints.
-		service := health.NewService(db, cfg.App.SecretKey, store, authEnforcer, version)
-		service.NewHTTP(apiRouter)
+		// Central business service: redirect short link.
+		// Note: this service is on root router.
+		service := redirect.NewService(db, store, authEnforcer)
+		service.NewHTTP(rootRouter)
 	}
 
 	// Start web UI.
@@ -162,12 +172,14 @@ func main() {
 		log.Fatal().Caller().Msg(err.Error())
 		os.Exit(2)
 	}
+
+	// Web UI embedded.
 	webHandler := http.FileServer(http.FS(distFS))
 	webRouter.PathPrefix("").Handler(webHandler)
 
 	// Help func to get endpoints.
 	if *debug {
-		util.PrintRoutes([]*mux.Router{apiRouter})
+		util.PrintRoutes([]*mux.Router{rootRouter, apiRouter})
 	}
 
 	srv := &http.Server{
@@ -178,13 +190,13 @@ func main() {
 	}
 
 	// Create context that listens for the interrupt signal from the OS.
-	ctx, stop := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	defer stop()
 
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
-		log.Info().Caller().Msg(fmt.Sprintf("server listening :%s", cfg.Server.HTTPPort))
+		log.Info().Caller().Msg(fmt.Sprintf("server listening 0.0.0.0:%s", cfg.Server.HTTPPort))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error().Caller().Msg(err.Error())
 		}
@@ -195,14 +207,14 @@ func main() {
 
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	stop()
-	log.Info().Caller().Msg("shutting down gracefully, press Ctrl+C again to force")
+	log.Info().Caller().Msg("shutting down gracefully..")
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Info().Caller().Msg(fmt.Sprintf("Server forced to shutdown: %s", err.Error()))
+		log.Warn().Caller().Msg(fmt.Sprintf("server forced to shutdown: %s", err.Error()))
 	}
-	log.Info().Caller().Msg("Server exiting")
+	log.Info().Caller().Msg("server exited")
 }

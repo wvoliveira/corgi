@@ -65,6 +65,12 @@ func decodeAdd(r *http.Request) (req addRequest, err error) {
 		return req, err
 	}
 
+	// TODO: insert this logic in config env/file.
+	// with default domain if not send in payload.
+	if req.Domain == "" {
+		req.Domain = r.Host
+	}
+
 	req.UserID = ii.UserID
 	return req, nil
 }

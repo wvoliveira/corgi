@@ -9,25 +9,6 @@ import (
 )
 
 func checkLink(link entity.Link) (err error) {
-	// Validate domain.
-	if err = validation.Validate(link.Domain,
-		validation.Required,
-		is.Domain,
-	); err != nil {
-		log.Warn().Caller().Msg(err.Error())
-		return e.ErrLinkInvalidDomain
-	}
-
-	// Validate keyword.
-	if err = validation.Validate(link.Keyword,
-		validation.Required,
-		validation.Length(6, 15),
-		is.Alphanumeric,
-	); err != nil {
-		log.Warn().Caller().Msg(err.Error())
-		return e.ErrLinkInvalidKeyword
-	}
-
 	// Validate URL.
 	if err = validation.Validate(link.URL,
 		validation.Required,
