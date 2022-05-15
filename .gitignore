@@ -129,3 +129,5 @@ api/v1/**docs
 .air
 
 .DS_Store
+.idea
+cmd/corgi/web

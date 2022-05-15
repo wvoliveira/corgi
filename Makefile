@@ -1,12 +1,20 @@
-database:
-	docker-compose up db-init broker
+export CGO_ENABLED = 1
+export NEXT_TELEMETRY_DISABLED = 1
 
-backend:
-	# air -c scripts/.air.toml
-	go run .\cmd\corgi\main.go
+.PHONY: build
+build: build-web
+	go build ./cmd/corgi -o corgi
 
-frontend:
-	cd web && ember serve
+.PHONY: build-web
+build-web:
+	cd web && \
+	npm install --frozen-lockfile && \
+	npm run export && \
+    mv dist ../cmd/corgi/web
 
-docker-backend:
-	docker build -t corgi:local -f cmd\corgi\Dockerfile .
+.PHONY: clean
+clean:
+	rm -f spitz
+	rm -rf ./cmd/corgi/web
+	rm -rf ./web/dist
+	rm -rf ./web/.next
