@@ -3,3 +3,4 @@
 cmd/corgi/web/*
 !cmd/corgi/web/.keep
 corgi
+web/package-lock.json
