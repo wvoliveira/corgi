@@ -9,14 +9,14 @@ import (
 	"time"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/elga-io/corgi/internal/app/entity"
-	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/jwt"
-	"github.com/elga-io/corgi/internal/pkg/logger"
-	"github.com/elga-io/corgi/internal/pkg/request"
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
+	"github.com/wvoliveira/corgi/internal/app/entity"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/jwt"
+	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/request"
 )
 
 type loggingResponseWriter struct {

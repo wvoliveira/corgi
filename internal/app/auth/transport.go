@@ -3,11 +3,11 @@ package auth
 import (
 	"net/http"
 
-	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/middleware"
-	"github.com/elga-io/corgi/internal/pkg/response"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
+	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
 func (s service) NewHTTP(r *mux.Router) {

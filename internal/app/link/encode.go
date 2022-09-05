@@ -1,7 +1,7 @@
 package link
 
 import (
-	"github.com/elga-io/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/app/entity"
 )
 
 type findAllResponse struct {

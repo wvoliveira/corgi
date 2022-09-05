@@ -4,10 +4,10 @@ import (
 	"errors"
 	"time"
 
-	"github.com/elga-io/corgi/internal/app/entity"
-	e "github.com/elga-io/corgi/internal/pkg/errors"
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
+	"github.com/wvoliveira/corgi/internal/app/entity"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 )
 
 // ValidToken verify if token is a valid one.

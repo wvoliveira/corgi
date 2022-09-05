@@ -15,33 +15,30 @@ import (
 	"time"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/elga-io/corgi/internal/app/auth"
-	"github.com/elga-io/corgi/internal/app/auth/facebook"
-	"github.com/elga-io/corgi/internal/app/auth/google"
-	"github.com/elga-io/corgi/internal/app/auth/password"
-	"github.com/elga-io/corgi/internal/app/auth/token"
-	"github.com/elga-io/corgi/internal/app/config"
-	"github.com/elga-io/corgi/internal/app/entity"
-	"github.com/elga-io/corgi/internal/app/health"
-	"github.com/elga-io/corgi/internal/app/link"
-	"github.com/elga-io/corgi/internal/app/redirect"
-	"github.com/elga-io/corgi/internal/app/user"
-	"github.com/elga-io/corgi/internal/pkg/database"
-	"github.com/elga-io/corgi/internal/pkg/middleware"
-	"github.com/elga-io/corgi/internal/pkg/util"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/wvoliveira/corgi/internal/app/auth"
+	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
+	"github.com/wvoliveira/corgi/internal/app/auth/google"
+	"github.com/wvoliveira/corgi/internal/app/auth/password"
+	"github.com/wvoliveira/corgi/internal/app/auth/token"
+	"github.com/wvoliveira/corgi/internal/app/config"
+	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/app/health"
+	"github.com/wvoliveira/corgi/internal/app/link"
+	"github.com/wvoliveira/corgi/internal/app/redirect"
+	"github.com/wvoliveira/corgi/internal/app/user"
+	"github.com/wvoliveira/corgi/internal/pkg/database"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
+	"github.com/wvoliveira/corgi/internal/pkg/util"
 )
 
 // version indicates the current version of the application.
 var version = "0.0.1"
 
-//go:embed web
-//go:embed web/_next/static
-//go:embed web/_next/static/chunks/pages/*.js
-//go:embed web/_next/static/*/*.js
+//go:embed all:web
 var nextFS embed.FS
 
 func main() {
@@ -188,7 +185,7 @@ func main() {
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
-		log.Info().Caller().Msg(fmt.Sprintf("server listening 0.0.0.0:%s", cfg.Server.HTTPPort))
+		log.Info().Caller().Msg(fmt.Sprintf("server listening http://127.0.0.1:%s", cfg.Server.HTTPPort))
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error().Caller().Msg(err.Error())
 		}

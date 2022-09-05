@@ -7,11 +7,11 @@ import (
 	"time"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/elga-io/corgi/internal/app/entity"
-	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/wvoliveira/corgi/internal/app/entity"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"gorm.io/gorm"
 )
 

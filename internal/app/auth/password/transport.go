@@ -3,11 +3,11 @@ package password
 import (
 	"net/http"
 
-	"github.com/elga-io/corgi/internal/app/entity"
-	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/middleware"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
+	"github.com/wvoliveira/corgi/internal/app/entity"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 )
 
 func (s service) NewHTTP(r *mux.Router) {

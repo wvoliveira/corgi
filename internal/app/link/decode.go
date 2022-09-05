@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/elga-io/corgi/internal/app/entity"
 	"github.com/gorilla/mux"
+	"github.com/wvoliveira/corgi/internal/app/entity"
 )
 
 type addRequest struct {

@@ -1,4 +1,4 @@
-module github.com/elga-io/corgi
+module github.com/wvoliveira/corgi
 
 go 1.17
 
