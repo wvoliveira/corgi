@@ -22,14 +22,18 @@ Use your own infrastructure to install this link shortener. With several feature
 
 ## Install
 
-Compile your self:
+Prerequisites:
+- Go 1.18+
+- Node 8+
+
+Build yourself:
 
 ```bash
-# Create a binary
-make
-
-# Start app
-./corgi
+$ make
 ```
 
-Or download a release [here](https://github.com/wvoliveira/corgi/releases).
+And run:
+
+```bash
+$ ./corgi
+```
