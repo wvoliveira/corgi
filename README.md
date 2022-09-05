@@ -24,7 +24,8 @@ Use your own infrastructure to install this link shortener. With several feature
 
 Prerequisites:
 - Go 1.18+
-- Node 8+
+- Node 16+
+- NPM 8+
 
 Build yourself:
 
