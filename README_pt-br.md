@@ -22,14 +22,18 @@ Use sua própria infraestrutura para instalar esse encurtador de links. Com vár
 
 ## Instalar
 
+Requesitos:
+- Go 1.18+
+- Node 8+
+
 Compile você mesmo:
 
 ```bash
-# Cria o binário
-make
-
-# Inicia a aplicação
-./corgi
+$ make
 ```
 
-Ou faça o download de alguma release [aqui](https://github.com/wvoliveira/corgi/releases).
+E execute:
+
+```bash
+$ ./corgi
+```
