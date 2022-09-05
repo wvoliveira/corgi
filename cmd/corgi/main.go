@@ -43,7 +43,7 @@ var nextFS embed.FS
 
 func main() {
 	debug := flag.Bool("d", false, "Enable DEBUG mode")
-	migrate := flag.Bool("m", false, "Enable GORM migration")
+	migrate := flag.Bool("m", true, "Enable GORM migration")
 	flag.Parse()
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
@@ -83,18 +83,16 @@ func main() {
 
 	// TODO: setup a properly CORS.
 
-	router := mux.NewRouter().SkipClean(true)
+	router := mux.NewRouter().SkipClean(false)
 	router.Use(middleware.Access)
 
 	rootRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
 	apiRouter := router.PathPrefix("/api").Subrouter().StrictSlash(true)
 	webRouter := router.MatcherFunc(func(req *http.Request, match *mux.RouteMatch) bool {
 		// Serve local web routes when either:
-		// - The request is not for theses URIs:
-		// - /api, /health or /:keyword
-		return (!strings.HasPrefix(req.URL.Path, "/api") ||
-			!strings.HasPrefix(req.URL.Path, "/health")) &&
-			req.Method == "GET"
+		// - The request is for theses URIs:
+		// - / and /_next
+		return (req.URL.Path == "/" || strings.HasPrefix(req.URL.Path, "/_next"))
 	}).Subrouter().StrictSlash(true)
 
 	// Start sessions.

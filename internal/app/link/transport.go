@@ -17,11 +17,11 @@ func (s service) NewHTTP(r *mux.Router) {
 
 	rr.HandleFunc("", nil).Methods("OPTIONS")
 	rr.HandleFunc("", s.HTTPAdd).Methods("POST")
-	rr.HandleFunc("/:id", s.HTTPFindByID).Methods("GET")
-	rr.HandleFunc("/status/:id", s.HTTPFindByID).Methods("GET")
+	rr.HandleFunc("/{id}", s.HTTPFindByID).Methods("GET")
+	rr.HandleFunc("/status/{id}", s.HTTPFindByID).Methods("GET")
 	rr.HandleFunc("", s.HTTPFindAll).Methods("GET")
-	rr.HandleFunc("/:id", s.HTTPUpdate).Methods("PATCH")
-	rr.HandleFunc("/:id", s.HTTPDelete).Methods("DELETE")
+	rr.HandleFunc("/{id}", s.HTTPUpdate).Methods("PATCH")
+	rr.HandleFunc("/{id}", s.HTTPDelete).Methods("DELETE")
 }
 
 func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {

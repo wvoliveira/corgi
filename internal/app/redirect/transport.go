@@ -5,14 +5,13 @@ import (
 
 	"github.com/gorilla/mux"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 )
 
 func (s service) NewHTTP(r *mux.Router) {
 	rr := r.PathPrefix("/").Subrouter()
-	rr.Use(middleware.SesssionRedirect(s.store, "_corgi"))
+	//rr.Use(middleware.SesssionRedirect(s.store, "_corgi"))
 
-	rr.HandleFunc("/:keyword", s.HTTPFind).Methods("GET")
+	rr.HandleFunc("/{keyword}", s.HTTPFind).Methods("GET")
 }
 
 func (s service) HTTPFind(w http.ResponseWriter, r *http.Request) {
