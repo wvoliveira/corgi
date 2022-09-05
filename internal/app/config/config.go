@@ -1,7 +1,6 @@
 package config
 
 import (
-	"fmt"
 	"os"
 	"strings"
 
@@ -112,17 +111,11 @@ func NewConfig(path string) (config Config) {
 	conf.SetConfigType("yaml")
 	conf.AddConfigPath(path)
 
-	err := conf.ReadInConfig()
-	if err != nil {
-		fmt.Printf("Error to read config file: %s\n", err.Error())
-	}
+	_ = conf.ReadInConfig()
 
 	conf.SetConfigFile(".env.yaml")
 	conf.AddConfigPath(".")
-	err = conf.MergeInConfig()
-	if err != nil {
-		fmt.Printf("Fatal error config file: %s\n", err.Error())
-	}
+	_ = conf.MergeInConfig()
 
 	// App config.
 	conf.SetDefault("app.secret_key", appSecretKey)
