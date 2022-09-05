@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	"github.com/elga-io/corgi/internal/app/config"
-	"github.com/elga-io/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/app/config"
+	"github.com/wvoliveira/corgi/internal/app/entity"
 	"gorm.io/gorm/logger"
 
 	"github.com/glebarez/sqlite"

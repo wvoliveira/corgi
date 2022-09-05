@@ -8,13 +8,13 @@ import (
 	"time"
 
 	"github.com/casbin/casbin/v2"
-	"github.com/elga-io/corgi/internal/app/entity"
-	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/jwt"
-	"github.com/elga-io/corgi/internal/pkg/logger"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
+	"github.com/wvoliveira/corgi/internal/app/entity"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/jwt"
+	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )

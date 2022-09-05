@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/elga-io/corgi/internal/pkg/response"
+	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
 func encodeRegister(w http.ResponseWriter) (err error) {

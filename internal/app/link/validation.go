@@ -1,11 +1,11 @@
 package link
 
 import (
-	"github.com/elga-io/corgi/internal/app/entity"
-	e "github.com/elga-io/corgi/internal/pkg/errors"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/rs/zerolog/log"
+	"github.com/wvoliveira/corgi/internal/app/entity"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 )
 
 func checkLink(link entity.Link) (err error) {

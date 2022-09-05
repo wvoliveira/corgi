@@ -1,7 +1,7 @@
 # ![Corgi](.github/logo.png?raw=true "Corgi logo")
 
-[![Lint](https://github.com/elga-io/corgi/actions/workflows/server.lint.yml/badge.svg)](https://github.com/elga-io/corgi/actions/workflows/server.lint.yml)
-[![Test](https://github.com/elga-io/corgi/actions/workflows/server.test.yml/badge.svg)](https://github.com/elga-io/corgi/actions/workflows/server.test.yml)
+[![Lint](https://github.com/wvoliveira/corgi/actions/workflows/server.lint.yml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/server.lint.yml)
+[![Test](https://github.com/wvoliveira/corgi/actions/workflows/server.test.yml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/server.test.yml)
 
 [Portuguese](./README_pt-br.md) | [English](./README.md)
 
@@ -32,4 +32,4 @@ make
 ./corgi
 ```
 
-Ou faça o download de alguma release [aqui](https://github.com/elga-io/corgi/releases).
+Ou faça o download de alguma release [aqui](https://github.com/wvoliveira/corgi/releases).

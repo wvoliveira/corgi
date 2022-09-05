@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
-	e "github.com/elga-io/corgi/internal/pkg/errors"
-	"github.com/elga-io/corgi/internal/pkg/middleware"
 	"github.com/gorilla/mux"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 )
 
 func (s service) NewHTTP(r *mux.Router) {

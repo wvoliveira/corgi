@@ -3,8 +3,8 @@ package health
 import (
 	"net/http"
 
-	"github.com/elga-io/corgi/internal/pkg/response"
 	"github.com/gorilla/mux"
+	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
 func (s service) NewHTTP(r *mux.Router) {
