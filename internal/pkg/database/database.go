@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/wvoliveira/corgi/internal/app/config"
 	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/util"
 	"gorm.io/gorm/logger"
 

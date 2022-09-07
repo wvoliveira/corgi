@@ -23,12 +23,13 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/auth/token"
-	"github.com/wvoliveira/corgi/internal/app/config"
 	"github.com/wvoliveira/corgi/internal/app/entity"
 	"github.com/wvoliveira/corgi/internal/app/health"
+	"github.com/wvoliveira/corgi/internal/app/info"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
+	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/util"
@@ -136,6 +137,12 @@ func main() {
 	{
 		// Healthcheck endpoints.
 		service := health.NewService(db, cfg.SecretKey, store, authEnforcer, version)
+		service.NewHTTP(rootRouter)
+	}
+
+	{
+		// Info endpoint.
+		service := info.NewService(db, cfg, version)
 		service.NewHTTP(rootRouter)
 	}
 
