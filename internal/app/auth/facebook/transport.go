@@ -89,5 +89,5 @@ func (s service) HTTPCallback(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookieAccess)
 	http.SetCookie(w, &cookieRefresh)
 
-	http.Redirect(w, r, s.cfg.App.RedirectURL, http.StatusMovedPermanently)
+	http.Redirect(w, r, s.cfg.RedirectURL, http.StatusMovedPermanently)
 }

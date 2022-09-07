@@ -7,7 +7,7 @@
 
 Corgi is a link shortener system.
 
-## Resources
+## Features
 
 * **Users** - Registration/Authentication with new users via social network or email/password.
 * **Easy** - Corgi is easy and fast. Insert a giant link and get a shortened link.

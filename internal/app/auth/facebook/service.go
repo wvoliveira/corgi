@@ -168,12 +168,12 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		return tokenAccess, tokenRefresh, err
 	}
 
-	tokenAccess, err = jwt.GenerateAccessToken(s.cfg.App.SecretKey, identity, user)
+	tokenAccess, err = jwt.GenerateAccessToken(s.cfg.SecretKey, identity, user)
 	if err != nil {
 		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
 	}
 
-	tokenRefresh, err = jwt.GenerateRefreshToken(s.cfg.App.SecretKey, identity, user)
+	tokenRefresh, err = jwt.GenerateRefreshToken(s.cfg.SecretKey, identity, user)
 	if err != nil {
 		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
 	}

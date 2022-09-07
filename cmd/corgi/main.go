@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -35,46 +34,40 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/util"
 )
 
-// version indicates the current version of the application.
-var version = "0.0.1"
+var (
+	version = "0.0.1"
+
+	flagDebug  bool
+	flagConfig string
+)
 
 //go:embed all:web
 var nextFS embed.FS
 
 func main() {
-	debug := flag.Bool("d", false, "Enable DEBUG mode")
-	migrate := flag.Bool("m", true, "Enable GORM migration")
+	flag.BoolVar(&flagDebug, "debug", false, "Enable DEBUG mode")
+	flag.StringVar(&flagConfig, "config", "~/.corgi/corgi.yaml", "Path of config file")
 	flag.Parse()
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
 
-	// Create database and cache folder in $HOME/.corgi path.
-	folder, err := util.CreateDataFolder(".corgi")
-	if err != nil {
+	cfg := config.NewConfig(flagConfig)
+	db := database.NewSQLDatabase()
+
+	// Seed first users. Most admins.
+	if err := db.AutoMigrate(
+		&entity.User{},
+		&entity.Identity{},
+		&entity.Link{},
+		&entity.Token{},
+	); err != nil {
 		log.Fatal().Caller().Msg(err.Error())
-	}
-
-	var (
-		cfg = config.NewConfig("configs")
-		db  = database.NewSQLDatabase("sqlite", filepath.Join(folder, "data"))
-	)
-
-	if *migrate {
-		// Seed first users. Most admins.
-		if err := db.AutoMigrate(
-			&entity.User{},
-			&entity.Identity{},
-			&entity.Link{},
-			&entity.Token{},
-		); err != nil {
-			log.Fatal().Caller().Msg(err.Error())
-			os.Exit(1)
-		}
+		os.Exit(1)
 	}
 
 	database.SeedUsers(db, cfg)
 
-	// Setup Casbin auth rules.
+	// Setup authorization rules.
 	authEnforcer, err := casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
 	if err != nil {
 		log.Fatal().Caller().Msg("error to get Casbin enforce rules")
@@ -96,23 +89,23 @@ func main() {
 	}).Subrouter().StrictSlash(true)
 
 	// Start sessions.
-	store := sessions.NewCookieStore([]byte(cfg.App.SecretKey))
+	store := sessions.NewCookieStore([]byte(cfg.SecretKey))
 
 	{
 		// Auth service: logout and check.
-		service := auth.NewService(db, cfg.App.SecretKey, store, authEnforcer)
+		service := auth.NewService(db, cfg.SecretKey, store, authEnforcer)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Token refresh route.
-		service := token.NewService(db, cfg.App.SecretKey, 30, store, authEnforcer)
+		service := token.NewService(db, cfg.SecretKey, 30, store, authEnforcer)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Auth password service.
-		service := password.NewService(db, cfg.App.SecretKey, 30, store, authEnforcer)
+		service := password.NewService(db, cfg.SecretKey, 30, store, authEnforcer)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -130,19 +123,19 @@ func main() {
 
 	{
 		// Central business service: manage link shortener.
-		service := link.NewService(db, cfg.App.SecretKey, store, authEnforcer)
+		service := link.NewService(db, cfg.SecretKey, store, authEnforcer)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// User service. Like profile view and edit.
-		service := user.NewService(db, cfg.App.SecretKey, store, authEnforcer)
+		service := user.NewService(db, cfg.SecretKey, store, authEnforcer)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Healthcheck endpoints.
-		service := health.NewService(db, cfg.App.SecretKey, store, authEnforcer, version)
+		service := health.NewService(db, cfg.SecretKey, store, authEnforcer, version)
 		service.NewHTTP(rootRouter)
 	}
 
@@ -165,7 +158,7 @@ func main() {
 	webRouter.PathPrefix("").Handler(webHandler)
 
 	// Help func to get endpoints.
-	if *debug {
+	if flagDebug {
 		util.PrintRoutes([]*mux.Router{rootRouter, apiRouter})
 	}
 

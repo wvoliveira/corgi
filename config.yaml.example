@@ -1,0 +1,19 @@
+log_level: info
+secret_key: b5a448b682ff8c98c4c56a5c724e55cec696bee3
+admin_password: password
+user_password: password
+
+redirect_url:
+
+server:
+  http_port: 8081
+  read_timeout: 60
+  write_timeout: 60
+
+auth:
+  google:
+    client_id:
+    client_secret:
+  facebook:
+    client_id:
+    client_secret:
