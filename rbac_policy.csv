@@ -1,5 +1,6 @@
 p, admin, /api/*, GET|POST|PATCH|UPDATE|DELETE|OPTIONS
 
+p, anonymous, /info, GET
 p, anonymous, /health/*, GET|OPTIONS
 p, anonymous, /auth/password/*, POST|OPTIONS
 p, anonymous, /auth/google/*, GET|OPTIONS

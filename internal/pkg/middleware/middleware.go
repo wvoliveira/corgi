@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/casbin/casbin/v2"
@@ -36,6 +37,12 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 // Access returns a middleware that records an access log message for every HTTP request being processed.
 func Access(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Disable logs for some paths.
+		if strings.HasPrefix(r.URL.Path, "/_next") {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		start := time.Now()
 
 		// Copy body payload to get length.

@@ -1,5 +1,5 @@
-export CGO_ENABLED = 1
-export NEXT_TELEMETRY_DISABLED = 1
+export CGO_ENABLED := 0
+export NEXT_TELEMETRY_DISABLED := 1
 
 .PHONY: build
 build: build-web

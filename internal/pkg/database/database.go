@@ -4,14 +4,15 @@ package database
 
 import (
 	"os"
+	"path/filepath"
 	"time"
 
-	"github.com/wvoliveira/corgi/internal/app/config"
 	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/config"
+	"github.com/wvoliveira/corgi/internal/pkg/util"
 	"gorm.io/gorm/logger"
 
 	"github.com/glebarez/sqlite"
-	"gorm.io/driver/mysql"
 
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
@@ -20,43 +21,30 @@ import (
 )
 
 // NewSQLDatabase create a gorm database object.
-// kind: type of database, like "sqlite", "mysql", "postgresql", etc.
-// dsn: dsn with user/password and all necessary for connect in database.
-func NewSQLDatabase(kind, dsn string) (db *gorm.DB) {
+func NewSQLDatabase() (db *gorm.DB) {
 	newLogger := logger.New(
-		&log.Logger, // io writer
+		&log.Logger,
 		logger.Config{
-			SlowThreshold:             time.Second,   // Slow SQL threshold
-			LogLevel:                  logger.Silent, // Log level
-			IgnoreRecordNotFoundError: true,          // Ignore ErrRecordNotFound error for logger
-			Colorful:                  false,         // Disable color
+			SlowThreshold:             time.Second,
+			LogLevel:                  logger.Silent,
+			IgnoreRecordNotFoundError: true,
+			Colorful:                  false,
 		},
 	)
 	cfg := gorm.Config{Logger: newLogger}
 
-	switch kind {
-	case "sqlite":
-		db, err := gorm.Open(sqlite.Open(dsn), &cfg)
-		if err != nil {
-			panic("failed to connect in sqlite database")
-		}
-		return db
-	case "mysql":
-		db, err := gorm.Open(mysql.Open(dsn), &cfg)
-		if err != nil {
-			panic("failed to connect in mysql database")
-		}
-		return db
-	// case "postgresql":
-	// 	db, err := gorm.Open(postgres.Open(dsn), &cfg)
-	// 	if err != nil {
-	// 		panic("failed to connect in postgresql database")
-	// 	}
-	// 	return db
-	default:
-		log.Fatal().Caller().Msg("this type of database is not supported")
+	// Create database and cache folder in $HOME/.corgi path.
+	appFolder, err := util.CreateDataFolder(".corgi")
+	if err != nil {
+		log.Fatal().Caller().Msg(err.Error())
 	}
 
+	dbFile := filepath.Join(appFolder, "data")
+
+	db, err = gorm.Open(sqlite.Open(dbFile), &cfg)
+	if err != nil {
+		panic("failed to connect in sqlite database")
+	}
 	return
 }
 
@@ -76,7 +64,7 @@ func SeedUsers(db *gorm.DB, c config.Config) {
 					CreatedAt: time.Now(),
 					Provider:  "email",
 					UID:       "admin@local",
-					Password:  c.App.AdminPassword,
+					Password:  c.AdminPassword,
 				},
 			},
 		},
@@ -92,7 +80,7 @@ func SeedUsers(db *gorm.DB, c config.Config) {
 					CreatedAt: time.Now(),
 					Provider:  "email",
 					UID:       "user@local",
-					Password:  c.App.UserPassword,
+					Password:  c.UserPassword,
 				},
 			},
 		},
