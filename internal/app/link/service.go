@@ -60,63 +60,45 @@ func (s service) Add(ctx context.Context, link entity.Link) (li entity.Link, err
 		return
 	}
 
-	// If userID is anonymous, create a random ID.
-	// And blank another fields.
-	// TODO: with anonymous access, keep trying to create a unique keyword.
+	// If user is anonymous, create a random ID and blank another fields.
 	if link.UserID == "anonymous" {
 		sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
 		link.Keyword, _ = sid.Generate()
-
-		// In anonymous, for small database, we check if URL already exists.
-		err = s.db.Model(&entity.Link{}).
-			Where("domain = ? AND keyword = ? OR (domain = ? AND url = ?)", link.Domain, link.Keyword, link.Domain, link.URL).
-			Take(&li).Error
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-
-			li.ID = uuid.New().String()
-			li.CreatedAt = time.Now()
-			li.Domain = link.Domain
-			li.Keyword = link.Keyword
-			li.URL = link.URL
-			li.Active = "true"
-			li.UserID = link.UserID
-
-			err = s.db.Model(&entity.Link{}).Create(&li).Error
-			return li, err
-		} else if err == nil {
-			l.Warn().Caller().Msg("domain with keyword already exists")
-			return li, e.ErrAnonymousURLAlreadyExists
+	} else {
+		if link.Domain == "" {
+			return li, e.ErrLinkInvalidDomain
 		}
-		l.Error().Caller().Msg(err.Error())
+
+		if link.Keyword == "" {
+			sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
+			link.Keyword, _ = sid.Generate()
+		}
 	}
 
-	// With a real user authentication.
-	if link.Domain == "" {
-		return li, e.ErrLinkInvalidDomain
-	}
-	if link.Keyword == "" {
-		return li, e.ErrLinkInvalidKeyword
-	}
+	err = s.db.Model(&entity.Link{}).
+		Where("domain = ? AND keyword = ?", link.Domain, link.Keyword).
+		Take(&li).Error
 
-	err = s.db.Model(&entity.Link{}).Where("domain = ? AND keyword = ?", link.Domain, link.Keyword).Take(&li).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-
 		li.ID = uuid.New().String()
 		li.CreatedAt = time.Now()
 		li.Domain = link.Domain
 		li.Keyword = link.Keyword
-		li.Title = link.Title
 		li.URL = link.URL
 		li.Active = "true"
 		li.UserID = link.UserID
 
 		err = s.db.Model(&entity.Link{}).Create(&li).Error
+		if err == nil {
+			l.Info().Caller().Msg("short link created with successfully")
+		}
 		return li, err
+
 	} else if err == nil {
 		l.Warn().Caller().Msg("domain with keyword already exists")
-		return li, e.ErrLinkAlreadyExists
+		return li, e.ErrAlreadyExists
 	}
-	l.Error().Caller().Msg(err.Error())
+
 	return li, e.ErrInternalServerError
 }
 
@@ -131,9 +113,11 @@ func (s service) FindByID(ctx context.Context, linkID, userID string) (li entity
 	if err == gorm.ErrRecordNotFound {
 		l.Warn().Caller().Msg("link not found")
 		return li, e.ErrLinkNotFound
+
 	} else if err == nil {
 		return
 	}
+
 	l.Error().Caller().Msg(err.Error())
 	return
 }
@@ -152,6 +136,7 @@ func (s service) FindAll(ctx context.Context, offset, limit int, sort, userID st
 	if err == gorm.ErrRecordNotFound {
 		l.Info().Caller().Msg("links not found")
 		return total, pages, links, e.ErrLinkNotFound
+
 	} else if err != nil {
 		l.Error().Caller().Msg(err.Error())
 		return

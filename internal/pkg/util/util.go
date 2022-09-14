@@ -1,6 +1,7 @@
 package util
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -52,4 +53,9 @@ func PrintRoutes(rs []*mux.Router) {
 			return nil
 		})
 	}
+}
+
+// AddContextInfo add any information inside context.
+func AddContextInfo(ctx context.Context, key interface{}, value string) context.Context {
+	return context.WithValue(ctx, key, value)
 }

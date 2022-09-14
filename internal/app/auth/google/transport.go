@@ -10,7 +10,7 @@ import (
 )
 
 func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/auth/google").Subrouter()
+	rr := r.PathPrefix("/v1/auth/google").Subrouter()
 	rr.Use(middleware.Checks)
 	rr.Use(middleware.Authorizer(s.enforce))
 

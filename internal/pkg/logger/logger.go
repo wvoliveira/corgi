@@ -9,10 +9,15 @@ import (
 )
 
 func Logger(ctx context.Context) (l zerolog.Logger) {
-	if ctx != nil {
-		if ctxRqId, ok := ctx.Value(entity.CorrelationID{}).(entity.CorrelationID); ok {
-			l = log.With().Str("req_id", ctxRqId.ID).Logger()
-		}
+	logContext := log.Logger.With()
+
+	if ctxRequest, ok := ctx.Value(entity.CorrelationID{}).(entity.CorrelationID); ok {
+		logContext = logContext.Str("req_id", ctxRequest.ID)
 	}
-	return l
+
+	if ctxIdentity, ok := ctx.Value(entity.IdentityInfo{}).(entity.IdentityInfo); ok {
+		logContext = logContext.Str("user_id", ctxIdentity.UserID)
+	}
+
+	return logContext.Logger()
 }
