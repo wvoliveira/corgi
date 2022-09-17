@@ -13,6 +13,8 @@ import (
 	"syscall"
 	"time"
 
+	_ "net/http/pprof"
+
 	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -88,6 +90,9 @@ func main() {
 		// - / and /_next
 		return (req.URL.Path == "/" || strings.HasPrefix(req.URL.Path, "/_next"))
 	}).Subrouter().StrictSlash(true)
+
+	// Profiling runtime.
+	router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
 
 	// Start sessions.
 	store := sessions.NewCookieStore([]byte(cfg.SecretKey))
