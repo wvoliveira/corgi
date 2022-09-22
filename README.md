@@ -1,9 +1,9 @@
-# ![Corgi](.github/logo.png?raw=true "Corgi logo")
+# Corgi
 
 [![Lint](https://github.com/wvoliveira/corgi/actions/workflows/server.lint.yml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/server.lint.yml)
 [![Test](https://github.com/wvoliveira/corgi/actions/workflows/server.test.yml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/server.test.yml)
+[![Language](https://img.shields.io/badge/Language-pt--br-blue)](./README_pt-br.md)
 
-[Portuguese](./README_pt-br.md) | [English](./README.md)
 
 Corgi is a link shortener system.
 
