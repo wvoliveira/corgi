@@ -26,6 +26,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/token"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/info"
+	"github.com/wvoliveira/corgi/internal/app/jobs"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
@@ -150,16 +151,22 @@ func main() {
 		service.NewHTTP(rootRouter)
 	}
 
-	// Start web UI.
-	distFS, err := fs.Sub(nextFS, "web")
-	if err != nil {
-		log.Fatal().Caller().Msg(err.Error())
-		os.Exit(2)
+	{
+		// Start web application. User interface.
+		// Embedded UI.
+		distFS, err := fs.Sub(nextFS, "web")
+		if err != nil {
+			log.Fatal().Caller().Msg(err.Error())
+			os.Exit(2)
+		}
+
+		webHandler := http.FileServer(http.FS(distFS))
+		webRouter.PathPrefix("").Handler(webHandler)
 	}
 
-	// Web UI embedded.
-	webHandler := http.FileServer(http.FS(distFS))
-	webRouter.PathPrefix("").Handler(webHandler)
+	// Start cronjobs.
+	serviceCron := jobs.NewService(db, cfg)
+	serviceCron.Start()
 
 	// Help func to get endpoints.
 	if flagDebug {
@@ -192,6 +199,9 @@ func main() {
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	stop()
 	log.Info().Caller().Msg("shutting down gracefully..")
+
+	// Stop cronjobs.
+	serviceCron.Stop()
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
