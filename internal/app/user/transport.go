@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
@@ -14,7 +14,6 @@ func (s service) NewHTTP(r *mux.Router) {
 	rr := r.PathPrefix("/v1/user").Subrouter()
 	rr.Use(middleware.Checks)
 	rr.Use(middleware.Auth(s.secret))
-	rr.Use(middleware.Authorizer(s.enforce))
 
 	rr.HandleFunc("/me", s.HTTPFind).Methods("GET")
 	rr.HandleFunc("/me", s.HTTPUpdate).Methods("PATCH")

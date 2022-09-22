@@ -6,10 +6,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/jwt"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
@@ -29,12 +28,11 @@ type service struct {
 	secret          string
 	tokenExpiration int
 	store           *sessions.CookieStore
-	enforce         *casbin.Enforcer
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, secret string, tokenExpiration int, store *sessions.CookieStore, enforce *casbin.Enforcer) Service {
-	return service{db, secret, tokenExpiration, store, enforce}
+func NewService(db *gorm.DB, secret string, tokenExpiration int, store *sessions.CookieStore) Service {
+	return service{db, secret, tokenExpiration, store}
 }
 
 // Refresh authenticates a user and generates a new access and refresh JWT token if needed.

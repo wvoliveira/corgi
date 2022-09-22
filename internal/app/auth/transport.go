@@ -11,10 +11,9 @@ import (
 )
 
 func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/auth").Subrouter()
+	rr := r.PathPrefix("/v1/auth").Subrouter()
 	rr.Use(middleware.Checks)
 	rr.Use(middleware.Auth(s.secret))
-	rr.Use(middleware.Authorizer(s.enforce))
 
 	rr.HandleFunc("/logout", s.HTTPLogout).Methods("GET")
 }
@@ -48,5 +47,5 @@ func (s service) HTTPLogout(w http.ResponseWriter, r *http.Request) {
 
 	// Encode object to answer request (response).
 	sr := logoutResponse{Err: err}
-	response.Default(w, sr, "", http.StatusNoContent)
+	response.Default(w, sr, "", http.StatusOK)
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
-	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/jwt"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
@@ -61,15 +61,11 @@ func Access(next http.Handler) http.Handler {
 		if v := ctx.Value(entity.CorrelationID{}); v == nil {
 			ctx = context.WithValue(ctx, entity.CorrelationID{}, entity.CorrelationID{ID: uuid.New().String()})
 		}
+
 		r = r.WithContext(ctx)
-
-		// Start logger with context.
-		l := logger.Logger(ctx)
-
-		// Call next handler.
 		next.ServeHTTP(lrw, r)
 
-		// End logging response access log.
+		l := logger.Logger(ctx)
 		l.Info().
 			Caller().
 			Str("client_ip", request.IP(r)).
@@ -93,22 +89,11 @@ func Auth(secret string) func(http.Handler) http.Handler {
 			// In this app, we can create link without authentication.
 			// So, in some routes we can forward without user_id.
 			// But only for period of time, like expiration in database/cache.
-			// Rules:
-			// - /api/v1/links and POST
-			// - /api/v1/links and GET
 			anonymousAccess := false
-			if (r.URL.Path == "/api/v1/links" && r.Method == "POST") ||
-				(r.URL.Path == "/api/v1/links/" && r.Method == "POST") ||
-				(r.URL.Path == "/api/v1/links" && r.Method == "GET") ||
-				(r.URL.Path == "/api/v1/links/" && r.Method == "GET") {
-				anonymousAccess = true
-			}
 
 			hashToken, err := r.Cookie("access_token")
-			if (err == http.ErrNoCookie || hashToken.Value == "") && !anonymousAccess {
-				l.Info().Caller().Msg("cookie with the access_token name was not found or blank")
-				e.EncodeError(w, e.ErrNoTokenFound)
-				return
+			if err == http.ErrNoCookie || hashToken.Value == "" {
+				anonymousAccess = true
 			}
 
 			ii := entity.IdentityInfo{}

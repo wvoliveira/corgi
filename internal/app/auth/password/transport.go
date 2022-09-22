@@ -5,13 +5,13 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
-	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 )
 
 func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/auth/password").Subrouter()
+	rr := r.PathPrefix("/v1/auth/password").Subrouter()
 	rr.Use(middleware.Checks)
 
 	rr.HandleFunc("/login", s.HTTPLogin).Methods("POST")

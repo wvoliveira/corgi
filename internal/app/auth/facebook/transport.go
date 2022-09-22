@@ -10,9 +10,8 @@ import (
 )
 
 func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/auth/facebook").Subrouter()
+	rr := r.PathPrefix("/v1/auth/facebook").Subrouter()
 	rr.Use(middleware.Checks)
-	rr.Use(middleware.Authorizer(s.enforce))
 
 	rr.HandleFunc("/login", s.HTTPLogin).Methods("GET")
 	rr.HandleFunc("/callback", s.HTTPCallback).Methods("GET")

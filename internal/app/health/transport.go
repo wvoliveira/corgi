@@ -9,13 +9,19 @@ import (
 
 func (s service) NewHTTP(r *mux.Router) {
 	rr := r.PathPrefix("/health").Subrouter()
-	// rr.Use(middleware.Authorizer(s.enforce))
-
-	rr.HandleFunc("/ping", s.HTTPHealth).Methods("GET")
-	//r.GET("/live", s.httpLive)
-	//r.GET("/ready", s.httpReady)
+	rr.HandleFunc("", s.HTTPHealth).Methods("GET")
+	rr.HandleFunc("/live", s.HTTPLive).Methods("GET")
+	rr.HandleFunc("/ready", s.HTTPReady).Methods("GET")
 }
 
 func (s service) HTTPHealth(w http.ResponseWriter, r *http.Request) {
-	response.Default(w, "pong", "", http.StatusOK)
+	response.Default(w, "OK", "", http.StatusOK)
+}
+
+func (s service) HTTPLive(w http.ResponseWriter, r *http.Request) {
+	response.Default(w, "Live", "", http.StatusOK)
+}
+
+func (s service) HTTPReady(w http.ResponseWriter, r *http.Request) {
+	response.Default(w, "Ready", "", http.StatusOK)
 }

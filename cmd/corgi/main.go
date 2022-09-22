@@ -13,7 +13,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/casbin/casbin/v2"
+	_ "net/http/pprof"
+
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog"
@@ -23,14 +24,15 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/auth/token"
-	"github.com/wvoliveira/corgi/internal/app/entity"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/info"
+	"github.com/wvoliveira/corgi/internal/app/jobs"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/util"
 )
@@ -68,15 +70,6 @@ func main() {
 
 	database.SeedUsers(db, cfg)
 
-	// Setup authorization rules.
-	authEnforcer, err := casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
-	if err != nil {
-		log.Fatal().Caller().Msg("error to get Casbin enforce rules")
-		os.Exit(2)
-	}
-
-	// TODO: setup a properly CORS.
-
 	router := mux.NewRouter().SkipClean(false)
 	router.Use(middleware.Access)
 
@@ -89,54 +82,59 @@ func main() {
 		return (req.URL.Path == "/" || strings.HasPrefix(req.URL.Path, "/_next"))
 	}).Subrouter().StrictSlash(true)
 
+	// Profiling runtime.
+	if flagDebug {
+		router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
+	}
+
 	// Start sessions.
 	store := sessions.NewCookieStore([]byte(cfg.SecretKey))
 
 	{
 		// Auth service: logout and check.
-		service := auth.NewService(db, cfg.SecretKey, store, authEnforcer)
+		service := auth.NewService(db, cfg.SecretKey, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Token refresh route.
-		service := token.NewService(db, cfg.SecretKey, 30, store, authEnforcer)
+		service := token.NewService(db, cfg.SecretKey, 30, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Auth password service.
-		service := password.NewService(db, cfg.SecretKey, 30, store, authEnforcer)
+		service := password.NewService(db, cfg.SecretKey, 30, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Auth with Google provider.
-		service := google.NewService(db, cfg, store, authEnforcer)
+		service := google.NewService(db, cfg, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Auth with Facebook provider.
-		service := facebook.NewService(db, cfg, store, authEnforcer)
+		service := facebook.NewService(db, cfg, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Central business service: manage link shortener.
-		service := link.NewService(db, cfg.SecretKey, store, authEnforcer)
+		service := link.NewService(db, cfg.SecretKey, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// User service. Like profile view and edit.
-		service := user.NewService(db, cfg.SecretKey, store, authEnforcer)
+		service := user.NewService(db, cfg.SecretKey, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Healthcheck endpoints.
-		service := health.NewService(db, cfg.SecretKey, store, authEnforcer, version)
+		service := health.NewService(db, cfg.SecretKey, store, version)
 		service.NewHTTP(rootRouter)
 	}
 
@@ -149,20 +147,26 @@ func main() {
 	{
 		// Central business service: redirect short link.
 		// Note: this service is on root router.
-		service := redirect.NewService(db, store, authEnforcer)
+		service := redirect.NewService(db, store)
 		service.NewHTTP(rootRouter)
 	}
 
-	// Start web UI.
-	distFS, err := fs.Sub(nextFS, "web")
-	if err != nil {
-		log.Fatal().Caller().Msg(err.Error())
-		os.Exit(2)
+	{
+		// Start web application. User interface.
+		// Embedded UI.
+		distFS, err := fs.Sub(nextFS, "web")
+		if err != nil {
+			log.Fatal().Caller().Msg(err.Error())
+			os.Exit(2)
+		}
+
+		webHandler := http.FileServer(http.FS(distFS))
+		webRouter.PathPrefix("").Handler(webHandler)
 	}
 
-	// Web UI embedded.
-	webHandler := http.FileServer(http.FS(distFS))
-	webRouter.PathPrefix("").Handler(webHandler)
+	// Start cronjobs.
+	serviceCron := jobs.NewService(db, cfg)
+	serviceCron.Start()
 
 	// Help func to get endpoints.
 	if flagDebug {
@@ -195,6 +199,9 @@ func main() {
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	stop()
 	log.Info().Caller().Msg("shutting down gracefully..")
+
+	// Stop cronjobs.
+	serviceCron.Stop()
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling

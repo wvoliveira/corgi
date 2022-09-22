@@ -10,7 +10,7 @@ import (
 
 func (s service) NewHTTP(r *mux.Router) {
 	rr := r.PathPrefix("/").Subrouter()
-	// rr.Use(middleware.Authorizer(s.enforce))
+	//
 
 	rr.HandleFunc("/info", s.HTTPInfo).Methods("GET")
 	//r.GET("/live", s.httpLive)

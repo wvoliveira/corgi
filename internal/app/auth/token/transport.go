@@ -4,17 +4,16 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
 func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/auth/token").Subrouter()
+	rr := r.PathPrefix("/v1/auth/token").Subrouter()
 	rr.Use(middleware.Checks)
 	rr.Use(middleware.Auth(s.secret))
-	rr.Use(middleware.Authorizer(s.enforce))
 
 	rr.HandleFunc("/refresh", s.HTTPRefresh).Methods("POST")
 }

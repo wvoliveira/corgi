@@ -1,9 +1,9 @@
-# ![Corgi](.github/logo.png?raw=true "Corgi logo")
+# Corgi
 
 [![Lint](https://github.com/wvoliveira/corgi/actions/workflows/server.lint.yml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/server.lint.yml)
 [![Test](https://github.com/wvoliveira/corgi/actions/workflows/server.test.yml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/server.test.yml)
+[![English](https://img.shields.io/badge/Language-en--us-blue)](./README.md)
 
-[Portuguese](./README_pt-br.md) | [English](./README.md)
 
 Corgi é um sistema encurtador de links.
 
