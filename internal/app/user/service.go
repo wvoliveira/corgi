@@ -39,6 +39,11 @@ func NewService(db *gorm.DB, secret string, store *sessions.CookieStore) Service
 func (s service) Find(ctx context.Context, userID string) (user entity.User, err error) {
 	l := logger.Logger(ctx)
 
+	if userID == "anonymous" {
+		user.Name = "Anonymous"
+		return
+	}
+
 	user.ID = userID
 	err = s.db.Debug().
 		Model(&user).
