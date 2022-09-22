@@ -4,7 +4,6 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/wvoliveira/corgi/internal/app/entity"
@@ -21,15 +20,14 @@ type Service interface {
 }
 
 type service struct {
-	db      *gorm.DB
-	secret  string
-	store   *sessions.CookieStore
-	enforce *casbin.Enforcer
+	db     *gorm.DB
+	secret string
+	store  *sessions.CookieStore
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, secret string, store *sessions.CookieStore, enforce *casbin.Enforcer) Service {
-	return service{db, secret, store, enforce}
+func NewService(db *gorm.DB, secret string, store *sessions.CookieStore) Service {
+	return service{db, secret, store}
 }
 
 // Logout remove cookie and refresh token from database.

@@ -14,7 +14,6 @@ func (s service) NewHTTP(r *mux.Router) {
 	rr := r.PathPrefix("/v1/auth").Subrouter()
 	rr.Use(middleware.Checks)
 	rr.Use(middleware.Auth(s.secret))
-	rr.Use(middleware.Authorizer(s.enforce))
 
 	rr.HandleFunc("/logout", s.HTTPLogout).Methods("GET")
 }

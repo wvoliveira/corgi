@@ -12,7 +12,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -41,15 +40,14 @@ type Service interface {
 }
 
 type service struct {
-	db      *gorm.DB
-	secret  string
-	store   *sessions.CookieStore
-	enforce *casbin.Enforcer
+	db     *gorm.DB
+	secret string
+	store  *sessions.CookieStore
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, secret string, store *sessions.CookieStore, enforce *casbin.Enforcer) Service {
-	return service{db, secret, store, enforce}
+func NewService(db *gorm.DB, secret string, store *sessions.CookieStore) Service {
+	return service{db, secret, store}
 }
 
 // Add create a new shortener link.

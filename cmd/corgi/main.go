@@ -15,7 +15,6 @@ import (
 
 	_ "net/http/pprof"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog"
@@ -70,15 +69,6 @@ func main() {
 
 	database.SeedUsers(db, cfg)
 
-	// Setup authorization rules.
-	authEnforcer, err := casbin.NewEnforcer("./rbac_model.conf", "./rbac_policy.csv")
-	if err != nil {
-		log.Fatal().Caller().Msg("error to get Casbin enforce rules")
-		os.Exit(2)
-	}
-
-	// TODO: setup a properly CORS.
-
 	router := mux.NewRouter().SkipClean(false)
 	router.Use(middleware.Access)
 
@@ -99,49 +89,49 @@ func main() {
 
 	{
 		// Auth service: logout and check.
-		service := auth.NewService(db, cfg.SecretKey, store, authEnforcer)
+		service := auth.NewService(db, cfg.SecretKey, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Token refresh route.
-		service := token.NewService(db, cfg.SecretKey, 30, store, authEnforcer)
+		service := token.NewService(db, cfg.SecretKey, 30, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Auth password service.
-		service := password.NewService(db, cfg.SecretKey, 30, store, authEnforcer)
+		service := password.NewService(db, cfg.SecretKey, 30, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Auth with Google provider.
-		service := google.NewService(db, cfg, store, authEnforcer)
+		service := google.NewService(db, cfg, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Auth with Facebook provider.
-		service := facebook.NewService(db, cfg, store, authEnforcer)
+		service := facebook.NewService(db, cfg, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Central business service: manage link shortener.
-		service := link.NewService(db, cfg.SecretKey, store, authEnforcer)
+		service := link.NewService(db, cfg.SecretKey, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// User service. Like profile view and edit.
-		service := user.NewService(db, cfg.SecretKey, store, authEnforcer)
+		service := user.NewService(db, cfg.SecretKey, store)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Healthcheck endpoints.
-		service := health.NewService(db, cfg.SecretKey, store, authEnforcer, version)
+		service := health.NewService(db, cfg.SecretKey, store, version)
 		service.NewHTTP(rootRouter)
 	}
 
@@ -154,7 +144,7 @@ func main() {
 	{
 		// Central business service: redirect short link.
 		// Note: this service is on root router.
-		service := redirect.NewService(db, store, authEnforcer)
+		service := redirect.NewService(db, store)
 		service.NewHTTP(rootRouter)
 	}
 

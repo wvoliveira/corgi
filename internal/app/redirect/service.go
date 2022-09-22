@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/wvoliveira/corgi/internal/app/entity"
@@ -23,14 +22,13 @@ type Service interface {
 }
 
 type service struct {
-	db      *gorm.DB
-	store   *sessions.CookieStore
-	enforce *casbin.Enforcer
+	db    *gorm.DB
+	store *sessions.CookieStore
 }
 
 // NewService creates a new public service.
-func NewService(db *gorm.DB, store *sessions.CookieStore, enforce *casbin.Enforcer) Service {
-	return service{db, store, enforce}
+func NewService(db *gorm.DB, store *sessions.CookieStore) Service {
+	return service{db, store}
 }
 
 // Find get a shortener link from keyword.

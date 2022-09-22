@@ -9,7 +9,6 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/google/uuid"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
@@ -43,15 +42,14 @@ type Identity interface {
 }
 
 type service struct {
-	db      *gorm.DB
-	cfg     config.Config
-	store   *sessions.CookieStore
-	enforce *casbin.Enforcer
+	db    *gorm.DB
+	cfg   config.Config
+	store *sessions.CookieStore
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, cfg config.Config, store *sessions.CookieStore, enforce *casbin.Enforcer) Service {
-	return service{db, cfg, store, enforce}
+func NewService(db *gorm.DB, cfg config.Config, store *sessions.CookieStore) Service {
+	return service{db, cfg, store}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
