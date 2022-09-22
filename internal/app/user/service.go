@@ -62,19 +62,23 @@ func (s service) Find(ctx context.Context, userID string) (user entity.User, err
 }
 
 // Update change specific link by ID.
-func (s service) Update(ctx context.Context, req entity.User) (user entity.User, err error) {
+func (s service) Update(ctx context.Context, reqUser entity.User) (user entity.User, err error) {
 	l := logger.Logger(ctx)
 
-	req.UpdatedAt = time.Now()
+	if reqUser.ID == "anonymous" {
+		return user, e.ErrUnauthorized
+	}
+
+	reqUser.UpdatedAt = time.Now()
 	err = s.db.Model(&entity.User{}).
-		Where("id = ?", req.ID).
-		Updates(&req).Error
+		Where("id = ?", reqUser.ID).
+		Updates(&reqUser).Error
 
 	if err == gorm.ErrRecordNotFound {
-		l.Info().Caller().Msg(fmt.Sprintf("the user with id '%s' not found", req.ID))
+		l.Info().Caller().Msg(fmt.Sprintf("the user with id '%s' not found", reqUser.ID))
 		return user, e.ErrUserNotFound
 	} else if err == nil {
-		user = req
+		user = reqUser
 		return
 	}
 
