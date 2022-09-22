@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 )
 
 type addRequest struct {

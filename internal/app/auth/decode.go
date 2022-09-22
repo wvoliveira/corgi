@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 )
 
 type logoutRequest struct {

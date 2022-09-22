@@ -5,7 +5,7 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
-	"github.com/wvoliveira/corgi/internal/app/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/entity"
 )
 
 func Logger(ctx context.Context) (l zerolog.Logger) {
