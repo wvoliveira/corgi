@@ -47,5 +47,5 @@ func (s service) HTTPLogout(w http.ResponseWriter, r *http.Request) {
 
 	// Encode object to answer request (response).
 	sr := logoutResponse{Err: err}
-	response.Default(w, sr, "", http.StatusNoContent)
+	response.Default(w, sr, "", http.StatusOK)
 }
