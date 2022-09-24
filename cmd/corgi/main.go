@@ -134,7 +134,7 @@ func main() {
 
 	{
 		// Healthcheck endpoints.
-		service := health.NewService(db, cfg.SecretKey, store, version)
+		service := health.NewService(db, cfg, version)
 		service.NewHTTP(rootRouter)
 	}
 

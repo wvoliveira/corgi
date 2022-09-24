@@ -15,8 +15,14 @@ type Response struct {
 func Default(w http.ResponseWriter, data interface{}, message string, status int) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
+
+	statusText := "successful"
+	if status >= 500 && status <= 599 {
+		statusText = "failed"
+	}
+
 	_ = json.NewEncoder(w).Encode(Response{
-		Status:  "successful",
+		Status:  statusText,
 		Data:    data,
 		Message: message,
 	})

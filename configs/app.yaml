@@ -34,15 +34,3 @@ cache:
   max_idle: 30
   max_active: 30
   idle_timeout: 200
-
-search:
-  host: 127.0.0.1
-  port: 9200
-  user:
-  password:
-
-broker:
-  host: 127.0.0.1
-  port: 4222
-  user:
-  password:
