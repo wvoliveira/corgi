@@ -8,6 +8,7 @@ import (
 	"github.com/robfig/cron"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"gorm.io/gorm"
 )
 
@@ -32,7 +33,13 @@ func NewService(db *gorm.DB, cfg config.Config) Service {
 }
 
 func (s service) Start() {
-	s.cronn.AddFunc("@every 30m", func() { s.RemoveTokens(context.TODO()) })
+	l := logger.Logger(context.TODO())
+
+	err := s.cronn.AddFunc("@every 30m", func() { s.RemoveTokens(context.TODO()) })
+	if err != nil {
+		l.Error().Caller().Msg(err.Error())
+	}
+
 	s.cronn.Start()
 }
 

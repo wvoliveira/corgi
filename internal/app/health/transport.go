@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
@@ -15,7 +16,20 @@ func (s service) NewHTTP(r *mux.Router) {
 }
 
 func (s service) HTTPHealth(w http.ResponseWriter, r *http.Request) {
-	response.Default(w, "OK", "", http.StatusOK)
+	healths, err := s.Health(r.Context())
+	if err != nil {
+		e.EncodeError(w, err)
+		return
+	}
+
+	httpStatusCode := http.StatusOK
+	for _, item := range healths {
+		if item.Required && item.Status != "OK" {
+			httpStatusCode = http.StatusServiceUnavailable
+		}
+	}
+
+	response.Default(w, healths, "", httpStatusCode)
 }
 
 func (s service) HTTPLive(w http.ResponseWriter, r *http.Request) {
