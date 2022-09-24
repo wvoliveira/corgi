@@ -16,5 +16,6 @@ type User struct {
 	Tokens     []Token
 	Links      []Link
 
-	Tags []Tag `gorm:"many2many:user_tags;"`
+	Groups []Group `gorm:"many2many:user_groups;"`
+	Tags   []Tag   `gorm:"many2many:user_tags;"`
 }

@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/casbin/casbin/v2"
 	"github.com/google/uuid"
 	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
@@ -96,7 +95,7 @@ func Auth(secret string) func(http.Handler) http.Handler {
 				anonymousAccess = true
 			}
 
-			ii := entity.IdentityInfo{}
+			identity := entity.IdentityInfo{}
 
 			if !anonymousAccess {
 				// validate ID token here
@@ -115,7 +114,7 @@ func Auth(secret string) func(http.Handler) http.Handler {
 					return
 				}
 
-				ii = entity.IdentityInfo{
+				identity = entity.IdentityInfo{
 					ID:             claims["identity_id"].(string),
 					Provider:       claims["identity_provider"].(string),
 					UID:            claims["identity_uid"].(string),
@@ -126,13 +125,29 @@ func Auth(secret string) func(http.Handler) http.Handler {
 			}
 
 			if anonymousAccess {
-				ii = entity.IdentityInfo{
+				identity = entity.IdentityInfo{
 					UserID: "anonymous",
 				}
 			}
 
+			// Authorizer. Casbin was removed but I'm rethinking if its was a good idea.
+			// Because now I need to check if user is anonymous access and block for some paths manually.
+			// Oh my lord.
+			if identity.UserID == "anonymous" {
+				path := r.URL.Path
+				unauthorizedPaths := []string{"/api/v1/groups", "/api/v1/auth/token", "/api/v1/auth/logout"}
+
+				for _, unauthorizedPath := range unauthorizedPaths {
+					if strings.HasPrefix(path, unauthorizedPath) {
+						err = e.ErrUnauthorized
+						e.EncodeError(w, err)
+						return
+					}
+				}
+			}
+
 			ctx := r.Context()
-			ctx = context.WithValue(ctx, entity.IdentityInfo{}, ii)
+			ctx = context.WithValue(ctx, entity.IdentityInfo{}, identity)
 			r = r.WithContext(ctx)
 
 			next.ServeHTTP(w, r)
@@ -141,6 +156,7 @@ func Auth(secret string) func(http.Handler) http.Handler {
 }
 
 // Checks returns a middleware that verify some points before business logic.
+// Like POST and PATCH without request body.
 func Checks(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == "POST" || r.Method == "PATCH" {
@@ -154,47 +170,8 @@ func Checks(next http.Handler) http.Handler {
 	})
 }
 
-// Authorizer check if user role has access to resource.
-func Authorizer(en *casbin.Enforcer) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			var (
-				role string
-				ii   = entity.IdentityInfo{}
-			)
-
-			anyy := ctx.Value(ii)
-			if anyy != nil {
-				ii := anyy.(entity.IdentityInfo)
-				role = ii.UserRole
-			}
-
-			if role == "" {
-				role = "anonymous"
-			}
-
-			// casbin rule enforcing
-			ok, err := en.Enforce(role, r.URL.Path, r.Method)
-			if err != nil {
-				log.Error().Caller().Msg(err.Error())
-				e.EncodeError(w, err)
-				return
-			}
-
-			if ok {
-				next.ServeHTTP(w, r)
-			} else {
-				e.EncodeError(w, e.ErrUnauthorized)
-				return
-			}
-		})
-	}
-}
-
-// SesssionRedirect check if user already clicked in shortener link.
-func SesssionRedirect(store *sessions.CookieStore, sessionName string) func(http.Handler) http.Handler {
+// SessionRedirect check if user already clicked in shortener link.
+func SessionRedirect(store *sessions.CookieStore, sessionName string) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			session, _ := store.Get(r, sessionName)

@@ -24,9 +24,10 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/auth/token"
+	"github.com/wvoliveira/corgi/internal/app/group"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/info"
-	"github.com/wvoliveira/corgi/internal/app/jobs"
+	"github.com/wvoliveira/corgi/internal/app/job"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
@@ -133,6 +134,12 @@ func main() {
 	}
 
 	{
+		// Group service. For administrate a bundle of links together.
+		service := group.NewService(db, cfg.SecretKey)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
 		// Healthcheck endpoints.
 		service := health.NewService(db, cfg, version)
 		service.NewHTTP(rootRouter)
@@ -165,7 +172,7 @@ func main() {
 	}
 
 	// Start cronjobs.
-	serviceCron := jobs.NewService(db, cfg)
+	serviceCron := job.NewService(db, cfg)
 	serviceCron.Start()
 
 	// Help func to get endpoints.

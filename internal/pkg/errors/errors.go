@@ -28,8 +28,12 @@ var (
 
 	// ErrUserNotFound error when user not found in database.
 	ErrUserNotFound = errors.New("user not found")
-	// ErrAccountDeleteYourSelf user admin or user with permission with that cannot delete yourself.
-	ErrAccountDeleteYourSelf = errors.New("delete yourself? this is not a good idea")
+
+	// ErrUserDeleteYourSelf user admin or user with permission with that cannot delete yourself.
+	ErrUserDeleteYourSelf = errors.New("delete yourself? this is not a good idea")
+
+	// ErrUserNotFoundInContext impossible to get identity or user from context of request.
+	ErrUserNotFoundInContext = errors.New("impossible to get identity/user from context")
 
 	// ErrLinkNotFound link not found in database.
 	ErrLinkNotFound       = errors.New("domain and keyword combination not found")
@@ -47,6 +51,9 @@ var (
 
 	// ErrRequestNeedBody error if client not send a body payload.
 	ErrRequestNeedBody = errors.New("methods POST and PATCH needs a body payload")
+
+	// ErrGroupAlreadyExists error when user try to create a group with a existent group name.
+	ErrGroupAlreadyExists = errors.New("group with this name already exists. Choose another one")
 )
 
 type response struct {
@@ -81,11 +88,14 @@ func codeFrom(err error) int {
 	switch err {
 	case ErrNotFound, ErrLinkNotFound:
 		return http.StatusNotFound
-	case ErrInconsistentIDs, ErrAccountDeleteYourSelf, ErrLinkAlreadyExists, ErrAlreadyExists,
+
+	case ErrInconsistentIDs, ErrUserDeleteYourSelf, ErrLinkAlreadyExists, ErrAlreadyExists,
 		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists:
 		return http.StatusBadRequest
+
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:
 		return http.StatusUnauthorized
+
 	default:
 		return http.StatusInternalServerError
 	}

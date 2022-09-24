@@ -1,10 +1,5 @@
 package link
 
-/*
-TODO:
-- Create logic to create link anonymously
-*/
-
 import (
 	"context"
 	"errors"
