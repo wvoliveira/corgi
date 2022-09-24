@@ -115,7 +115,7 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 
 	identity := entity.Identity{}
 	// check if user exists in database.
-	err = s.db.Debug().Model(entity.Identity{}).Where("provider = ? AND UID = ?", "google", googleUser.ID).First(&identity).Error
+	err = s.db.Model(entity.Identity{}).Where("provider = ? AND UID = ?", "google", googleUser.ID).First(&identity).Error
 	if err == gorm.ErrRecordNotFound {
 		identity := entity.Identity{}
 		user := entity.User{}
@@ -136,7 +136,7 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		user.Active = &t
 		user.Identities = append(user.Identities, identity)
 
-		err = s.db.Debug().Model(&entity.User{}).Create(&user).Error
+		err = s.db.Model(&entity.User{}).Create(&user).Error
 		if err != nil {
 			l.Error().Caller().Msg(err.Error())
 			return
@@ -147,7 +147,7 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 
 	// Get user info.
 	if identity.UserID == "" {
-		err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "google", googleUser.ID).First(&identity).Error
+		err = s.db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "google", googleUser.ID).First(&identity).Error
 		if err != nil {
 			l.Error().Caller().Msg(err.Error())
 			return
@@ -155,7 +155,7 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 	}
 
 	user := entity.User{}
-	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
+	err = s.db.Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return tokenAccess, tokenRefresh, err
 	} else if err != nil {
@@ -173,7 +173,7 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 	}
 
 	tokenRefresh.UserID = identity.UserID
-	err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error
+	err = s.db.Model(&entity.Token{}).Create(&tokenRefresh).Error
 	if err != nil {
 		return
 	}

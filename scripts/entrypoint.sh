@@ -12,7 +12,7 @@ if [[ -z ${APP_DSN} ]]; then
   export APP_DSN=`sed -n 's/^dsn:[[:space:]]*"\(.*\)"/\1/p' ${CONFIG_FILE}`
 fi
 
-echo "[`date`] Running DB migrations..."
+echo "[`date`] Running DB migrationdb.Debug()."
 migrate -database "${APP_DSN}" -path ./migrations up
 
 echo "[`date`] Starting server..."

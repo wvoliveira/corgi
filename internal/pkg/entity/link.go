@@ -1,9 +1,10 @@
 package entity
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"time"
 )
 
 // Link represents a link record.
@@ -21,7 +22,7 @@ type Link struct {
 	UserID string `json:"-" gorm:"index"`
 }
 
-// LinkLog model to store redirections logs.
+// LinkLog model to store redirects logs.
 type LinkLog struct {
 	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
 	CreatedAt time.Time `json:"created_at"`
@@ -58,9 +59,4 @@ func (l *Link) BeforeUpdate(tx *gorm.DB) (err error) {
 func (l *LinkLog) BeforeCreate(tx *gorm.DB) (err error) {
 	l.ID = uuid.New().String()
 	return
-}
-
-// GetID returns the Link ID.
-func (l Link) GetID() string {
-	return l.ID
 }

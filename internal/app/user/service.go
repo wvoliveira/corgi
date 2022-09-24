@@ -45,7 +45,7 @@ func (s service) Find(ctx context.Context, userID string) (user entity.User, err
 	}
 
 	user.ID = userID
-	err = s.db.Debug().
+	err = s.db.
 		Model(&user).
 		Preload("Identities").
 		Find(&user).Error

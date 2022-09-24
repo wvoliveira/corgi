@@ -102,16 +102,16 @@ func (s service) HealthAuth(ctx context.Context, providers []string) (hs []entit
 func (s service) HealthDatabase(ctx context.Context) (h entity.Health) {
 	h = entity.Health{
 		Required:    true,
-		Status:      "OK",
-		Component:   "Database",
-		Description: "Integrity check is OK",
+		Status:      "ok",
+		Component:   "database",
+		Description: "integrity check is ok",
 	}
 
 	// You can mock a error with below one or create one yourself.
 	// err := errors.New("database is locked. Call your admin hero")
 	err := s.db.Exec("PRAGMA integrity_check").Error
 	if err != nil {
-		h.Status = "Fail"
+		h.Status = "error"
 		h.Description = fmt.Sprintf("Integrity check return error: %s", err.Error())
 	}
 	return
@@ -124,7 +124,7 @@ func (s service) healthAuthentication(ctx context.Context, provider string) (h e
 	// The default config is disabled social authentication
 	h = entity.Health{
 		Required:    false,
-		Status:      "Disabled",
+		Status:      "disabled",
 		Component:   component,
 		Description: fmt.Sprintf("%s config is not proper configured", component),
 	}
@@ -146,17 +146,17 @@ func (s service) healthAuthentication(ctx context.Context, provider string) (h e
 
 	resp, err := http.Head(endpoint)
 	if err != nil {
-		h.Status = "Failed"
+		h.Status = "error"
 		h.Description = err.Error()
 		return
 	}
 
 	// Facebook oauth endpoint returns 500, but this not means that unavailable.
 	if resp.StatusCode >= 501 && resp.StatusCode <= 599 {
-		h.Status = "Failed"
-		h.Description = fmt.Sprintf("Status code from endpoint: %d", resp.StatusCode)
+		h.Status = "error"
+		h.Description = fmt.Sprintf("status code from endpoint: %d", resp.StatusCode)
 	} else {
-		h.Status = "OK"
+		h.Status = "ok"
 		h.Description = fmt.Sprintf("%s is OK", component)
 	}
 	return

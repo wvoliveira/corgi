@@ -40,7 +40,7 @@ func NewService(db *gorm.DB, secret string, tokenExpiration int, store *sessions
 func (s service) Refresh(ctx context.Context, payload entity.Token) (tokenAccess, tokenRefresh entity.Token, err error) {
 	l := logger.Logger(ctx)
 
-	if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).First(&tokenRefresh).Error; err != nil {
+	if err = s.db.Model(&entity.Token{}).Where("id = ?", payload.ID).First(&tokenRefresh).Error; err != nil {
 		l.Warn().Caller().Msg(err.Error())
 		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	}
@@ -74,11 +74,11 @@ func (s service) Refresh(ctx context.Context, payload entity.Token) (tokenAccess
 	}
 
 	if genRefresh {
-		if err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error; err != nil {
+		if err = s.db.Model(&entity.Token{}).Create(&tokenRefresh).Error; err != nil {
 			l.Error().Caller().Msg(err.Error())
 			return tokenAccess, tokenRefresh, errors.New("error to create refresh token")
 		}
-		if err = s.db.Debug().Model(&entity.Token{}).Where("id = ?", payload.ID).Delete(&payload).Error; err != nil {
+		if err = s.db.Model(&entity.Token{}).Where("id = ?", payload.ID).Delete(&payload).Error; err != nil {
 			l.Error().Caller().Msg(err.Error())
 			return tokenAccess, tokenRefresh, errors.New("error to delete refresh token from database")
 		}

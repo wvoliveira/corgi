@@ -17,7 +17,7 @@ type Service interface {
 	Start()
 	Stop()
 
-	RemoveTokens(ctx context.Context)
+	RemoveTokens()
 }
 
 type service struct {
@@ -35,12 +35,13 @@ func NewService(db *gorm.DB, cfg config.Config) Service {
 func (s service) Start() {
 	l := logger.Logger(context.TODO())
 
-	err := s.cronn.AddFunc("@every 30m", func() { s.RemoveTokens(context.TODO()) })
+	err := s.cronn.AddFunc("@every 30m", func() { s.RemoveTokens() })
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
 	}
 
 	s.cronn.Start()
+	l.Info().Caller().Msg("jobs started")
 }
 
 func (s service) Stop() {
@@ -48,12 +49,19 @@ func (s service) Stop() {
 }
 
 // RemoveTokens remove expired tokens from database.
-func (s service) RemoveTokens(_ context.Context) {
+func (s service) RemoveTokens() {
+	l := logger.Logger(context.TODO())
+
 	tokens := []entity.Token{}
 	now := time.Now()
 
-	err := s.db.Where("? > expires_in", now).Delete(&tokens).Error
+	stat := s.db.Where("? > expires_in", now).Delete(&tokens)
+	count := stat.RowsAffected
+	err := stat.Error
+
 	if err != nil {
-		fmt.Println("Error: ", err.Error())
+		l.Error().Caller().Msg(err.Error())
 	}
+
+	l.Info().Caller().Msg(fmt.Sprintf("%d expired tokens was removed", count))
 }

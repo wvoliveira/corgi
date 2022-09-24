@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gorilla/mux"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
@@ -33,15 +32,10 @@ type findAllRequest struct {
 }
 
 type updateRequest struct {
-	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Domain    string    `json:"domain"`
-	Keyword   string    `json:"keyword"`
-	URL       string    `json:"url"`
-	Title     string    `json:"title"`
-	Active    string    `json:"active"`
-	UserID    string    `json:"user_id"`
+	ID     string `json:"id"`
+	URL    string `json:"url"`
+	Title  string `json:"title"`
+	Active string `json:"active"`
 }
 
 type deleteRequest struct {
@@ -134,29 +128,29 @@ func decodeFindAll(r *http.Request) (req findAllRequest, err error) {
 	return req, nil
 }
 
-func decodeUpdate(r *http.Request) (req updateRequest, err error) {
+func decodeUpdate(r *http.Request) (req updateRequest, userID string, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
 	data := ctx.Value(entity.IdentityInfo{})
 	if data == nil {
-		return req, errors.New("impossible to get identity from context")
+		return req, userID, errors.New("impossible to get identity from context")
 	}
 
 	ii := data.(entity.IdentityInfo)
+	userID = ii.UserID
 
 	linkID := vars["id"]
 	if linkID == "" {
-		return req, errors.New("impossible to get link id")
+		return req, userID, errors.New("impossible to get link id")
 	}
 
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return req, err
+		return req, userID, err
 	}
 
 	req.ID = linkID
-	req.UserID = ii.UserID
-	return req, nil
+	return req, userID, nil
 }
 
 func decodeDelete(r *http.Request) (req deleteRequest, err error) {

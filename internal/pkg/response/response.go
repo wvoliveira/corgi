@@ -18,7 +18,7 @@ func Default(w http.ResponseWriter, data interface{}, message string, status int
 
 	statusText := "successful"
 	if status >= 500 && status <= 599 {
-		statusText = "failed"
+		statusText = "error"
 	}
 
 	_ = json.NewEncoder(w).Encode(Response{

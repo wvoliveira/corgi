@@ -83,20 +83,18 @@ func (s service) HTTPFindAll(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s service) HTTPUpdate(w http.ResponseWriter, r *http.Request) {
-	dr, err := decodeUpdate(r)
+	dr, userID, err := decodeUpdate(r)
 	if err != nil {
 		e.EncodeError(w, err)
 		return
 	}
 
 	link, err := s.Update(r.Context(), entity.Link{
-		ID:      dr.ID,
-		Domain:  dr.Domain,
-		Keyword: dr.Keyword,
-		URL:     dr.URL,
-		Title:   dr.Title,
-		Active:  dr.Active,
-		UserID:  dr.UserID,
+		ID:     dr.ID,
+		URL:    dr.URL,
+		Title:  dr.Title,
+		Active: dr.Active,
+		UserID: userID,
 	})
 	if err != nil {
 		e.EncodeError(w, err)

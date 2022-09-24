@@ -39,7 +39,7 @@ func (s service) Logout(ctx context.Context, token entity.Token) (err error) {
 		return e.ErrUnauthorized
 	}
 
-	err = s.db.Debug().Model(&entity.Token{}).Where("id = ? AND user_id = ?", token.ID, token.UserID).Delete(&token).Error
+	err = s.db.Model(&entity.Token{}).Where("id = ? AND user_id = ?", token.ID, token.UserID).Delete(&token).Error
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
 		return

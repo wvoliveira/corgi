@@ -20,7 +20,6 @@ import (
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
@@ -166,18 +165,20 @@ func (s service) Update(ctx context.Context, link entity.Link) (li entity.Link, 
 func (s service) Delete(ctx context.Context, linkID, userID string) (err error) {
 	l := logger.Logger(ctx)
 
-	err = s.db.Debug().
+	stat := s.db.
 		Model(&entity.Link{}).
-		Clauses(clause.Returning{}).
 		Where("id = ? AND user_id = ?", linkID, userID).
-		Delete(&entity.Link{ID: linkID, UserID: userID}).Error
+		Delete(&entity.Link{ID: linkID, UserID: userID})
 
-	if err == gorm.ErrRecordNotFound {
-		l.Info().Caller().Msg("link not found")
+	err = stat.Error
+	count := stat.RowsAffected
+
+	if err == gorm.ErrRecordNotFound || count == 0 {
 		return e.ErrLinkNotFound
 	} else if err == nil {
 		return
 	}
+
 	l.Error().Caller().Msg(err.Error())
 	return
 }

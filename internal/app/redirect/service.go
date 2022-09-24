@@ -52,7 +52,7 @@ func (s service) Find(ctx context.Context, domain, keyword string) (li entity.Li
 func (s service) Log(ctx context.Context, payload entity.LinkLog) (err error) {
 	l := logger.Logger(ctx)
 
-	err = s.db.Debug().Model(&entity.LinkLog{}).Create(&payload).Error
+	err = s.db.Model(&entity.LinkLog{}).Create(&payload).Error
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
 		return
