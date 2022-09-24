@@ -20,9 +20,14 @@ import (
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
 	Health(ctx context.Context) ([]entity.Health, error)
+	HealthDatabase(ctx context.Context) (h entity.Health)
+	HealthAuth(ctx context.Context, providers []string) ([]entity.Health, error)
 
 	NewHTTP(r *mux.Router)
 	HTTPHealth(w http.ResponseWriter, r *http.Request)
+	HTTPHealthAuth(w http.ResponseWriter, r *http.Request)
+	HTTPHealthAuthProvider(w http.ResponseWriter, r *http.Request)
+	HTTPHealthLive(w http.ResponseWriter, r *http.Request)
 }
 
 type service struct {
@@ -36,17 +41,17 @@ func NewService(db *gorm.DB, cfg config.Config, version string) Service {
 	return service{db, cfg, version}
 }
 
-// Health make a healt check for system dependencies
+// Health make a health check for system dependencies
 // like database, social network authentication, etc.
 func (s service) Health(ctx context.Context) (hs []entity.Health, err error) {
+	// Increase async group and check a dependence.
+	// It's useful for non-blocking healthcheck.
 	var wg sync.WaitGroup
 
-	// Increase async group and check a dependencie.
-	// It's useful for non-blocking healthcheck.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		hs = append(hs, s.healthDatabase(ctx))
+		hs = append(hs, s.HealthDatabase(ctx))
 	}()
 
 	// Checking Google authentication.
@@ -67,7 +72,34 @@ func (s service) Health(ctx context.Context) (hs []entity.Health, err error) {
 	return
 }
 
-func (s service) healthDatabase(ctx context.Context) (h entity.Health) {
+// HealthAuth make a health check for auth dependencies.
+// like Google auth, Facebook auth or another social network.
+func (s service) HealthAuth(ctx context.Context, providers []string) (hs []entity.Health, err error) {
+	// Increase async group and check a dependence.
+	// It's useful for non-blocking healthcheck.
+	var wg sync.WaitGroup
+
+	if len(providers) == 0 {
+		providers = []string{"google", "facebook"}
+	}
+
+	for index := range providers {
+		wg.Add(1)
+
+		// God knows what this means
+		// and today I too, but who knows in some days.
+		go func(provider string) {
+			defer wg.Done()
+			hs = append(hs, s.healthAuthentication(ctx, provider))
+		}(providers[index])
+
+	}
+
+	wg.Wait()
+	return
+}
+
+func (s service) HealthDatabase(ctx context.Context) (h entity.Health) {
 	h = entity.Health{
 		Required:    true,
 		Status:      "OK",
