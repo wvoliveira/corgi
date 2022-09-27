@@ -25,7 +25,7 @@ func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	group := entity.Group{Name: payload.Name, Description: payload.Description}
+	group := entity.Group{Name: payload.Name, DisplayName: payload.DisplayName, Description: payload.Description}
 
 	group, err = s.Add(r.Context(), group, userID)
 	if err != nil {
@@ -33,7 +33,19 @@ func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	response.Default(w, group, "", http.StatusOK)
+	var userIDs []string
+	for _, user := range group.Users {
+		userIDs = append(userIDs, user.ID)
+	}
+
+	resp := addResponse{
+		Name:        group.Name,
+		DisplayName: group.DisplayName,
+		Description: group.Description,
+		UserIDs:     userIDs,
+	}
+
+	response.Default(w, resp, "", http.StatusOK)
 }
 
 func (s service) HTTPList(w http.ResponseWriter, r *http.Request) {

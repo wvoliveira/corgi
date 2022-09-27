@@ -45,7 +45,5 @@ func (s service) HTTPLogout(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &cookieRefresh)
 	http.SetCookie(w, &cookieLogged)
 
-	// Encode object to answer request (response).
-	sr := logoutResponse{Err: err}
-	response.Default(w, sr, "", http.StatusOK)
+	response.Default(w, nil, "", http.StatusOK)
 }

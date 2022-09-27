@@ -90,7 +90,7 @@ func codeFrom(err error) int {
 		return http.StatusNotFound
 
 	case ErrInconsistentIDs, ErrUserDeleteYourSelf, ErrLinkAlreadyExists, ErrAlreadyExists,
-		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists:
+		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists, ErrGroupAlreadyExists:
 		return http.StatusBadRequest
 
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:

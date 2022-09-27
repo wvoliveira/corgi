@@ -16,6 +16,10 @@ func Default(w http.ResponseWriter, data interface{}, message string, status int
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 
+	if data == nil {
+		return
+	}
+
 	statusText := "successful"
 	if status >= 500 && status <= 599 {
 		statusText = "error"

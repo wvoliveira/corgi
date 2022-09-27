@@ -59,3 +59,13 @@ func PrintRoutes(rs []*mux.Router) {
 func AddContextInfo(ctx context.Context, key interface{}, value string) context.Context {
 	return context.WithValue(ctx, key, value)
 }
+
+// Contains check if contain a specific item in a list.
+func Contains(list []string, item string) bool {
+	for _, a := range list {
+		if a == item {
+			return true
+		}
+	}
+	return false
+}

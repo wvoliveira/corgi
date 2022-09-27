@@ -48,7 +48,7 @@ func NewService(db *gorm.DB, secret string, store *sessions.CookieStore) Service
 func (s service) Add(ctx context.Context, link entity.Link) (li entity.Link, err error) {
 	l := logger.Logger(ctx)
 
-	if err = checkLink(link); err != nil {
+	if err = checkLink(ctx, link); err != nil {
 		return
 	}
 

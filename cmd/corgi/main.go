@@ -62,6 +62,7 @@ func main() {
 	if err := db.AutoMigrate(
 		&entity.User{},
 		&entity.Identity{},
+		&entity.Group{},
 		&entity.Link{},
 		&entity.Token{},
 	); err != nil {

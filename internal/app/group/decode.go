@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
@@ -12,6 +13,7 @@ import (
 
 type addRequest struct {
 	Name        string   `json:"name"`
+	DisplayName string   `json:"display_name"`
 	Description string   `json:"description"`
 	UserIDs     []string `json:"user_Ids"`
 }
@@ -24,7 +26,7 @@ type listRequest struct {
 	UserID string `json:"-"`
 }
 
-func decodeAdd(r *http.Request) (request addRequest, userID string, err error) {
+func decodeAdd(r *http.Request) (payload addRequest, userID string, err error) {
 	ctx := r.Context()
 
 	data := ctx.Value(entity.IdentityInfo{})
@@ -33,13 +35,13 @@ func decodeAdd(r *http.Request) (request addRequest, userID string, err error) {
 		return
 	}
 
-	if err = json.NewDecoder(r.Body).Decode(&request); err != nil {
+	if err = json.NewDecoder(r.Body).Decode(&payload); err != nil {
 		return
 	}
 
-	// Group name is required. Without this, an error must happens.
-	if request.Name == "" {
-		err = errors.New("you must pass group name")
+	payload.Name = strings.ToLower(payload.Name)
+	err = checkName(payload.Name)
+	if err != nil {
 		return
 	}
 
@@ -68,7 +70,7 @@ func decodeList(r *http.Request) (request listRequest, err error) {
 		page = 1
 	}
 	if sort == "" {
-		sort = "ID desc"
+		sort = "name ASC"
 	}
 
 	switch {

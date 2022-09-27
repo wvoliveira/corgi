@@ -43,7 +43,10 @@ func (s service) Add(ctx context.Context, requestGroup entity.Group, userID stri
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		group = requestGroup
-		err = s.db.Model(&entity.Group{}).Create(&group).Error
+		group.CreatedBy = userID
+		group.Users = append(group.Users, entity.User{ID: userID})
+
+		err = s.db.Create(&group).Save(&group).Error
 		if err == nil {
 			l.Info().Caller().Msg("group created with successfully")
 		}
@@ -60,21 +63,45 @@ func (s service) Add(ctx context.Context, requestGroup entity.Group, userID stri
 
 func (s service) List(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []entity.Group, err error) {
 	l := logger.Logger(ctx)
+	pages = 1
 
-	err = s.db.Model(&entity.Group{}).Where("user_id = ?", userID).
-		Count(&total).
-		Offset(offset).
-		Limit(limit).
-		Order(sort).
-		Find(&groups).Error
+	// TODO: make a single transaction to get total and list of items.
+	// For some reason it's a bit complex to make join with gorm
+	// or my brain is not ready for this.
+	queryTotal := `SELECT COUNT()
+		FROM groups 
+		JOIN user_groups 
+			ON user_groups.group_id = groups.id 
+			AND user_groups.user_id = ?
+	`
+	err = s.db.Raw(queryTotal, userID).Scan(&total).Error
+	if err == gorm.ErrRecordNotFound {
+		return
+	}
 
-	if err == gorm.ErrRecordNotFound || err == nil {
-		l.Info().Caller().Msg("groups empty")
+	if err != nil {
+		l.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	queryItems := fmt.Sprintf(`SELECT groups.* 
+		FROM groups 
+		JOIN user_groups 
+			ON user_groups.group_id = groups.id 
+			AND user_groups.user_id = ?
+		ORDER BY %s
+		LIMIT ? OFFSET ?
+	`, sort)
+	err = s.db.Raw(queryItems, userID, limit, offset).Scan(&groups).Error
+	if err == gorm.ErrRecordNotFound {
+		return
+	}
+
+	if err != nil {
+		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
 	pages = int(math.Ceil(float64(total) / float64(limit)))
-
-	l.Error().Caller().Msg(err.Error())
 	return
 }
