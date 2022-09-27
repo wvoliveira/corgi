@@ -16,6 +16,7 @@ func (s service) NewHTTP(r *mux.Router) {
 
 	rr.HandleFunc("", s.HTTPAdd).Methods("POST")
 	rr.HandleFunc("", s.HTTPList).Methods("GET")
+	rr.HandleFunc("/{id}", s.HTTPFindByID).Methods("GET")
 }
 
 func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {
@@ -71,4 +72,20 @@ func (s service) HTTPList(w http.ResponseWriter, r *http.Request) {
 	}
 
 	response.Default(w, resp, "", http.StatusOK)
+}
+
+func (s service) HTTPFindByID(w http.ResponseWriter, r *http.Request) {
+	payload, err := decodeFindByID(r)
+	if err != nil {
+		e.EncodeError(w, err)
+		return
+	}
+
+	group, err := s.FindByID(r.Context(), payload.ID, payload.UserID)
+	if err != nil {
+		e.EncodeError(w, err)
+		return
+	}
+
+	response.Default(w, group, "", http.StatusOK)
 }

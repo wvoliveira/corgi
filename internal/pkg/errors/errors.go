@@ -54,6 +54,7 @@ var (
 
 	// ErrGroupAlreadyExists error when user try to create a group with a existent group name.
 	ErrGroupAlreadyExists = errors.New("group with this name already exists. Choose another one")
+	ErrGroupNotFound      = errors.New("group with this ID was not found")
 )
 
 type response struct {
@@ -86,7 +87,7 @@ func EncodeError(w http.ResponseWriter, err error) {
 
 func codeFrom(err error) int {
 	switch err {
-	case ErrNotFound, ErrLinkNotFound:
+	case ErrNotFound, ErrLinkNotFound, ErrGroupNotFound:
 		return http.StatusNotFound
 
 	case ErrInconsistentIDs, ErrUserDeleteYourSelf, ErrLinkAlreadyExists, ErrAlreadyExists,

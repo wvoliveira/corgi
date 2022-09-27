@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/gorilla/mux"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 )
@@ -23,6 +24,11 @@ type listRequest struct {
 	Sort   string `json:"sort"`
 	Offset int    `json:"offset"`
 	Limit  int    `json:"limit"`
+	UserID string `json:"-"`
+}
+
+type findByIDRequest struct {
+	ID     string `json:"id"`
 	UserID string `json:"-"`
 }
 
@@ -87,4 +93,25 @@ func decodeList(r *http.Request) (request listRequest, err error) {
 	request.Offset = offset
 	request.UserID = ii.UserID
 	return
+}
+
+func decodeFindByID(r *http.Request) (req findByIDRequest, err error) {
+	ctx := r.Context()
+	vars := mux.Vars(r)
+
+	data := ctx.Value(entity.IdentityInfo{})
+	if data == nil {
+		return req, errors.New("impossible to get identity from context")
+	}
+
+	identity := data.(entity.IdentityInfo)
+
+	GroupID := vars["id"]
+	if GroupID == "" {
+		return req, errors.New("impossible to get group id")
+	}
+
+	req.ID = GroupID
+	req.UserID = identity.UserID
+	return req, nil
 }

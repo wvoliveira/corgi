@@ -18,6 +18,7 @@ import (
 type Service interface {
 	Add(ctx context.Context, requestGroup entity.Group, userID string) (group entity.Group, err error)
 	List(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []entity.Group, err error)
+	FindByID(ctx context.Context, groupID, userID string) (group entity.Group, err error)
 
 	NewHTTP(r *mux.Router)
 	HTTPAdd(w http.ResponseWriter, r *http.Request)
@@ -103,5 +104,50 @@ func (s service) List(ctx context.Context, offset, limit int, sort, userID strin
 	}
 
 	pages = int(math.Ceil(float64(total) / float64(limit)))
+	return
+}
+
+// FindByID get a group details filtering with group ID.
+func (s service) FindByID(ctx context.Context, groupID, userID string) (group entity.Group, err error) {
+	l := logger.Logger(ctx)
+
+	query := `SELECT groups.*
+		FROM groups 
+		JOIN user_groups 
+			ON user_groups.group_id = groups.id 
+			AND user_groups.user_id = ?
+		WHERE groups.id = ?
+	`
+	err = s.db.Raw(query, userID, groupID).Scan(&group).Error
+
+	if err == gorm.ErrRecordNotFound || group.ID == "" {
+		return group, e.ErrGroupNotFound
+	}
+
+	if err != nil {
+		l.Error().Caller().Msg(err.Error())
+	}
+
+	users := []entity.User{}
+	queryUsers := `SELECT users.*
+		FROM users 
+		JOIN user_groups 
+			ON user_groups.user_id = users.id 
+		JOIN groups
+			ON groups.id = user_groups.group_id 
+		AND groups.id = ?
+	`
+	err = s.db.Raw(queryUsers, groupID).Scan(&users).Error
+
+	if err == gorm.ErrRecordNotFound {
+		l.Warn().Caller().Msg(err.Error())
+		return group, e.ErrGroupNotFound
+	}
+
+	if err != nil {
+		l.Error().Caller().Msg(err.Error())
+	}
+
+	group.Users = users
 	return
 }
