@@ -48,13 +48,18 @@ var (
 //go:embed all:web
 var nextFS embed.FS
 
-func main() {
+func init() {
 	flag.BoolVar(&flagDebug, "debug", false, "Enable DEBUG mode")
 	flag.StringVar(&flagConfig, "config", "~/.corgi/corgi.yaml", "Path of config file")
 	flag.Parse()
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	if flagDebug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	}
+}
 
+func main() {
 	cfg := config.NewConfig(flagConfig)
 	db := database.NewSQLDatabase()
 
@@ -176,7 +181,7 @@ func main() {
 	serviceCron := job.NewService(db, cfg)
 	serviceCron.Start()
 
-	// Help func to get endpoints.
+	// Show all endpoints and their own methods.
 	if flagDebug {
 		util.PrintRoutes([]*mux.Router{rootRouter, apiRouter})
 	}
