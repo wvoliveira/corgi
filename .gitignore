@@ -1,6 +1,13 @@
 .DS_Store
 .idea
+.vscode
+
+# Frontend export
 cmd/corgi/web/*
 !cmd/corgi/web/.keep
+
+# Binaries
 corgi
+
+# Frontend
 web/package-lock.json
