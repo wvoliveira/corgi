@@ -20,8 +20,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// NewSQLDatabase create a gorm database object.
-func NewSQLDatabase() (db *gorm.DB) {
+// New create a gorm database object.
+func New() (db *gorm.DB) {
 	newLogger := logger.New(
 		&log.Logger,
 		logger.Config{

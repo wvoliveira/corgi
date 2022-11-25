@@ -31,6 +31,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
+	"github.com/wvoliveira/corgi/internal/pkg/cache"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
@@ -61,7 +62,8 @@ func init() {
 
 func main() {
 	cfg := config.NewConfig(flagConfig)
-	db := database.NewSQLDatabase()
+	db := database.New()
+	cache := cache.New()
 
 	// Seed first users. Most admins.
 	if err := db.AutoMigrate(
@@ -111,7 +113,7 @@ func main() {
 
 	{
 		// Auth password service.
-		service := password.NewService(db, cfg.SecretKey, 30, store)
+		service := password.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 

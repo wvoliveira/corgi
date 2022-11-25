@@ -28,7 +28,7 @@ func (s service) HTTPLogin(w http.ResponseWriter, r *http.Request) {
 	identity := entity.Identity{Provider: "email", UID: dr.Email, Password: dr.Password}
 
 	// Business logic.
-	tokenAccess, tokenRefresh, err := s.Login(r.Context(), identity)
+	session, err := s.Login(r.Context(), identity)
 	if err != nil {
 		e.EncodeError(w, err)
 		return
@@ -36,9 +36,9 @@ func (s service) HTTPLogin(w http.ResponseWriter, r *http.Request) {
 
 	cookieAccess := http.Cookie{
 		Name:    "access_token",
-		Value:   tokenAccess.Token,
+		Value:   session.TokenAccess,
 		Path:    "/",
-		Expires: tokenAccess.ExpiresIn,
+		Expires: session.ExpiresIn,
 		// RawExpires
 		Secure:   false,
 		HttpOnly: false,
@@ -46,9 +46,9 @@ func (s service) HTTPLogin(w http.ResponseWriter, r *http.Request) {
 
 	cookieRefresh := http.Cookie{
 		Name:    "refresh_token_id",
-		Value:   tokenRefresh.ID,
+		Value:   session.TokenRefresh,
 		Path:    "/",
-		Expires: tokenRefresh.ExpiresIn,
+		Expires: session.ExpiresIn,
 		// RawExpires
 		Secure:   false,
 		HttpOnly: false,
