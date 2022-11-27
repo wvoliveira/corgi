@@ -3,88 +3,73 @@ package password
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/rs/zerolog/log"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/v1/auth/password").Subrouter()
-	rr.Use(middleware.Checks)
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/auth/password")
+	// r.Use(middleware.Checks)
 
-	rr.HandleFunc("/login", s.HTTPLogin).Methods("POST")
-	rr.HandleFunc("/register", s.HTTPRegister).Methods("POST")
+	r.POST("/login", s.HTTPLogin())
+	r.POST("/register", s.HTTPRegister())
 }
 
-func (s service) HTTPLogin(w http.ResponseWriter, r *http.Request) {
-	// Decode request to request object.
-	dr, err := decodeLoginRequest(r)
-	if err != nil {
-		e.EncodeError(w, err)
-		return
+func (s service) HTTPLogin() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		dr, err := decodeLogin(c)
+		if err != nil {
+			e.EncodeError(c, err)
+			return
+		}
+
+		identity := entity.Identity{
+			Provider: "email",
+			UID:      dr.Email,
+			Password: dr.Password,
+		}
+
+		tokenAccess, tokenRefresh, err := s.Login(c, identity)
+		if err != nil {
+			e.EncodeError(c, err)
+			return
+		}
+
+		// TODOS:
+		// - change token model to create access and refresh token only
+		// - use options to set Domain and MaxAge. Ex.:
+		//	 https://github.com/gin-contrib/sessions/blob/master/session_options_go1.10.go
+		session := sessions.Default(c)
+		session.Set("token_access", tokenAccess.Token)
+		session.Set("token_refresh", tokenRefresh.ID)
+
+		c.String(http.StatusOK, "")
 	}
-	identity := entity.Identity{Provider: "email", UID: dr.Email, Password: dr.Password}
-
-	// Business logic.
-	tokenAccess, tokenRefresh, err := s.Login(r.Context(), identity)
-	if err != nil {
-		e.EncodeError(w, err)
-		return
-	}
-
-	cookieAccess := http.Cookie{
-		Name:    "access_token",
-		Value:   tokenAccess.Token,
-		Path:    "/",
-		Expires: tokenAccess.ExpiresIn,
-		// RawExpires
-		Secure:   false,
-		HttpOnly: false,
-	}
-
-	cookieRefresh := http.Cookie{
-		Name:    "refresh_token_id",
-		Value:   tokenRefresh.ID,
-		Path:    "/",
-		Expires: tokenRefresh.ExpiresIn,
-		// RawExpires
-		Secure:   false,
-		HttpOnly: false,
-	}
-
-	http.SetCookie(w, &cookieAccess)
-	http.SetCookie(w, &cookieRefresh)
-
-	w.WriteHeader(200)
 }
 
-func (s service) HTTPRegister(w http.ResponseWriter, r *http.Request) {
-	// Decode request and create a object with it.
-	dr, err := decodeRegisterRequest(r)
-	if err != nil {
-		log.Error().Caller().Msg(err.Error())
-		e.EncodeError(w, err)
-		return
-	}
+func (s service) HTTPRegister() gin.HandlerFunc {
+	return func(c *gin.Context) {
 
-	// Business logic.
-	err = s.Register(r.Context(), entity.Identity{
-		Provider: "email",
-		UID:      dr.Email,
-		Password: dr.Password,
-	})
-	if err != nil {
-		e.EncodeError(w, err)
-		return
-	}
+		dr, err := decodeRegister(c)
+		if err != nil {
+			e.EncodeError(c, err)
+			return
+		}
 
-	// Encode response to send to final-user.
-	err = encodeRegister(w)
-	if err != nil {
-		log.Error().Caller().Msg(err.Error())
-		e.EncodeError(w, err)
-		return
+		err = s.Register(c, entity.Identity{
+			Provider: "email",
+			UID:      dr.Email,
+			Password: dr.Password,
+		})
+
+		if err != nil {
+			e.EncodeError(c, err)
+			return
+		}
+
+		encodeRegister(c)
 	}
 }

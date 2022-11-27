@@ -2,8 +2,8 @@ package auth
 
 import (
 	"errors"
-	"net/http"
 
+	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 )
 
@@ -11,10 +11,9 @@ type logoutRequest struct {
 	Token entity.Token
 }
 
-func decodeLogout(r *http.Request) (req logoutRequest, err error) {
-	ctx := r.Context()
-
-	data := ctx.Value(entity.IdentityInfo{})
+func decodeLogout(c *gin.Context) (req logoutRequest, err error) {
+	// TODO: check this c.Value(...)
+	data := c.Value(entity.IdentityInfo{})
 	if data == nil {
 		return req, errors.New("impossible to get identity from context")
 	}

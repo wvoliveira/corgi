@@ -2,58 +2,54 @@ package main
 
 import (
 	"context"
-	"embed"
 	"flag"
 	"fmt"
-	"io/fs"
 	"net/http"
 	"os"
 	"os/signal"
-	"strings"
 	"syscall"
 	"time"
 
-	_ "net/http/pprof"
+	"github.com/gin-contrib/pprof"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/wvoliveira/corgi/internal/app/auth"
-	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
-	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
-	"github.com/wvoliveira/corgi/internal/app/auth/token"
-	"github.com/wvoliveira/corgi/internal/app/health"
-	"github.com/wvoliveira/corgi/internal/app/info"
 	"github.com/wvoliveira/corgi/internal/app/jobs"
-	"github.com/wvoliveira/corgi/internal/app/link"
-	"github.com/wvoliveira/corgi/internal/app/redirect"
-	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
-	"github.com/wvoliveira/corgi/internal/pkg/middleware"
-	"github.com/wvoliveira/corgi/internal/pkg/util"
 )
 
 var (
-	version = "0.0.1"
+	version       = "0.0.1"
+	sessionSecret = "CHANGE_FOR_SOMETHING_MORE_SECURITY"
 
 	flagDebug  bool
 	flagConfig string
 )
 
-//go:embed all:web
-var nextFS embed.FS
-
-func main() {
+func init() {
 	flag.BoolVar(&flagDebug, "debug", false, "Enable DEBUG mode")
 	flag.StringVar(&flagConfig, "config", "~/.corgi/corgi.yaml", "Path of config file")
 	flag.Parse()
 
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
+	if flagDebug {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else {
+		gin.SetMode(gin.ReleaseMode)
+	}
+}
 
+// //go:embed all:web
+// var nextFS embed.FS
+
+func main() {
 	cfg := config.NewConfig(flagConfig)
 	db := database.NewSQLDatabase()
 
@@ -70,108 +66,110 @@ func main() {
 
 	database.SeedUsers(db, cfg)
 
-	router := mux.NewRouter().SkipClean(false)
-	router.Use(middleware.Access)
+	// Create a root router and attach session.
+	// I think its a good idea because we can manager user access with cookie based.
+	router := gin.Default()
+	store := cookie.NewStore([]byte(sessionSecret))
+	router.Use(sessions.Sessions("user", store))
 
-	rootRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
-	apiRouter := router.PathPrefix("/api").Subrouter().StrictSlash(true)
-	webRouter := router.MatcherFunc(func(req *http.Request, match *mux.RouteMatch) bool {
-		// Serve local web routes when either:
-		// - The request is for theses URIs:
-		// - / and /_next
-		return (req.URL.Path == "/" || strings.HasPrefix(req.URL.Path, "/_next"))
-	}).Subrouter().StrictSlash(true)
+	// rootRouter := router.Group("/")
+	apiRouter := router.Group("/api")
 
-	// Profiling runtime.
+	// rootRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
+	// apiRouter := router.PathPrefix("/api").Subrouter().StrictSlash(true)
+	// webRouter := router.MatcherFunc(func(req *http.Request, match *mux.RouteMatch) bool {
+	// 	// Serve local web routes when either:
+	// 	// - The request is for theses URIs:
+	// 	// - / and /_next
+	// 	return (req.URL.Path == "/" || strings.HasPrefix(req.URL.Path, "/_next"))
+	// }).Subrouter().StrictSlash(true)
+
 	if flagDebug {
-		router.PathPrefix("/debug/pprof").Handler(http.DefaultServeMux)
+		pprof.Register(router)
 	}
-
-	// Start sessions.
-	store := sessions.NewCookieStore([]byte(cfg.SecretKey))
 
 	{
 		// Auth service: logout and check.
-		service := auth.NewService(db, cfg.SecretKey, store)
+		service := auth.NewService(db)
 		service.NewHTTP(apiRouter)
 	}
 
-	{
-		// Token refresh route.
-		service := token.NewService(db, cfg.SecretKey, 30, store)
-		service.NewHTTP(apiRouter)
-	}
+	// {
+	// 	// Token refresh route.
+	// 	service := token.NewService(db, cfg.SecretKey, 30, store)
+	// 	service.NewHTTP(apiRouter)
+	// }
 
 	{
 		// Auth password service.
-		service := password.NewService(db, cfg.SecretKey, 30, store)
+		service := password.NewService(db)
 		service.NewHTTP(apiRouter)
 	}
 
-	{
-		// Auth with Google provider.
-		service := google.NewService(db, cfg, store)
-		service.NewHTTP(apiRouter)
-	}
+	// {
+	// 	// Auth with Google provider.
+	// 	service := google.NewService(db, cfg, store)
+	// 	service.NewHTTP(apiRouter)
+	// }
 
-	{
-		// Auth with Facebook provider.
-		service := facebook.NewService(db, cfg, store)
-		service.NewHTTP(apiRouter)
-	}
+	// {
+	// 	// Auth with Facebook provider.
+	// 	service := facebook.NewService(db, cfg, store)
+	// 	service.NewHTTP(apiRouter)
+	// }
 
-	{
-		// Central business service: manage link shortener.
-		service := link.NewService(db, cfg.SecretKey, store)
-		service.NewHTTP(apiRouter)
-	}
+	// {
+	// 	// Central business service: manage link shortener.
+	// 	service := link.NewService(db, cfg.SecretKey, store)
+	// 	service.NewHTTP(apiRouter)
+	// }
 
-	{
-		// User service. Like profile view and edit.
-		service := user.NewService(db, cfg.SecretKey, store)
-		service.NewHTTP(apiRouter)
-	}
+	// {
+	// 	// User service. Like profile view and edit.
+	// 	service := user.NewService(db, cfg.SecretKey, store)
+	// 	service.NewHTTP(apiRouter)
+	// }
 
-	{
-		// Healthcheck endpoints.
-		service := health.NewService(db, cfg, version)
-		service.NewHTTP(rootRouter)
-	}
+	// {
+	// 	// Healthcheck endpoints.
+	// 	service := health.NewService(db, cfg, version)
+	// 	service.NewHTTP(rootRouter)
+	// }
 
-	{
-		// Info endpoint.
-		service := info.NewService(db, cfg, version)
-		service.NewHTTP(rootRouter)
-	}
+	// {
+	// 	// Info endpoint.
+	// 	service := info.NewService(db, cfg, version)
+	// 	service.NewHTTP(rootRouter)
+	// }
 
-	{
-		// Central business service: redirect short link.
-		// Note: this service is on root router.
-		service := redirect.NewService(db, store)
-		service.NewHTTP(rootRouter)
-	}
+	// {
+	// 	// Central business service: redirect short link.
+	// 	// Note: this service is on root router.
+	// 	service := redirect.NewService(db, store)
+	// 	service.NewHTTP(rootRouter)
+	// }
 
-	{
-		// Start web application. User interface.
-		// Embedded UI.
-		distFS, err := fs.Sub(nextFS, "web")
-		if err != nil {
-			log.Fatal().Caller().Msg(err.Error())
-			os.Exit(2)
-		}
+	// {
+	// 	// Start web application. User interface.
+	// 	// Embedded UI.
+	// 	distFS, err := fs.Sub(nextFS, "web")
+	// 	if err != nil {
+	// 		log.Fatal().Caller().Msg(err.Error())
+	// 		os.Exit(2)
+	// 	}
 
-		webHandler := http.FileServer(http.FS(distFS))
-		webRouter.PathPrefix("").Handler(webHandler)
-	}
+	// 	webHandler := http.FileServer(http.FS(distFS))
+	// 	webRouter.PathPrefix("").Handler(webHandler)
+	// }
 
 	// Start cronjobs.
 	serviceCron := jobs.NewService(db, cfg)
 	serviceCron.Start()
 
 	// Help func to get endpoints.
-	if flagDebug {
-		util.PrintRoutes([]*mux.Router{rootRouter, apiRouter})
-	}
+	// if flagDebug {
+	// 	util.PrintRoutes([]*mux.Router{rootRouter, apiRouter})
+	// }
 
 	srv := &http.Server{
 		Addr:         ":" + cfg.Server.HTTPPort,

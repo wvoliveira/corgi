@@ -1,11 +1,7 @@
 package auth
 
 import (
-	"context"
-	"net/http"
-
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
@@ -14,26 +10,24 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Logout(ctx context.Context, token entity.Token) error
+	Logout(c *gin.Context, token entity.Token) error
 
-	NewHTTP(r *mux.Router)
-	HTTPLogout(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPLogout() gin.HandlerFunc
 }
 
 type service struct {
-	db     *gorm.DB
-	secret string
-	store  *sessions.CookieStore
+	db *gorm.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, secret string, store *sessions.CookieStore) Service {
-	return service{db, secret, store}
+func NewService(db *gorm.DB) Service {
+	return service{db}
 }
 
 // Logout remove cookie and refresh token from database.
-func (s service) Logout(ctx context.Context, token entity.Token) (err error) {
-	l := logger.Logger(ctx)
+func (s service) Logout(c *gin.Context, token entity.Token) (err error) {
+	l := logger.Logger(c.Request.Context())
 
 	if token.UserID == "anonymous" {
 		return e.ErrUnauthorized

@@ -1,15 +1,12 @@
 package password
 
 import (
-	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/jwt"
@@ -20,30 +17,27 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(ctx context.Context, identity entity.Identity) (entity.Token, entity.Token, error)
-	Register(ctx context.Context, identity entity.Identity) error
+	Login(*gin.Context, entity.Identity) (entity.Token, entity.Token, error)
+	Register(*gin.Context, entity.Identity) error
 
-	NewHTTP(r *mux.Router)
-	HTTPLogin(w http.ResponseWriter, r *http.Request)
-	HTTPRegister(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPLogin() gin.HandlerFunc
+	HTTPRegister() gin.HandlerFunc
 }
 
 type service struct {
-	db              *gorm.DB
-	secret          string
-	tokenExpiration int
-	store           *sessions.CookieStore
+	db *gorm.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, secret string, tokenExpiration int, store *sessions.CookieStore) Service {
-	return service{db, secret, tokenExpiration, store}
+func NewService(db *gorm.DB) Service {
+	return service{db}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAccess, tokenRefresh entity.Token, err error) {
-	l := logger.Logger(ctx)
+func (s service) Login(c *gin.Context, identity entity.Identity) (tokenAccess, tokenRefresh entity.Token, err error) {
+	l := logger.Logger(c.Request.Context())
 
 	identityDB := entity.Identity{}
 	err = s.db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
@@ -57,7 +51,6 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAcce
 		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	}
 
-	// Get user info.
 	user := entity.User{}
 	err = s.db.Model(&entity.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
 	if err != nil {
@@ -86,7 +79,7 @@ func (s service) Login(ctx context.Context, identity entity.Identity) (tokenAcce
 }
 
 // Register a new user to our database.
-func (s service) Register(ctx context.Context, identity entity.Identity) (err error) {
+func (s service) Register(c *gin.Context, identity entity.Identity) (err error) {
 	l := logger.Logger(ctx)
 
 	user := entity.User{}
