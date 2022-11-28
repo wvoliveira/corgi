@@ -51,7 +51,7 @@ func (s service) Find(c *gin.Context, userID string) (user entity.User, err erro
 		Find(&user).Error
 
 	if err == gorm.ErrRecordNotFound {
-		log.Info().Caller().Msg(fmt.Sprintf("the user with user_id '%s' was not found", userID))
+		log.Info().Caller().Msg(fmt.Sprintf("the user with user_id \"%s\" was not found", userID))
 		return user, e.ErrUserNotFound
 	}
 

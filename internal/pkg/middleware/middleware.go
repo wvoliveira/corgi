@@ -96,13 +96,14 @@ func Auth() gin.HandlerFunc {
 
 			session.Set("user", user)
 			session.Save()
+
+			c.Next()
+			return
 		}
 
-		if v != nil {
-			err := json.Unmarshal(v.([]byte), &user)
-			if err != nil {
-				log.Error().Caller().Msg(err.Error())
-			}
+		err := json.Unmarshal(v.([]byte), &user)
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
 		}
 
 		c.Next()

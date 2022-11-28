@@ -16,20 +16,6 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 
 	r.POST("/login", s.HTTPLogin)
 	r.POST("/register", s.HTTPRegister)
-
-	r.GET("/incr", func(c *gin.Context) {
-		session := sessions.Default(c)
-		var user string
-
-		v := session.Get("user")
-		if v == nil {
-			fmt.Println("VAZIOOO")
-		} else {
-			user = v.(string)
-		}
-
-		c.JSON(200, gin.H{"user": user})
-	})
 }
 
 func (s service) HTTPLogin(c *gin.Context) {

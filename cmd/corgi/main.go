@@ -74,7 +74,11 @@ func main() {
 	router := gin.Default()
 
 	store := cookie.NewStore([]byte(sessionSecret))
-	store.Options(sessions.Options{MaxAge: 60 * 60 * 24})
+	store.Options(sessions.Options{
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   60 * 60 * 24,
+	})
 
 	router.Use(sessions.Sessions("session", store))
 

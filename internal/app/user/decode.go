@@ -17,10 +17,11 @@ func decodeFind(c *gin.Context) (user entity.User, err error) {
 	fmt.Println(v)
 
 	if v == nil {
-		return user, errors.New("impossible to get user from context")
+		return user, errors.New("impossible to get user from session")
 	}
 
-	return v.(entity.User), nil
+	err = json.Unmarshal([]byte(v.(string)), &user)
+	return
 }
 
 func decodeUpdate(c *gin.Context) (user entity.User, err error) {
