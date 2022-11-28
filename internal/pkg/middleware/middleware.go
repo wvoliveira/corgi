@@ -3,19 +3,19 @@ package middleware
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
 	"time"
 
-	"github.com/casbin/casbin/v2"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/sessions"
 	"github.com/rs/zerolog/log"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/jwt"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/request"
 )
@@ -81,138 +81,47 @@ func Access(next http.Handler) http.Handler {
 }
 
 // Auth check if auth ok and set claims in request header.
-func Auth(secret string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			l := logger.Logger(r.Context())
+func Auth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		user := entity.User{}
 
-			// In this app, we can create link without authentication.
-			// So, in some routes we can forward without user_id.
-			// But only for period of time, like expiration in database/cache.
-			anonymousAccess := false
+		v := session.Get("user")
 
-			hashToken, err := r.Cookie("access_token")
-			if err == http.ErrNoCookie || hashToken.Value == "" {
-				anonymousAccess = true
+		fmt.Println(v)
+
+		if v == nil {
+			user.ID = "anonymous"
+			user.Name = "Anonymous"
+
+			session.Set("user", user)
+			session.Save()
+		}
+
+		if v != nil {
+			err := json.Unmarshal(v.([]byte), &user)
+			if err != nil {
+				log.Error().Caller().Msg(err.Error())
 			}
+		}
 
-			ii := entity.IdentityInfo{}
-
-			if !anonymousAccess {
-				// validate ID token here
-				claims, err := jwt.ValidateToken(hashToken.Value, secret)
-
-				if err != nil {
-					l.Warn().Caller().Msg(fmt.Sprintf("the token is invalid: %s", err.Error()))
-					e.EncodeError(w, e.ErrTokenInvalid)
-					return
-				}
-
-				tokenRefreshID, err := r.Cookie("refresh_token_id")
-				if err != nil {
-					l.Warn().Caller().Msg(fmt.Sprintf("error to get refresh_token_id from cookie: %s", err.Error()))
-					e.EncodeError(w, e.ErrTokenInvalid)
-					return
-				}
-
-				ii = entity.IdentityInfo{
-					ID:             claims["identity_id"].(string),
-					Provider:       claims["identity_provider"].(string),
-					UID:            claims["identity_uid"].(string),
-					UserID:         claims["user_id"].(string),
-					UserRole:       claims["user_role"].(string),
-					RefreshTokenID: tokenRefreshID.Value,
-				}
-			}
-
-			if anonymousAccess {
-				ii = entity.IdentityInfo{
-					UserID: "anonymous",
-				}
-			}
-
-			ctx := r.Context()
-			ctx = context.WithValue(ctx, entity.IdentityInfo{}, ii)
-			r = r.WithContext(ctx)
-
-			next.ServeHTTP(w, r)
-		})
+		c.Next()
 	}
 }
 
 // Checks returns a middleware that verify some points before business logic.
-func Checks(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == "POST" || r.Method == "PATCH" {
-			if r.Body == http.NoBody {
+func Checks() gin.HandlerFunc {
+	return func(c *gin.Context) {
+
+		if c.Request.Method == "POST" || c.Request.Method == "PATCH" {
+
+			if c.Request.Body == http.NoBody {
 				log.Warn().Caller().Msg("Empty body in POST or PATCH request")
-				e.EncodeError(w, e.ErrRequestNeedBody)
+				e.EncodeError(c, e.ErrRequestNeedBody)
 				return
 			}
 		}
-		next.ServeHTTP(w, r)
-	})
-}
 
-// Authorizer check if user role has access to resource.
-func Authorizer(en *casbin.Enforcer) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			ctx := r.Context()
-
-			var (
-				role string
-				ii   = entity.IdentityInfo{}
-			)
-
-			anyy := ctx.Value(ii)
-			if anyy != nil {
-				ii := anyy.(entity.IdentityInfo)
-				role = ii.UserRole
-			}
-
-			if role == "" {
-				role = "anonymous"
-			}
-
-			// casbin rule enforcing
-			ok, err := en.Enforce(role, r.URL.Path, r.Method)
-			if err != nil {
-				log.Error().Caller().Msg(err.Error())
-				e.EncodeError(w, err)
-				return
-			}
-
-			if ok {
-				next.ServeHTTP(w, r)
-			} else {
-				e.EncodeError(w, e.ErrUnauthorized)
-				return
-			}
-		})
-	}
-}
-
-// SesssionRedirect check if user already clicked in shortener link.
-func SesssionRedirect(store *sessions.CookieStore, sessionName string) func(http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			session, _ := store.Get(r, sessionName)
-
-			next.ServeHTTP(w, r)
-
-			if r.Response.StatusCode == 404 {
-				return
-			}
-
-			if data := session.Values[r.URL.Path]; data == nil {
-				session.Values[r.URL.Path] = true
-				err := session.Save(r, w)
-				if err != nil {
-					http.Error(w, err.Error(), http.StatusInternalServerError)
-					return
-				}
-			}
-		})
+		c.Next()
 	}
 }

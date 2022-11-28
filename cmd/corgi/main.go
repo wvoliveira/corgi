@@ -20,6 +20,8 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/jobs"
+	"github.com/wvoliveira/corgi/internal/app/user"
+	"github.com/wvoliveira/corgi/internal/pkg/cache"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
@@ -51,7 +53,8 @@ func init() {
 
 func main() {
 	cfg := config.NewConfig(flagConfig)
-	db := database.NewSQLDatabase()
+	db := database.New()
+	cache := cache.New()
 
 	// Seed first users. Most admins.
 	if err := db.AutoMigrate(
@@ -69,8 +72,11 @@ func main() {
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
 	router := gin.Default()
+
 	store := cookie.NewStore([]byte(sessionSecret))
-	router.Use(sessions.Sessions("user", store))
+	store.Options(sessions.Options{MaxAge: 60 * 60 * 24})
+
+	router.Use(sessions.Sessions("session", store))
 
 	// rootRouter := router.Group("/")
 	apiRouter := router.Group("/api")
@@ -94,15 +100,15 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	// {
-	// 	// Token refresh route.
-	// 	service := token.NewService(db, cfg.SecretKey, 30, store)
-	// 	service.NewHTTP(apiRouter)
-	// }
-
 	{
 		// Auth password service.
-		service := password.NewService(db)
+		service := password.NewService(db, cache)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// User service. Like profile view and edit.
+		service := user.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -121,12 +127,6 @@ func main() {
 	// {
 	// 	// Central business service: manage link shortener.
 	// 	service := link.NewService(db, cfg.SecretKey, store)
-	// 	service.NewHTTP(apiRouter)
-	// }
-
-	// {
-	// 	// User service. Like profile view and edit.
-	// 	service := user.NewService(db, cfg.SecretKey, store)
 	// 	service.NewHTTP(apiRouter)
 	// }
 

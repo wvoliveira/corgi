@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/jwt"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -17,86 +17,77 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(*gin.Context, entity.Identity) (entity.Token, entity.Token, error)
+	Login(*gin.Context, entity.Identity) (entity.User, error)
 	Register(*gin.Context, entity.Identity) error
 
 	NewHTTP(*gin.RouterGroup)
-	HTTPLogin() gin.HandlerFunc
-	HTTPRegister() gin.HandlerFunc
+	HTTPLogin(c *gin.Context)
+	HTTPRegister(c *gin.Context)
 }
 
 type service struct {
-	db *gorm.DB
+	// TODO: still use cache or remove?
+	db    *gorm.DB
+	cache *badger.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB) Service {
-	return service{db}
+func NewService(db *gorm.DB, cache *badger.DB) Service {
+	return service{db, cache}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
-// Otherwise, an error is returned.
-func (s service) Login(c *gin.Context, identity entity.Identity) (tokenAccess, tokenRefresh entity.Token, err error) {
-	l := logger.Logger(c.Request.Context())
+func (s service) Login(c *gin.Context, identity entity.Identity) (user entity.User, err error) {
+	var (
+		log        = logger.Logger(c.Request.Context())
+		identityDB = entity.Identity{}
+	)
 
-	identityDB := entity.Identity{}
-	err = s.db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", identity.Provider, identity.UID).First(&identityDB).Error
+	err = s.db.Model(&entity.Identity{}).
+		Where("provider = ? AND uid = ?", identity.Provider, identity.UID).
+		First(&identityDB).Error
+
 	if err != nil {
-		l.Warn().Caller().Msg(err.Error())
-		return tokenAccess, tokenRefresh, e.ErrUnauthorized
+		log.Warn().Caller().Msg(err.Error())
+		return user, e.ErrUnauthorized
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(identityDB.Password), []byte(identity.Password)); err != nil {
-		l.Info().Caller().Msg("authentication failed")
-		return tokenAccess, tokenRefresh, e.ErrUnauthorized
+		log.Info().Caller().Msg("authentication failed")
+		return user, e.ErrUnauthorized
 	}
 
-	user := entity.User{}
 	err = s.db.Model(&entity.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return tokenAccess, tokenRefresh, err
+		log.Error().Caller().Msg(err.Error())
+		return user, err
 	}
 
-	tokenAccess, err = jwt.GenerateAccessToken(s.secret, identityDB, user)
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
-	}
-
-	tokenRefresh, err = jwt.GenerateRefreshToken(s.secret, identityDB, user)
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
-	}
-
-	tokenRefresh.UserID = identityDB.UserID
-	err = s.db.Model(&entity.Token{}).Create(&tokenRefresh).Error
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-	}
 	return
 }
 
 // Register a new user to our database.
 func (s service) Register(c *gin.Context, identity entity.Identity) (err error) {
-	l := logger.Logger(ctx)
-
-	user := entity.User{}
-	identityDB := entity.Identity{}
+	var (
+		log        = logger.Logger(c.Request.Context())
+		user       = entity.User{}
+		identityDB = entity.Identity{}
+	)
 
 	err = s.db.Model(&entity.Identity{}).
 		Where("provider = ? AND uid = ?", identity.Provider, identity.UID).
 		First(&identityDB).Error
 
 	if err == nil {
-		l.Warn().Caller().Msg(fmt.Sprintf("provider '%s' and uid '%s' already exists", identity.Provider, identity.UID))
+		log.Warn().Caller().Msg(fmt.Sprintf("provider '%s' and uid '%s' already exists", identity.Provider, identity.UID))
 		return e.ErrAlreadyExists
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(identity.Password), 8)
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
+		log.Error().Caller().Msg(err.Error())
 		return e.ErrInternalServerError
 	}
 
@@ -104,16 +95,19 @@ func (s service) Register(c *gin.Context, identity entity.Identity) (err error) 
 	identity.CreatedAt = time.Now()
 	identity.Password = string(hashedPassword)
 
-	t := true
+	active := true
 	user.ID = uuid.New().String()
 	user.CreatedAt = time.Now()
 	user.Role = "user"
-	user.Active = &t
+	user.Active = &active
 	user.Identities = append(user.Identities, identity)
 
 	err = s.db.Model(&entity.User{}).Create(&user).Error
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
+		log.Error().Caller().Msg(err.Error())
+		return errors.New("error to create a user: " + err.Error())
 	}
+
 	return
 }

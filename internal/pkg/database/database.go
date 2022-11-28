@@ -20,8 +20,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// NewSQLDatabase create a gorm database object.
-func NewSQLDatabase() (db *gorm.DB) {
+// New create a gorm database object.
+func New() (db *gorm.DB) {
 	newLogger := logger.New(
 		&log.Logger,
 		logger.Config{
@@ -33,8 +33,7 @@ func NewSQLDatabase() (db *gorm.DB) {
 	)
 	cfg := gorm.Config{Logger: newLogger}
 
-	// Create database and cache folder in $HOME/.corgi path.
-	appFolder, err := util.CreateDataFolder(".corgi")
+	appFolder, err := util.GetOrCreateDataFolder()
 	if err != nil {
 		log.Fatal().Caller().Msg(err.Error())
 	}

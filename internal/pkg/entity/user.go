@@ -12,9 +12,9 @@ type User struct {
 	Role   string `json:"role"`
 	Active *bool  `json:"active" gorm:"default:true"`
 
-	Identities []Identity
-	Tokens     []Token
-	Links      []Link
+	Identities []Identity `json:"identities,omitempty"`
+	Tokens     []Token    `json:"tokens,omitempty"`
+	Links      []Link     `json:"links,omitempty"`
 
-	Tags []Tag `gorm:"many2many:user_tags;"`
+	Tags []Tag `gorm:"many2many:user_tags;" json:"tags,omitempty"`
 }
