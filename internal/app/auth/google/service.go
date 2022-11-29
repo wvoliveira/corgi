@@ -1,20 +1,16 @@
 package google
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
-	"github.com/wvoliveira/corgi/internal/pkg/config"
+	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
-	"github.com/wvoliveira/corgi/internal/pkg/jwt"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
@@ -23,41 +19,29 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(ctx context.Context, redirectURL string) (string, error)
-	Callback(ctx context.Context, callbackURL string, r callbackRequest) (entity.Token, entity.Token, error)
+	Login(*gin.Context, string) (string, error)
+	Callback(*gin.Context, string, callbackRequest) (entity.User, error)
 
-	NewHTTP(r *mux.Router)
-	HTTPLogin(w http.ResponseWriter, r *http.Request)
-	HTTPCallback(w http.ResponseWriter, r *http.Request)
-}
-
-// Identity represents an authenticated user identity.
-type Identity interface {
-	// GetID returns the user ID.
-	GetID() string
-	// GetUID returns the e-mail, google id, facebook id, etc.
-	GetUID() string
-	// GetRole returns the role.
-	GetRole() string
+	NewHTTP(*gin.RouterGroup)
+	HTTPLogin(*gin.Context)
+	HTTPCallback(*gin.Context)
 }
 
 type service struct {
-	db    *gorm.DB
-	cfg   config.Config
-	store *sessions.CookieStore
+	db *gorm.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, cfg config.Config, store *sessions.CookieStore) Service {
-	return service{db, cfg, store}
+func NewService(db *gorm.DB) Service {
+	return service{db}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(ctx context.Context, callbackURL string) (redirectURL string, err error) {
+func (s service) Login(_ *gin.Context, callbackURL string) (redirectURL string, err error) {
 	conf := &oauth2.Config{
-		ClientID:     s.cfg.Auth.Google.ClientID,
-		ClientSecret: s.cfg.Auth.Google.ClientSecret,
+		ClientID:     viper.GetString("auth.google.client_id"),
+		ClientSecret: viper.GetString("auth.google.client_secret"),
 		RedirectURL:  callbackURL,
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
@@ -72,12 +56,12 @@ func (s service) Login(ctx context.Context, callbackURL string) (redirectURL str
 	return
 }
 
-func (s service) Callback(ctx context.Context, callbackURL string, r callbackRequest) (tokenAccess, tokenRefresh entity.Token, err error) {
-	l := logger.Logger(ctx)
+func (s service) Callback(c *gin.Context, callbackURL string, r callbackRequest) (user entity.User, err error) {
+	l := logger.Logger(c)
 
 	conf := &oauth2.Config{
-		ClientID:     s.cfg.Auth.Google.ClientID,
-		ClientSecret: s.cfg.Auth.Google.ClientSecret,
+		ClientID:     viper.GetString("auth.google.client_id"),
+		ClientSecret: viper.GetString("auth.google.client_secret"),
 		RedirectURL:  callbackURL,
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
@@ -87,13 +71,15 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		Endpoint: google.Endpoint,
 	}
 
-	oauthToken, err := conf.Exchange(ctx, r.Code)
+	oauthToken, err := conf.Exchange(c, r.Code)
+
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	client := conf.Client(ctx, oauthToken)
+	client := conf.Client(c, oauthToken)
+
 	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(oauthToken.AccessToken))
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
@@ -107,6 +93,7 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 	}
 
 	googleUser := entity.GoogleUserInfo{}
+
 	err = json.Unmarshal(response, &googleUser)
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
@@ -114,11 +101,11 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 	}
 
 	identity := entity.Identity{}
+
 	// check if user exists in database.
 	err = s.db.Debug().Model(entity.Identity{}).Where("provider = ? AND UID = ?", "google", googleUser.ID).First(&identity).Error
 	if err == gorm.ErrRecordNotFound {
 		identity := entity.Identity{}
-		user := entity.User{}
 
 		identity.ID = uuid.New().String()
 		identity.CreatedAt = time.Now()
@@ -128,12 +115,12 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		identity.Verified = &googleUser.VerifiedEmail
 		identity.VerifiedAt = identity.CreatedAt
 
-		t := true
+		active := true
 		user.ID = uuid.New().String()
 		user.CreatedAt = time.Now()
 		user.Name = googleUser.Name
 		user.Role = "user"
-		user.Active = &t
+		user.Active = &active
 		user.Identities = append(user.Identities, identity)
 
 		err = s.db.Debug().Model(&entity.User{}).Create(&user).Error
@@ -141,11 +128,11 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 			l.Error().Caller().Msg(err.Error())
 			return
 		}
+
 	} else if err != nil {
 		l.Error().Caller().Msg(err.Error())
 	}
 
-	// Get user info.
 	if identity.UserID == "" {
 		err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "google", googleUser.ID).First(&identity).Error
 		if err != nil {
@@ -154,28 +141,11 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		}
 	}
 
-	user := entity.User{}
 	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
+
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return tokenAccess, tokenRefresh, err
-	} else if err != nil {
-		return tokenAccess, tokenRefresh, err
+		return user, err
 	}
 
-	tokenAccess, err = jwt.GenerateAccessToken(s.cfg.SecretKey, identity, user)
-	if err != nil {
-		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
-	}
-
-	tokenRefresh, err = jwt.GenerateRefreshToken(s.cfg.SecretKey, identity, user)
-	if err != nil {
-		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
-	}
-
-	tokenRefresh.UserID = identity.UserID
-	err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error
-	if err != nil {
-		return
-	}
 	return
 }

@@ -5,8 +5,9 @@ app:
 
 auth:
   google:
-    client_id:
-    client_secret:
+    client_id: 180551609644-qf392m12gr5p68eor6m2jamvjup42ul7.apps.googleusercontent.com
+    client_secret: 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
+
   facebook:
     client_id:
     client_secret:

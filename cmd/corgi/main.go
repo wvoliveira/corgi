@@ -21,6 +21,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/wvoliveira/corgi/internal/app/auth"
+	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/debug"
 	"github.com/wvoliveira/corgi/internal/app/jobs"
@@ -124,11 +125,11 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	// {
-	// 	// Auth with Google provider.
-	// 	service := google.NewService(db, cfg, store)
-	// 	service.NewHTTP(apiRouter)
-	// }
+	{
+		// Auth with Google provider.
+		service := google.NewService(db)
+		service.NewHTTP(apiRouter)
+	}
 
 	// {
 	// 	// Auth with Facebook provider.
