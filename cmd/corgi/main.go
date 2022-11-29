@@ -22,6 +22,7 @@ import (
 	"github.com/rs/zerolog/log"
 	"github.com/wvoliveira/corgi/internal/app/auth"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
+	"github.com/wvoliveira/corgi/internal/app/debug"
 	"github.com/wvoliveira/corgi/internal/app/jobs"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/cache"
@@ -76,6 +77,7 @@ func main() {
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
 	router := gin.Default()
+	rootRouter := router.Group("/")
 
 	store := cookie.NewStore([]byte(viper.GetString("secret_key")))
 	store.Options(sessions.Options{
@@ -87,7 +89,7 @@ func main() {
 	router.Use(sessions.Sessions("session", store))
 
 	// rootRouter := router.Group("/")
-	apiRouter := router.Group("/api")
+	apiRouter := rootRouter.Group("/api")
 
 	// rootRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
 	// apiRouter := router.PathPrefix("/api").Subrouter().StrictSlash(true)
@@ -100,6 +102,8 @@ func main() {
 
 	if flagDebug {
 		pprof.Register(router)
+		service := debug.NewService()
+		service.NewHTTP(rootRouter)
 	}
 
 	{

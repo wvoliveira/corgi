@@ -1,50 +1,50 @@
 package debug
 
 import (
-	"context"
-	"net/http"
+	"os"
+	"strings"
 
-	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/pkg/config"
-	"gorm.io/gorm"
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Info(ctx context.Context) (info, error)
+	Config() map[string]interface{}
+	Env() map[string]string
 
-	NewHTTP(r *mux.Router)
-	HTTPInfo(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPConfig(*gin.Context)
+	HTTPEnv(*gin.Context)
 }
 
-type service struct {
-	db      *gorm.DB
-	cfg     config.Config
-	version string
+type service struct{}
+
+// NewService creates a new debug "service".
+func NewService() Service {
+	return service{}
 }
 
-type info struct {
-	Version     string     `json:"version"`
-	LogLevel    string     `json:"log_level"`
-	RedirectURL string     `json:"redirect_url"`
-	Server      infoServer `json:"server"`
+// Config get info from config struct.
+func (s service) Config() (info map[string]interface{}) {
+	keys := viper.AllKeys()
+	info = make(map[string]interface{})
+
+	for _, key := range keys {
+		value := viper.Get(key)
+		info[key] = value
+	}
+	return
 }
 
-type infoServer struct {
-	HTTPPort string `json:"http_port"`
-}
+// Env get info from environment variables.
+func (s service) Env() (info map[string]string) {
+	vars := os.Environ()
+	info = make(map[string]string)
 
-// NewService creates a new authentication service.
-func NewService(db *gorm.DB, cfg config.Config, version string) Service {
-	return service{db, cfg, version}
-}
-
-// Health create a new shortener link.
-func (s service) Info(_ context.Context) (i info, err error) {
-	// l := logger.Logger(ctx)
-	i.Version = s.version
-	i.LogLevel = s.cfg.LogLevel
-	i.RedirectURL = s.cfg.RedirectURL
-	i.Server.HTTPPort = s.cfg.Server.HTTPPort
+	for _, v := range vars {
+		values := strings.Split(v, "=")
+		info[values[0]] = values[1]
+	}
 	return
 }
