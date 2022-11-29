@@ -1,8 +1,7 @@
 app:
-  log_level: debug
-  secret_key: 12345f
-  admin_password: 12345
-  user_password: 12345
+  log_level: info
+  secret_key: CHANGE_FOR_SOMETHING_MORE_SECURITY
+  redirect_url: http://127.0.0.1:8081
 
 auth:
   google:

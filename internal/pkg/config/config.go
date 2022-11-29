@@ -1,83 +1,43 @@
 package config
 
 import (
-	"os"
 	"strings"
+
+	"github.com/mitchellh/go-homedir"
+	flag "github.com/spf13/pflag"
 
 	"github.com/rs/zerolog/log"
 
 	"github.com/spf13/viper"
 )
 
-const (
-	secretKey     = "changeme"
-	logLevel      = "info"
-	adminPassword = "12345"
-	userPassword  = "12345"
+// New load the configuration app.
+func New(configFile string) {
+	viper.SetDefault("app.log_level", "info")
+	viper.SetDefault("app.secret_key", "CHANGE_FOR_SOMETHING_MORE_SECURITY")
+	viper.SetDefault("app.redirect_url", "http://127.0.0.1:8081")
 
-	redirectURL = "http://127.0.0.1:8081"
+	viper.SetDefault("server.http_port", 8081)
 
-	serverHTTPPort = "8081"
-)
+	viper.AutomaticEnv()
+	viper.SetEnvPrefix("CORGI")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-// Config a struct for app configuration.
-type Config struct {
-	SecretKey     string `mapstructure:"secret_key"`
-	LogLevel      string `mapstructure:"log_level"`
-	AdminPassword string `mapstructure:"admin_password"`
-	UserPassword  string `mapstructure:"user_password"`
+	viper.SetConfigName("corgi")
+	viper.SetConfigType("yaml")
 
-	RedirectURL string `mapstructure:"redirect_url"`
+	file, err := homedir.Expand(configFile)
 
-	Server struct {
-		HTTPPort string `mapstructure:"http_port"`
+	if err != nil {
+		log.Error().Caller().Msg("error to expand config file: " + err.Error())
+	} else {
+		viper.SetConfigFile(file)
 	}
 
-	Auth struct {
-		Google struct {
-			ClientID     string `mapstructure:"client_id"`
-			ClientSecret string `mapstructure:"client_secret"`
-		}
-		Facebook struct {
-			ClientID     string `mapstructure:"client_id"`
-			ClientSecret string `mapstructure:"client_secret"`
-		}
-	}
-}
-
-// NewConfig load the configuration app.
-func NewConfig(configFile string) (config Config) {
-	conf := viper.New()
-
-	conf.AutomaticEnv()
-	conf.SetEnvPrefix("CORGI")
-	conf.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	conf.SetConfigFile(configFile)
-	conf.SetConfigType("yaml")
-	err := conf.ReadInConfig()
+	err = viper.ReadInConfig()
 	if err != nil {
 		log.Warn().Caller().Msg(err.Error())
 	}
 
-	conf.SetDefault("secret_key", secretKey)
-	conf.SetDefault("log_level", logLevel)
-	conf.SetDefault("admin_password", adminPassword)
-	conf.SetDefault("user_password", userPassword)
-
-	conf.SetDefault("redirect_url", redirectURL)
-
-	conf.SetDefault("server.http_port", serverHTTPPort)
-
-	// workaround because viper does not treat env vars the same as other config
-	for _, key := range conf.AllKeys() {
-		val := conf.Get(key)
-		conf.Set(key, val)
-	}
-
-	if err := conf.Unmarshal(&config); err != nil {
-		log.Fatal().Caller().Msg(err.Error())
-		os.Exit(1)
-	}
-	return
+	viper.BindPFlags(flag.CommandLine)
 }

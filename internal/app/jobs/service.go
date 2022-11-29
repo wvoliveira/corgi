@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/robfig/cron"
-	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"gorm.io/gorm"
@@ -23,13 +22,12 @@ type Service interface {
 type service struct {
 	cronn *cron.Cron
 	db    *gorm.DB
-	cfg   config.Config
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, cfg config.Config) Service {
+func NewService(db *gorm.DB) Service {
 	cronn := cron.New()
-	return service{cronn, db, cfg}
+	return service{cronn, db}
 }
 
 func (s service) Start() {

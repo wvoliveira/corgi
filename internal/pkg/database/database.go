@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	"github.com/wvoliveira/corgi/internal/pkg/util"
 	"gorm.io/gorm/logger"
@@ -48,7 +47,7 @@ func New() (db *gorm.DB) {
 }
 
 // SeedUsers create the first users for system.
-func SeedUsers(db *gorm.DB, c config.Config) {
+func SeedUsers(db *gorm.DB) {
 	t := true
 	users := []entity.User{
 		{
@@ -63,7 +62,7 @@ func SeedUsers(db *gorm.DB, c config.Config) {
 					CreatedAt: time.Now(),
 					Provider:  "email",
 					UID:       "admin@local",
-					Password:  c.AdminPassword,
+					Password:  "12345",
 				},
 			},
 		},
@@ -79,7 +78,7 @@ func SeedUsers(db *gorm.DB, c config.Config) {
 					CreatedAt: time.Now(),
 					Provider:  "email",
 					UID:       "user@local",
-					Password:  c.UserPassword,
+					Password:  "12345",
 				},
 			},
 		},
@@ -88,11 +87,13 @@ func SeedUsers(db *gorm.DB, c config.Config) {
 	for _, user := range users {
 		var count int64
 		db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", user.Identities[0].Provider, user.Identities[0].UID).Count(&count)
+
 		if count > 0 {
 			continue
 		}
 
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Identities[0].Password), 8)
+
 		if err != nil {
 			log.Info().Caller().Msg(err.Error())
 			os.Exit(1)
