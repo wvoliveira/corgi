@@ -3,17 +3,16 @@ package auth
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
-	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"gorm.io/gorm"
 )
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Logout(c *gin.Context, token entity.Token) error
+	Logout(*gin.Context, entity.User) error
 
 	NewHTTP(*gin.RouterGroup)
-	HTTPLogout() gin.HandlerFunc
+	HTTPLogout(c *gin.Context)
 }
 
 type service struct {
@@ -26,17 +25,11 @@ func NewService(db *gorm.DB) Service {
 }
 
 // Logout remove cookie and refresh token from database.
-func (s service) Logout(c *gin.Context, token entity.Token) (err error) {
-	l := logger.Logger(c.Request.Context())
+func (s service) Logout(c *gin.Context, user entity.User) (err error) {
+	log := logger.Logger(c.Request.Context())
 
-	if token.UserID == "anonymous" {
-		return e.ErrUnauthorized
-	}
+	// TODO: make something with user logout session.
+	log.Info().Caller().Msg("user logout but do nothing in backend yet")
 
-	err = s.db.Debug().Model(&entity.Token{}).Where("id = ? AND user_id = ?", token.ID, token.UserID).Delete(&token).Error
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
-	}
 	return
 }

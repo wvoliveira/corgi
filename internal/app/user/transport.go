@@ -6,13 +6,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
 func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r := rg.Group("/user")
 	// rr.Use(middleware.Checks)
-	// r.Use(middleware.Auth())
+	r.Use(middleware.Auth())
 
 	r.GET("/me", s.HTTPFind)
 	r.PATCH("/me", s.HTTPUpdate)
@@ -23,12 +24,14 @@ func (s service) HTTPFind(c *gin.Context) {
 	var identities = []identity{}
 
 	user, err := decodeFind(c)
+
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	user, err = s.Find(c, user.ID)
+
 	if err != nil {
 		e.EncodeError(c, err)
 		return

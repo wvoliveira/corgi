@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/gob"
 	"flag"
 	"fmt"
 	"net/http"
@@ -46,6 +47,8 @@ func init() {
 	} else {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	gob.Register(entity.User{})
 }
 
 // //go:embed all:web

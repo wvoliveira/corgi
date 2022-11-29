@@ -3,8 +3,6 @@ package middleware
 import (
 	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -88,8 +86,6 @@ func Auth() gin.HandlerFunc {
 
 		v := session.Get("user")
 
-		fmt.Println(v)
-
 		if v == nil {
 			user.ID = "anonymous"
 			user.Name = "Anonymous"
@@ -101,10 +97,7 @@ func Auth() gin.HandlerFunc {
 			return
 		}
 
-		err := json.Unmarshal(v.([]byte), &user)
-		if err != nil {
-			log.Error().Caller().Msg(err.Error())
-		}
+		user = v.(entity.User)
 
 		c.Next()
 	}
