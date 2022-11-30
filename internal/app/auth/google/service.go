@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
+	"net/http"
 	"net/url"
 	"time"
 
@@ -19,7 +20,7 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(*gin.Context, string) (string, error)
+	Login(*gin.Context, string, string) (entity.User, string, error)
 	Callback(*gin.Context, string, callbackRequest) (entity.User, error)
 
 	NewHTTP(*gin.RouterGroup)
@@ -38,28 +39,67 @@ func NewService(db *gorm.DB) Service {
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(_ *gin.Context, callbackURL string) (redirectURL string, err error) {
-	conf := &oauth2.Config{
-		ClientID:     viper.GetString("auth.google.client_id"),
-		ClientSecret: viper.GetString("auth.google.client_secret"),
-		RedirectURL:  callbackURL,
-		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
-			"openid",
-		},
-		Endpoint: google.Endpoint,
+func (s service) Login(c *gin.Context, accessToken, callbackURL string) (user entity.User, redirectURL string, err error) {
+	log := logger.Logger(c)
+
+	conf := createOAuth2Config(callbackURL)
+
+	if accessToken == "" {
+		// Redirect user to Google's consent page to ask for permission
+		// for the scopes specified above.
+		redirectURL = conf.AuthCodeURL("state")
+		return
 	}
-	// Redirect user to Google's consent page to ask for permission
-	// for the scopes specified above.
-	redirectURL = conf.AuthCodeURL("state")
+
+	// If access token was sent with URL, just get user info.
+	userGoogle, err := getUserFromGoogle(c, accessToken)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	_, user, err = getOrCreateUser(s.db, userGoogle)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
 	return
 }
 
 func (s service) Callback(c *gin.Context, callbackURL string, r callbackRequest) (user entity.User, err error) {
-	l := logger.Logger(c)
+	log := logger.Logger(c)
 
-	conf := &oauth2.Config{
+	conf := createOAuth2Config(callbackURL)
+
+	oauthToken, err := conf.Exchange(c, r.Code)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	userGoogle, err := getUserFromGoogle(c, oauthToken.AccessToken)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	_, user, err = getOrCreateUser(s.db, userGoogle)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	return
+}
+
+func createOAuth2Config(callbackURL string) (conf *oauth2.Config) {
+	conf = &oauth2.Config{
 		ClientID:     viper.GetString("auth.google.client_id"),
 		ClientSecret: viper.GetString("auth.google.client_secret"),
 		RedirectURL:  callbackURL,
@@ -70,82 +110,71 @@ func (s service) Callback(c *gin.Context, callbackURL string, r callbackRequest)
 		},
 		Endpoint: google.Endpoint,
 	}
+	return
+}
 
-	oauthToken, err := conf.Exchange(c, r.Code)
+func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle entity.UserGoogle, err error) {
+
+	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(accessToken))
 
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	client := conf.Client(c, oauthToken)
-
-	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(oauthToken.AccessToken))
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
+	if resp.StatusCode != 200 {
+		return userGoogle, errors.New("error to get info from Google")
 	}
 
 	response, err := ioutil.ReadAll(resp.Body)
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	googleUser := entity.GoogleUserInfo{}
+	err = json.Unmarshal(response, &userGoogle)
+	return
+}
 
-	err = json.Unmarshal(response, &googleUser)
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
-	}
+func getOrCreateUser(db *gorm.DB, userGoogle entity.UserGoogle) (identity entity.Identity, user entity.User, err error) {
 
-	identity := entity.Identity{}
+	err = db.Debug().Model(entity.Identity{}).Where("provider = ? AND UID = ?", "google", userGoogle.ID).First(&identity).Error
 
-	// check if user exists in database.
-	err = s.db.Debug().Model(entity.Identity{}).Where("provider = ? AND UID = ?", "google", googleUser.ID).First(&identity).Error
 	if err == gorm.ErrRecordNotFound {
-		identity := entity.Identity{}
 
 		identity.ID = uuid.New().String()
 		identity.CreatedAt = time.Now()
 		identity.LastLogin = identity.CreatedAt
 		identity.Provider = "google"
-		identity.UID = googleUser.ID
-		identity.Verified = &googleUser.VerifiedEmail
+		identity.UID = userGoogle.ID
+		identity.Verified = &userGoogle.VerifiedEmail
 		identity.VerifiedAt = identity.CreatedAt
 
 		active := true
 		user.ID = uuid.New().String()
 		user.CreatedAt = time.Now()
-		user.Name = googleUser.Name
+		user.Name = userGoogle.Name
 		user.Role = "user"
 		user.Active = &active
 		user.Identities = append(user.Identities, identity)
 
-		err = s.db.Debug().Model(&entity.User{}).Create(&user).Error
-		if err != nil {
-			l.Error().Caller().Msg(err.Error())
-			return
-		}
+		err = db.Debug().Model(&entity.User{}).Create(&user).Error
+		return
 
-	} else if err != nil {
-		l.Error().Caller().Msg(err.Error())
+	}
+
+	if err != nil {
+		return
 	}
 
 	if identity.UserID == "" {
-		err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "google", googleUser.ID).First(&identity).Error
+		err = db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "google", userGoogle.ID).First(&identity).Error
+
 		if err != nil {
-			l.Error().Caller().Msg(err.Error())
 			return
 		}
 	}
 
-	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
-
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return user, err
-	}
+	err = db.Debug().Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
 
 	return
 }

@@ -20,6 +20,9 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 
 func (s service) HTTPLogin(c *gin.Context) {
 
+	// Remove this and set in decode function
+	accessToken, _ := c.GetQuery("access_token")
+
 	schema := "http"
 	if c.Request.TLS != nil {
 		schema = "https"
@@ -28,19 +31,31 @@ func (s service) HTTPLogin(c *gin.Context) {
 	// Ex.: http://localhost:8081/api/auth/google/callback
 	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/api/auth/google/callback")
 
-	redirectURL, err := s.Login(c, callbackURL)
+	user, redirectURL, err := s.Login(c, accessToken, callbackURL)
 
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	if err != nil {
-		e.EncodeError(c, err)
-	}
+	if user.ID != "" {
+		session := sessions.Default(c)
+		session.Set("user", user)
 
-	fmt.Println("Callback URL:", callbackURL)
-	fmt.Println("Redirect URL:", redirectURL)
+		err = session.Save()
+
+		if err != nil {
+			e.EncodeError(c, err)
+			return
+		}
+
+		c.JSON(200, response.Response{
+			Status: "successful",
+			Data:   user,
+		})
+
+		return
+	}
 
 	c.Redirect(http.StatusMovedPermanently, redirectURL)
 }

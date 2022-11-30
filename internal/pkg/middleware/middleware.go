@@ -92,12 +92,13 @@ func Auth() gin.HandlerFunc {
 
 			session.Set("user", user)
 			session.Save()
-
-			c.Next()
-			return
 		}
 
-		user = v.(entity.User)
+		if v != nil {
+			user = v.(entity.User)
+			session.Set("user", user)
+			session.Save()
+		}
 
 		c.Next()
 	}

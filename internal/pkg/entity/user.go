@@ -18,3 +18,10 @@ type User struct {
 
 	Tags []Tag `gorm:"many2many:user_tags;" json:"tags,omitempty"`
 }
+
+type UserGoogle struct {
+	ID            string `json:"id"`
+	Name          string `json:"name"`
+	Email         string `json:"email"`
+	VerifiedEmail bool   `json:"verified_email"`
+}

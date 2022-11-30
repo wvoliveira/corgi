@@ -78,7 +78,6 @@ func main() {
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
 	router := gin.Default()
-	rootRouter := router.Group("/")
 
 	store := cookie.NewStore([]byte(viper.GetString("secret_key")))
 	store.Options(sessions.Options{
@@ -89,7 +88,7 @@ func main() {
 
 	router.Use(sessions.Sessions("session", store))
 
-	// rootRouter := router.Group("/")
+	rootRouter := router.Group("/")
 	apiRouter := rootRouter.Group("/api")
 
 	// rootRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
