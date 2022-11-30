@@ -12,9 +12,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/rs/zerolog/log"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/request"
 )
 
@@ -56,8 +56,8 @@ func Access(next http.Handler) http.Handler {
 		// associate request ID and session ID with the request context
 		// so that they can be added to the log messages
 		ctx := r.Context()
-		if v := ctx.Value(entity.CorrelationID{}); v == nil {
-			ctx = context.WithValue(ctx, entity.CorrelationID{}, entity.CorrelationID{ID: uuid.New().String()})
+		if v := ctx.Value(model.CorrelationID{}); v == nil {
+			ctx = context.WithValue(ctx, model.CorrelationID{}, model.CorrelationID{ID: uuid.New().String()})
 		}
 
 		r = r.WithContext(ctx)
@@ -82,7 +82,7 @@ func Access(next http.Handler) http.Handler {
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)
-		user := entity.User{}
+		user := model.User{}
 
 		v := session.Get("user")
 
@@ -95,7 +95,7 @@ func Auth() gin.HandlerFunc {
 		}
 
 		if v != nil {
-			user = v.(entity.User)
+			user = v.(model.User)
 			session.Set("user", user)
 			session.Save()
 		}

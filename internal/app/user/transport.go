@@ -4,9 +4,9 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
@@ -63,7 +63,7 @@ func (s service) HTTPUpdate(c *gin.Context) {
 		return
 	}
 
-	user, err = s.Update(c, entity.User{ID: user.ID, Name: user.Name})
+	user, err = s.Update(c, model.User{ID: user.ID, Name: user.Name})
 
 	if err != nil {
 		e.EncodeError(c, err)

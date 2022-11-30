@@ -1,9 +1,10 @@
-package entity
+package model
 
 import (
+	"time"
+
 	"github.com/google/uuid"
 	"gorm.io/gorm"
-	"time"
 )
 
 // Link represents a link record.

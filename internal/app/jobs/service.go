@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/robfig/cron"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"gorm.io/gorm"
 )
 
@@ -47,7 +47,7 @@ func (s service) Stop() {
 
 // RemoveTokens remove expired tokens from database.
 func (s service) RemoveTokens(_ context.Context) {
-	tokens := []entity.Token{}
+	tokens := []model.Token{}
 	now := time.Now()
 
 	err := s.db.Where("? > expires_in", now).Delete(&tokens).Error

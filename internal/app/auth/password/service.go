@@ -8,17 +8,17 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(*gin.Context, entity.Identity) (entity.User, error)
-	Register(*gin.Context, entity.Identity) error
+	Login(*gin.Context, model.Identity) (model.User, error)
+	Register(*gin.Context, model.Identity) error
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPLogin(c *gin.Context)
@@ -37,13 +37,13 @@ func NewService(db *gorm.DB, cache *badger.DB) Service {
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
-func (s service) Login(c *gin.Context, identity entity.Identity) (user entity.User, err error) {
+func (s service) Login(c *gin.Context, identity model.Identity) (user model.User, err error) {
 	var (
 		log        = logger.Logger(c.Request.Context())
-		identityDB = entity.Identity{}
+		identityDB = model.Identity{}
 	)
 
-	err = s.db.Model(&entity.Identity{}).
+	err = s.db.Model(&model.Identity{}).
 		Where("provider = ? AND uid = ?", identity.Provider, identity.UID).
 		First(&identityDB).Error
 
@@ -57,7 +57,7 @@ func (s service) Login(c *gin.Context, identity entity.Identity) (user entity.Us
 		return user, e.ErrUnauthorized
 	}
 
-	err = s.db.Model(&entity.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
+	err = s.db.Model(&model.User{}).Where("id = ?", identityDB.UserID).First(&user).Error
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
@@ -68,14 +68,14 @@ func (s service) Login(c *gin.Context, identity entity.Identity) (user entity.Us
 }
 
 // Register a new user to our database.
-func (s service) Register(c *gin.Context, identity entity.Identity) (err error) {
+func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
 	var (
 		log        = logger.Logger(c.Request.Context())
-		user       = entity.User{}
-		identityDB = entity.Identity{}
+		user       = model.User{}
+		identityDB = model.Identity{}
 	)
 
-	err = s.db.Model(&entity.Identity{}).
+	err = s.db.Model(&model.Identity{}).
 		Where("provider = ? AND uid = ?", identity.Provider, identity.UID).
 		First(&identityDB).Error
 
@@ -102,7 +102,7 @@ func (s service) Register(c *gin.Context, identity entity.Identity) (err error) 
 	user.Active = &active
 	user.Identities = append(user.Identities, identity)
 
-	err = s.db.Model(&entity.User{}).Create(&user).Error
+	err = s.db.Model(&model.User{}).Create(&user).Error
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())

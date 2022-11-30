@@ -3,8 +3,8 @@ package password
 import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
@@ -24,7 +24,7 @@ func (s service) HTTPLogin(c *gin.Context) {
 		return
 	}
 
-	identity := entity.Identity{
+	identity := model.Identity{
 		Provider: "email",
 		UID:      dr.Email,
 		Password: dr.Password,
@@ -68,7 +68,7 @@ func (s service) HTTPRegister(c *gin.Context) {
 		return
 	}
 
-	err = s.Register(c, entity.Identity{
+	err = s.Register(c, model.Identity{
 		Provider: "email",
 		UID:      dr.Email,
 		Password: dr.Password,

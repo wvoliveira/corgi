@@ -11,8 +11,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"gorm.io/gorm"
@@ -20,8 +20,8 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(*gin.Context, string, string) (entity.User, string, error)
-	Callback(*gin.Context, string, callbackRequest) (entity.User, error)
+	Login(*gin.Context, string, string) (model.User, string, error)
+	Callback(*gin.Context, string, callbackRequest) (model.User, error)
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPLogin(*gin.Context)
@@ -39,7 +39,7 @@ func NewService(db *gorm.DB) Service {
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(c *gin.Context, accessToken, callbackURL string) (user entity.User, redirectURL string, err error) {
+func (s service) Login(c *gin.Context, accessToken, callbackURL string) (user model.User, redirectURL string, err error) {
 	log := logger.Logger(c)
 
 	conf := createOAuth2Config(callbackURL)
@@ -69,7 +69,7 @@ func (s service) Login(c *gin.Context, accessToken, callbackURL string) (user en
 	return
 }
 
-func (s service) Callback(c *gin.Context, callbackURL string, r callbackRequest) (user entity.User, err error) {
+func (s service) Callback(c *gin.Context, callbackURL string, r callbackRequest) (user model.User, err error) {
 	log := logger.Logger(c)
 
 	conf := createOAuth2Config(callbackURL)
@@ -113,7 +113,7 @@ func createOAuth2Config(callbackURL string) (conf *oauth2.Config) {
 	return
 }
 
-func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle entity.UserGoogle, err error) {
+func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle model.UserGoogle, err error) {
 
 	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(accessToken))
 
@@ -135,9 +135,9 @@ func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle entity.Us
 	return
 }
 
-func getOrCreateUser(db *gorm.DB, userGoogle entity.UserGoogle) (identity entity.Identity, user entity.User, err error) {
+func getOrCreateUser(db *gorm.DB, userGoogle model.UserGoogle) (identity model.Identity, user model.User, err error) {
 
-	err = db.Debug().Model(entity.Identity{}).Where("provider = ? AND UID = ?", "google", userGoogle.ID).First(&identity).Error
+	err = db.Debug().Model(model.Identity{}).Where("provider = ? AND UID = ?", "google", userGoogle.ID).First(&identity).Error
 
 	if err == gorm.ErrRecordNotFound {
 
@@ -157,7 +157,7 @@ func getOrCreateUser(db *gorm.DB, userGoogle entity.UserGoogle) (identity entity
 		user.Active = &active
 		user.Identities = append(user.Identities, identity)
 
-		err = db.Debug().Model(&entity.User{}).Create(&user).Error
+		err = db.Debug().Model(&model.User{}).Create(&user).Error
 		return
 
 	}
@@ -167,14 +167,14 @@ func getOrCreateUser(db *gorm.DB, userGoogle entity.UserGoogle) (identity entity
 	}
 
 	if identity.UserID == "" {
-		err = db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "google", userGoogle.ID).First(&identity).Error
+		err = db.Debug().Model(&model.Identity{}).Where("provider = ? AND uid = ?", "google", userGoogle.ID).First(&identity).Error
 
 		if err != nil {
 			return
 		}
 	}
 
-	err = db.Debug().Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
+	err = db.Debug().Model(&model.User{}).Where("id = ?", identity.UserID).First(&user).Error
 
 	return
 }

@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
@@ -31,7 +30,7 @@ func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	link, err := s.Add(r.Context(), entity.Link{Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, UserID: dr.UserID})
+	link, err := s.Add(r.Context(), model.Link{Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, UserID: dr.UserID})
 	if err != nil {
 		e.EncodeError(w, err)
 		return
@@ -89,7 +88,7 @@ func (s service) HTTPUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	link, err := s.Update(r.Context(), entity.Link{
+	link, err := s.Update(r.Context(), model.Link{
 		ID:      dr.ID,
 		Domain:  dr.Domain,
 		Keyword: dr.Keyword,

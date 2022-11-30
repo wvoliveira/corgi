@@ -6,8 +6,8 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
 // ValidToken verify if token is a valid one.
@@ -32,14 +32,14 @@ func ValidToken(secret string, payload string) (claims jwt.MapClaims, valid bool
 }
 
 // UpdateAccessToken generate access and refresh tokens.
-func UpdateAccessToken(secret string, claims jwt.MapClaims) (token entity.Token, err error) {
-	identity := entity.Identity{
+func UpdateAccessToken(secret string, claims jwt.MapClaims) (token model.Token, err error) {
+	identity := model.Identity{
 		ID:       claims["identity_id"].(string),
 		Provider: claims["identity_provider"].(string),
 		UID:      claims["identity_uid"].(string),
 	}
 
-	user := entity.User{
+	user := model.User{
 		ID:   claims["user_id"].(string),
 		Role: claims["user_role"].(string),
 	}
@@ -52,14 +52,14 @@ func UpdateAccessToken(secret string, claims jwt.MapClaims) (token entity.Token,
 }
 
 // UpdateRefreshToken generate refresh token.
-func UpdateRefreshToken(secret string, claims jwt.MapClaims) (token entity.Token, err error) {
-	identity := entity.Identity{
+func UpdateRefreshToken(secret string, claims jwt.MapClaims) (token model.Token, err error) {
+	identity := model.Identity{
 		ID:       claims["identity_id"].(string),
 		Provider: claims["identity_provider"].(string),
 		UID:      claims["identity_uid"].(string),
 	}
 
-	user := entity.User{
+	user := model.User{
 		ID:   claims["user_id"].(string),
 		Role: claims["user_role"].(string),
 	}
@@ -72,7 +72,7 @@ func UpdateRefreshToken(secret string, claims jwt.MapClaims) (token entity.Token
 }
 
 // GenerateAccessToken generate a new JWT token with user info in claims.
-func GenerateAccessToken(secret string, identity entity.Identity, user entity.User) (token entity.Token, err error) {
+func GenerateAccessToken(secret string, identity model.Identity, user model.User) (token model.Token, err error) {
 	accessToken := jwt.New(jwt.SigningMethodHS256)
 
 	// This system not has a security problem. So, the token expires in 2 hours.
@@ -100,7 +100,7 @@ func GenerateAccessToken(secret string, identity entity.Identity, user entity.Us
 }
 
 // GenerateRefreshToken generate a new JWT refresh token and add user info in claims.
-func GenerateRefreshToken(secret string, identity entity.Identity, user entity.User) (token entity.Token, err error) {
+func GenerateRefreshToken(secret string, identity model.Identity, user model.User) (token model.Token, err error) {
 	refreshToken := jwt.New(jwt.SigningMethodHS256)
 	id := uuid.New().String()
 

@@ -6,10 +6,10 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
-func decodeFind(c *gin.Context) (user entity.User, err error) {
+func decodeFind(c *gin.Context) (user model.User, err error) {
 	session := sessions.Default(c)
 	v := session.Get("user")
 
@@ -17,18 +17,18 @@ func decodeFind(c *gin.Context) (user entity.User, err error) {
 		return user, errors.New("impossible to get user from session")
 	}
 
-	user = v.(entity.User)
+	user = v.(model.User)
 	return
 }
 
-func decodeUpdate(c *gin.Context) (user entity.User, err error) {
+func decodeUpdate(c *gin.Context) (user model.User, err error) {
 	data, exists := c.Get("user")
 
 	if !exists {
 		return user, errors.New("impossible to get user from context")
 	}
 
-	user = data.(entity.User)
+	user = data.(model.User)
 
 	if err = json.NewDecoder(c.Request.Body).Decode(&user); err != nil {
 		return user, err

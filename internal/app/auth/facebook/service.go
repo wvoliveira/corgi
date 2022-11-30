@@ -13,9 +13,9 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	"github.com/wvoliveira/corgi/internal/pkg/jwt"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/facebook"
 	"gorm.io/gorm"
@@ -24,14 +24,14 @@ import (
 // Service encapsulates the authentication logic.
 type Service interface {
 	Login(ctx context.Context, redirectURL string) (string, error)
-	Callback(ctx context.Context, callbackURL string, r callbackRequest) (entity.Token, entity.Token, error)
+	Callback(ctx context.Context, callbackURL string, r callbackRequest) (model.Token, model.Token, error)
 
 	NewHTTP(r *mux.Router)
 	HTTPLogin(w http.ResponseWriter, r *http.Request)
 	HTTPCallback(w http.ResponseWriter, r *http.Request)
 }
 
-// Identity represents an authenticated user identity.
+// Identity represents an authenticated user idmodel.
 type Identity interface {
 	// GetID returns the user ID.
 	GetID() string
@@ -71,7 +71,7 @@ func (s service) Login(ctx context.Context, callbackURL string) (redirectURL str
 	return
 }
 
-func (s service) Callback(ctx context.Context, callbackURL string, r callbackRequest) (tokenAccess, tokenRefresh entity.Token, err error) {
+func (s service) Callback(ctx context.Context, callbackURL string, r callbackRequest) (tokenAccess, tokenRefresh model.Token, err error) {
 	l := logger.Logger(ctx)
 
 	conf := &oauth2.Config{
@@ -117,20 +117,20 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		return
 	}
 
-	identity := entity.Identity{}
+	identity := model.Identity{}
 	// check if user exists in database.
-	err = s.db.Debug().Model(entity.Identity{}).Where("provider = ? AND UID = ?", "facebook", facebookUser.ID).First(&identity).Error
+	err = s.db.Debug().Model(model.Identity{}).Where("provider = ? AND UID = ?", "facebook", facebookUser.ID).First(&identity).Error
 	if err == gorm.ErrRecordNotFound {
-		identity := entity.Identity{}
-		user := entity.User{}
+		identity := model.Identity{}
+		user := model.User{}
 
-		identity.ID = uuid.New().String()
-		identity.CreatedAt = time.Now()
-		identity.LastLogin = identity.CreatedAt
-		identity.Provider = "facebook"
-		identity.UID = facebookUser.ID
-		//identity.Verified = false
-		//identity.VerifiedAt = identity.CreatedAt
+		idmodel.ID = uuid.New().String()
+		idmodel.CreatedAt = time.Now()
+		idmodel.LastLogin = idmodel.CreatedAt
+		idmodel.Provider = "facebook"
+		idmodel.UID = facebookUser.ID
+		//idmodel.Verified = false
+		//idmodel.VerifiedAt = idmodel.CreatedAt
 
 		t := true
 		user.ID = uuid.New().String()
@@ -140,7 +140,7 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		user.Active = &t
 		user.Identities = append(user.Identities, identity)
 
-		err = s.db.Debug().Model(&entity.User{}).Create(&user).Error
+		err = s.db.Debug().Model(&model.User{}).Create(&user).Error
 		if err != nil {
 			l.Error().Caller().Msg(err.Error())
 			return
@@ -150,16 +150,16 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 	}
 
 	// Get user info.
-	if identity.UserID == "" {
-		err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "facebook", facebookUser.ID).First(&identity).Error
+	if idmodel.UserID == "" {
+		err = s.db.Debug().Model(&model.Identity{}).Where("provider = ? AND uid = ?", "facebook", facebookUser.ID).First(&identity).Error
 		if err != nil {
 			l.Error().Caller().Msg(err.Error())
 			return
 		}
 	}
 
-	user := entity.User{}
-	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
+	user := model.User{}
+	err = s.db.Debug().Model(&model.User{}).Where("id = ?", idmodel.UserID).First(&user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return tokenAccess, tokenRefresh, err
 	} else if err != nil {
@@ -176,8 +176,8 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
 	}
 
-	tokenRefresh.UserID = identity.UserID
-	err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error
+	tokenRefresh.UserID = idmodel.UserID
+	err = s.db.Debug().Model(&model.Token{}).Create(&tokenRefresh).Error
 	if err != nil {
 		return
 	}

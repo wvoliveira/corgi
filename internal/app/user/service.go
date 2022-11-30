@@ -6,16 +6,16 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"gorm.io/gorm"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Find(*gin.Context, string) (entity.User, error)
-	Update(*gin.Context, entity.User) (entity.User, error)
+	Find(*gin.Context, string) (model.User, error)
+	Update(*gin.Context, model.User) (model.User, error)
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPFind(*gin.Context)
@@ -33,7 +33,7 @@ func NewService(db *gorm.DB, cache *badger.DB) Service {
 }
 
 // Find get a shortener link from ID.
-func (s service) Find(c *gin.Context, userID string) (user entity.User, err error) {
+func (s service) Find(c *gin.Context, userID string) (user model.User, err error) {
 	var (
 		log = logger.Logger(c.Request.Context())
 	)
@@ -64,7 +64,7 @@ func (s service) Find(c *gin.Context, userID string) (user entity.User, err erro
 }
 
 // Update change specific link by ID.
-func (s service) Update(c *gin.Context, reqUser entity.User) (user entity.User, err error) {
+func (s service) Update(c *gin.Context, reqUser model.User) (user model.User, err error) {
 	var (
 		log = logger.Logger(c.Request.Context())
 	)
@@ -74,7 +74,7 @@ func (s service) Update(c *gin.Context, reqUser entity.User) (user entity.User, 
 	}
 
 	reqUser.UpdatedAt = time.Now()
-	err = s.db.Model(&entity.User{}).
+	err = s.db.Model(&model.User{}).
 		Where("id = ?", reqUser.ID).
 		Updates(&reqUser).Error
 

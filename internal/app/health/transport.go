@@ -18,7 +18,7 @@ func (s service) NewHTTP(r *mux.Router) {
 func (s service) HTTPHealth(w http.ResponseWriter, r *http.Request) {
 	healths, err := s.Health(r.Context())
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 

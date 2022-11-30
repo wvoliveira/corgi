@@ -1,4 +1,4 @@
-package entity
+package model
 
 type Health struct {
 	Required    bool   `json:"required"`

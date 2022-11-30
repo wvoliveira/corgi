@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 )
 
 type addRequest struct {
@@ -54,12 +53,12 @@ type deleteRequest struct {
 func decodeAdd(r *http.Request) (req addRequest, err error) {
 	ctx := r.Context()
 
-	data := ctx.Value(entity.IdentityInfo{})
+	data := ctx.Value(model.IdentityInfo{})
 	if data == nil {
 		return req, errors.New("impossible to get identity from context")
 	}
 
-	ii := data.(entity.IdentityInfo)
+	ii := data.(model.IdentityInfo)
 
 	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return req, err
@@ -79,12 +78,12 @@ func decodeFindByID(r *http.Request) (req findByIDRequest, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	data := ctx.Value(entity.IdentityInfo{})
+	data := ctx.Value(model.IdentityInfo{})
 	if data == nil {
 		return req, errors.New("impossible to get identity from context")
 	}
 
-	ii := data.(entity.IdentityInfo)
+	ii := data.(model.IdentityInfo)
 
 	linkID := vars["id"]
 	if linkID == "" {
@@ -100,12 +99,12 @@ func decodeFindAll(r *http.Request) (req findAllRequest, err error) {
 	ctx := r.Context()
 	params := r.URL.Query()
 
-	data := ctx.Value(entity.IdentityInfo{})
+	data := ctx.Value(model.IdentityInfo{})
 	if data == nil {
 		return req, errors.New("impossible to get identity from context")
 	}
 
-	ii := data.(entity.IdentityInfo)
+	ii := data.(model.IdentityInfo)
 
 	page, _ := strconv.Atoi(params.Get("page"))
 	limit, _ := strconv.Atoi(params.Get("limit"))
@@ -138,12 +137,12 @@ func decodeUpdate(r *http.Request) (req updateRequest, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	data := ctx.Value(entity.IdentityInfo{})
+	data := ctx.Value(model.IdentityInfo{})
 	if data == nil {
 		return req, errors.New("impossible to get identity from context")
 	}
 
-	ii := data.(entity.IdentityInfo)
+	ii := data.(model.IdentityInfo)
 
 	linkID := vars["id"]
 	if linkID == "" {
@@ -163,12 +162,12 @@ func decodeDelete(r *http.Request) (req deleteRequest, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	data := ctx.Value(entity.IdentityInfo{})
+	data := ctx.Value(model.IdentityInfo{})
 	if data == nil {
 		return req, errors.New("impossible to get identity from context")
 	}
 
-	ii := data.(entity.IdentityInfo)
+	ii := data.(model.IdentityInfo)
 
 	linkID := vars["id"]
 	if linkID == "" {

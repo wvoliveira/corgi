@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/util"
 	"gorm.io/gorm/logger"
 
@@ -49,14 +49,14 @@ func New() (db *gorm.DB) {
 // SeedUsers create the first users for system.
 func SeedUsers(db *gorm.DB) {
 	t := true
-	users := []entity.User{
+	users := []model.User{
 		{
 			ID:        uuid.New().String(),
 			CreatedAt: time.Now(),
 			Name:      "Administrator",
 			Role:      "admin",
 			Active:    &t,
-			Identities: []entity.Identity{
+			Identities: []model.Identity{
 				{
 					ID:        uuid.New().String(),
 					CreatedAt: time.Now(),
@@ -72,7 +72,7 @@ func SeedUsers(db *gorm.DB) {
 			Name:      "User",
 			Role:      "user",
 			Active:    &t,
-			Identities: []entity.Identity{
+			Identities: []model.Identity{
 				{
 					ID:        uuid.New().String(),
 					CreatedAt: time.Now(),
@@ -86,7 +86,7 @@ func SeedUsers(db *gorm.DB) {
 
 	for _, user := range users {
 		var count int64
-		db.Model(&entity.Identity{}).Where("provider = ? AND uid = ?", user.Identities[0].Provider, user.Identities[0].UID).Count(&count)
+		db.Model(&model.Identity{}).Where("provider = ? AND uid = ?", user.Identities[0].Provider, user.Identities[0].UID).Count(&count)
 
 		if count > 0 {
 			continue
@@ -100,6 +100,6 @@ func SeedUsers(db *gorm.DB) {
 		}
 
 		user.Identities[0].Password = string(hashedPassword)
-		db.Model(&entity.User{}).Create(&user)
+		db.Model(&model.User{}).Create(&user)
 	}
 }
