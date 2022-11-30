@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/sessions"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"gorm.io/gorm"
 )
 

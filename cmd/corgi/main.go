@@ -29,7 +29,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/cache"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
 var (
@@ -52,7 +52,7 @@ func init() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	gob.Register(entity.User{})
+	gob.Register(model.User{})
 }
 
 // //go:embed all:web
@@ -64,10 +64,10 @@ func main() {
 
 	// Seed first users. Most admins.
 	if err := db.AutoMigrate(
-		&entity.User{},
-		&entity.Identity{},
-		&entity.Link{},
-		&entity.Token{},
+		&model.User{},
+		&model.Identity{},
+		&model.Link{},
+		&model.Token{},
 	); err != nil {
 		log.Fatal().Caller().Msg(err.Error())
 		os.Exit(1)
