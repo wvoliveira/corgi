@@ -3,11 +3,12 @@ package redirect
 import (
 	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 )
 
 func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r := rg.Group("/")
-	//rr.Use(middleware.SesssionRedirect(s.store, "_corgi"))
+	r.Use(middleware.UniqueUserForKeywords())
 
 	r.GET("/:keyword", s.HTTPFind)
 }
