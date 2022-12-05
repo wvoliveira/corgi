@@ -1,12 +1,9 @@
 package redirect
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -15,47 +12,55 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Find(ctx context.Context, domain, keyword string) (link model.Link, err error)
+	Find(*gin.Context, string, string) (model.Link, error)
 
-	NewHTTP(r *mux.Router)
-	HTTPFind(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPFind(*gin.Context)
 }
 
 type service struct {
-	db    *gorm.DB
-	store *sessions.CookieStore
+	db *gorm.DB
 }
 
 // NewService creates a new public service.
-func NewService(db *gorm.DB, store *sessions.CookieStore) Service {
-	return service{db, store}
+func NewService(db *gorm.DB) Service {
+	return service{db}
 }
 
 // Find get a shortener link from keyword.
-func (s service) Find(ctx context.Context, domain, keyword string) (li model.Link, err error) {
-	l := logger.Logger(ctx)
+func (s service) Find(c *gin.Context, domain, keyword string) (m model.Link, err error) {
 
-	err = s.db.Model(&model.Link{}).Where("domain = ? AND keyword = ?", domain, keyword).Take(&li).Error
+	log := logger.Logger(c)
+
+	err = s.db.
+		Model(&model.Link{}).
+		Where("domain = ? AND keyword = ?", domain, keyword).
+		Take(&m).Error
+
 	if err == gorm.ErrRecordNotFound {
-		l.Info().Caller().Msg(fmt.Sprintf("the link domain '%s' and keyword '%s' not found", domain, keyword))
-		return li, e.ErrLinkNotFound
+		log.Info().Caller().Msg(fmt.Sprintf("the combination domain '%s' and keyword '%s' was not found", domain, keyword))
+		return m, e.ErrLinkNotFound
 	}
 
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
+		log.Error().Caller().Msg(err.Error())
+		return m, e.ErrInternalServerError
 	}
+
 	return
 }
 
 // Log store a log metadata to database.
-func (s service) Log(ctx context.Context, payload model.LinkLog) (err error) {
-	l := logger.Logger(ctx)
+func (s service) Log(c *gin.Context, payload model.LinkLog) (err error) {
+
+	log := logger.Logger(c)
 
 	err = s.db.Debug().Model(&model.LinkLog{}).Create(&payload).Error
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
+		log.Error().Caller().Msg(err.Error())
+		return e.ErrInternalServerError
 	}
+
 	return
 }

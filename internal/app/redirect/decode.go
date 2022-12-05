@@ -2,9 +2,8 @@ package redirect
 
 import (
 	"errors"
-	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
 type findByKeywordRequest struct {
@@ -13,16 +12,18 @@ type findByKeywordRequest struct {
 	Keyword string `json:"keyword"`
 }
 
-func decodeFindByKeyword(r *http.Request) (req findByKeywordRequest, err error) {
-	domain := r.Host
-	vars := mux.Vars(r)
+func decodeFindByKeyword(c *gin.Context) (r findByKeywordRequest, err error) {
 
-	keyword := vars["keyword"]
+	domain := c.Request.Host
+
+	keyword := c.Param("keyword")
+
 	if keyword == "" {
-		return req, errors.New("impossible to get redirect keyword")
+		return r, errors.New("impossible to get redirect keyword from path")
 	}
 
-	req.Domain = domain
-	req.Keyword = keyword
-	return req, nil
+	r.Domain = domain
+	r.Keyword = keyword
+
+	return r, nil
 }

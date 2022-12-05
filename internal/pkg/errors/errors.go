@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 )
 
 // nolint
@@ -69,7 +68,6 @@ type Errorer interface {
 
 // EncodeError generate a response for errors.
 func EncodeError(c *gin.Context, err error) {
-	log.Error().Caller().Msg(err.Error())
 
 	resp := response{
 		Status: "error",
