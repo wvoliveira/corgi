@@ -18,6 +18,8 @@ func New(configFile string) {
 	viper.SetDefault("app.redirect_url", "http://127.0.0.1:8081")
 
 	viper.SetDefault("server.http_port", 8081)
+	viper.SetDefault("server.read_timeout", 10)
+	viper.SetDefault("server.write_timeout", 10)
 
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("CORGI")

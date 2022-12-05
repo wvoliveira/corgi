@@ -14,5 +14,5 @@ auth:
 
 server:
   http_port: 8081
-  read_timeout: 60
-  write_timeout: 60
+  read_timeout: 10
+  write_timeout: 10

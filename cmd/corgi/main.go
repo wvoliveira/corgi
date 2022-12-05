@@ -26,7 +26,6 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/debug"
 	"github.com/wvoliveira/corgi/internal/app/health"
-	"github.com/wvoliveira/corgi/internal/app/jobs"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
@@ -174,15 +173,11 @@ func main() {
 	// 	webRouter.PathPrefix("").Handler(webHandler)
 	// }
 
-	// Start cronjobs.
-	serviceCron := jobs.NewService(db)
-	serviceCron.Start()
-
 	srv := &http.Server{
 		Addr:         ":" + viper.GetString("server.http_port"),
 		Handler:      router,
-		ReadTimeout:  5 * time.Second,
-		WriteTimeout: 10 * time.Second,
+		ReadTimeout:  viper.GetDuration("server.read_timeout") * time.Second,
+		WriteTimeout: viper.GetDuration("server.write_timeout") * time.Second,
 	}
 
 	// Create context that listens for the interrupt signal from the OS.
@@ -207,9 +202,6 @@ func main() {
 	stop()
 
 	log.Info().Caller().Msg("shutting down gracefully..")
-
-	// Stop cronjobs.
-	serviceCron.Stop()
 
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling

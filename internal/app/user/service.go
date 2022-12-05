@@ -45,7 +45,7 @@ func (s service) Find(c *gin.Context, userID string) (user model.User, err error
 
 	user.ID = userID
 
-	err = s.db.Debug().
+	err = s.db.
 		Model(&user).
 		Preload("Identities").
 		Find(&user).Error

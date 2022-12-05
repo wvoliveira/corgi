@@ -31,11 +31,12 @@ func NewService(db *gorm.DB) Service {
 }
 
 func (s service) Start() {
-	l := logger.Logger(context.TODO())
+	log := logger.Logger(context.TODO())
 
 	err := s.cronn.AddFunc("@every 30m", func() { s.RemoveTokens(context.TODO()) })
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
+		log.Error().Caller().Msg(err.Error())
 	}
 
 	s.cronn.Start()
