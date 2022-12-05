@@ -142,7 +142,10 @@ func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle model.Use
 
 func getOrCreateUser(db *gorm.DB, userGoogle model.UserGoogle) (identity model.Identity, user model.User, err error) {
 
-	err = db.Debug().Model(model.Identity{}).Where("provider = ? AND UID = ?", "google", userGoogle.ID).First(&identity).Error
+	err = db.
+		Model(model.Identity{}).
+		Where("provider = ? AND UID = ?", "google", userGoogle.ID).
+		First(&identity).Error
 
 	if err == gorm.ErrRecordNotFound {
 
@@ -161,7 +164,10 @@ func getOrCreateUser(db *gorm.DB, userGoogle model.UserGoogle) (identity model.I
 		user.Active = &active
 		user.Identities = append(user.Identities, identity)
 
-		err = db.Debug().Model(&model.User{}).Create(&user).Error
+		err = db.
+			Model(&model.User{}).
+			Create(&user).Error
+
 		return
 
 	}
@@ -171,14 +177,20 @@ func getOrCreateUser(db *gorm.DB, userGoogle model.UserGoogle) (identity model.I
 	}
 
 	if identity.UserID == "" {
-		err = db.Debug().Model(&model.Identity{}).Where("provider = ? AND uid = ?", "google", userGoogle.ID).First(&identity).Error
+		err = db.
+			Model(&model.Identity{}).
+			Where("provider = ? AND uid = ?", "google", userGoogle.ID).
+			First(&identity).Error
 
 		if err != nil {
 			return
 		}
 	}
 
-	err = db.Debug().Model(&model.User{}).Where("id = ?", identity.UserID).First(&user).Error
+	err = db.
+		Model(&model.User{}).
+		Where("id = ?", identity.UserID).
+		First(&user).Error
 
 	return
 }

@@ -137,7 +137,10 @@ func getUserFromFacebook(c *gin.Context, accessToken string) (userFacebook model
 func getOrCreateUser(c *gin.Context, db *gorm.DB, userFacebook model.UserFacebook) (identity model.Identity, user model.User, err error) {
 	log := logger.Logger(c)
 
-	err = db.Debug().Model(model.Identity{}).Where("provider = ? AND UID = ?", "facebook", userFacebook.ID).First(&identity).Error
+	err = db.
+		Model(model.Identity{}).
+		Where("provider = ? AND UID = ?", "facebook", userFacebook.ID).
+		First(&identity).Error
 
 	if err == gorm.ErrRecordNotFound {
 
@@ -155,25 +158,35 @@ func getOrCreateUser(c *gin.Context, db *gorm.DB, userFacebook model.UserFaceboo
 		user.Active = &active
 		user.Identities = append(user.Identities, identity)
 
-		err = db.Debug().Model(&model.User{}).Create(&user).Error
+		err = db.
+			Model(&model.User{}).
+			Create(&user).Error
+
 		return
 
 	}
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
+
 		return
 	}
 
 	if identity.UserID == "" {
-		err = db.Debug().Model(&model.Identity{}).Where("provider = ? AND uid = ?", "facebook", userFacebook.ID).First(&identity).Error
+		err = db.
+			Model(&model.Identity{}).
+			Where("provider = ? AND uid = ?", "facebook", userFacebook.ID).
+			First(&identity).Error
 
 		if err != nil {
 			return
 		}
 	}
 
-	err = db.Debug().Model(&model.User{}).Where("id = ?", identity.UserID).First(&user).Error
+	err = db.
+		Model(&model.User{}).
+		Where("id = ?", identity.UserID).
+		First(&user).Error
 
 	return
 }
