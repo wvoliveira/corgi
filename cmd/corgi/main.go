@@ -26,6 +26,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/debug"
 	"github.com/wvoliveira/corgi/internal/app/jobs"
+	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/cache"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
@@ -137,11 +138,11 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	// {
-	// 	// Central business service: manage link shortener.
-	// 	service := link.NewService(db, cfg.SecretKey, store)
-	// 	service.NewHTTP(apiRouter)
-	// }
+	{
+		// Central business service: manage link shortener.
+		service := link.NewService(db)
+		service.NewHTTP(apiRouter)
+	}
 
 	// {
 	// 	// Healthcheck endpoints.

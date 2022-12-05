@@ -1,5 +1,7 @@
 package link
 
+import "github.com/wvoliveira/corgi/internal/pkg/model"
+
 type findAllResponse struct {
 	Links []model.Link `json:"data"`
 	Limit int          `json:"limit"`
