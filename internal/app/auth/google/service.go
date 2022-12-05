@@ -11,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/spf13/viper"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2"
@@ -121,6 +122,10 @@ func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle model.Use
 		return
 	}
 
+	if resp.StatusCode == 401 {
+		return userGoogle, e.ErrUnauthorized
+	}
+
 	if resp.StatusCode != 200 {
 		return userGoogle, errors.New("error to get info from Google")
 	}
@@ -147,7 +152,6 @@ func getOrCreateUser(db *gorm.DB, userGoogle model.UserGoogle) (identity model.I
 		identity.Provider = "google"
 		identity.UID = userGoogle.ID
 		identity.Verified = &userGoogle.VerifiedEmail
-		identity.VerifiedAt = identity.CreatedAt
 
 		active := true
 		user.ID = uuid.New().String()

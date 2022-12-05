@@ -25,3 +25,9 @@ type UserGoogle struct {
 	Email         string `json:"email"`
 	VerifiedEmail bool   `json:"verified_email"`
 }
+
+type UserFacebook struct {
+	ID    string `json:"id"`
+	Name  string `json:"name"`
+	Email string `json:"email"`
+}

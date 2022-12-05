@@ -21,6 +21,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/wvoliveira/corgi/internal/app/auth"
+	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/debug"
@@ -130,11 +131,11 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	// {
-	// 	// Auth with Facebook provider.
-	// 	service := facebook.NewService(db, cfg, store)
-	// 	service.NewHTTP(apiRouter)
-	// }
+	{
+		// Auth with Facebook provider.
+		service := facebook.NewService(db)
+		service.NewHTTP(apiRouter)
+	}
 
 	// {
 	// 	// Central business service: manage link shortener.

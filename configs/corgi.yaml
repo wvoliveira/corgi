@@ -9,28 +9,10 @@ auth:
     client_secret: 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
 
   facebook:
-    client_id:
-    client_secret:
+    client_id: 1558055581305469
+    client_secret: 6a7fc30fafabdc4247bf3797a63d8bd8
 
 server:
   http_port: 8081
-  grpc_port: 8082
   read_timeout: 60
   write_timeout: 60
-
-database:
-  host: 127.0.0.1
-  port: 26257
-  user:
-  password:
-  database: corgi
-
-cache:
-  host: 127.0.0.1
-  port: 6379
-  user:
-  password:
-  database: 1
-  max_idle: 30
-  max_active: 30
-  idle_timeout: 200

@@ -1,7 +1,6 @@
 package facebook
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -9,11 +8,9 @@ import (
 	"net/url"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
-	"github.com/wvoliveira/corgi/internal/pkg/config"
-	"github.com/wvoliveira/corgi/internal/pkg/jwt"
+	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2"
@@ -23,60 +20,88 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(ctx context.Context, redirectURL string) (string, error)
-	Callback(ctx context.Context, callbackURL string, r callbackRequest) (model.Token, model.Token, error)
+	Login(*gin.Context, string, string) (model.User, string, error)
+	Callback(*gin.Context, string, callbackRequest) (model.User, error)
 
-	NewHTTP(r *mux.Router)
-	HTTPLogin(w http.ResponseWriter, r *http.Request)
-	HTTPCallback(w http.ResponseWriter, r *http.Request)
-}
-
-// Identity represents an authenticated user idmodel.
-type Identity interface {
-	// GetID returns the user ID.
-	GetID() string
-	// GetUID returns the e-mail, google id, facebook id, etc.
-	GetUID() string
-	// GetRole returns the role.
-	GetRole() string
+	NewHTTP(*gin.RouterGroup)
+	HTTPLogin(*gin.Context)
+	HTTPCallback(*gin.Context)
 }
 
 type service struct {
-	db    *gorm.DB
-	cfg   config.Config
-	store *sessions.CookieStore
+	db *gorm.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, cfg config.Config, store *sessions.CookieStore) Service {
-	return service{db, cfg, store}
+func NewService(db *gorm.DB) Service {
+	return service{db}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(ctx context.Context, callbackURL string) (redirectURL string, err error) {
-	conf := &oauth2.Config{
-		ClientID:     s.cfg.Auth.Facebook.ClientID,
-		ClientSecret: s.cfg.Auth.Facebook.ClientSecret,
-		RedirectURL:  callbackURL,
-		Scopes: []string{
-			"public_profile",
-			"email",
-		},
-		Endpoint: facebook.Endpoint,
+func (s service) Login(c *gin.Context, accessToken, callbackURL string) (user model.User, redirectURL string, err error) {
+	log := logger.Logger(c)
+
+	conf := createOAuth2Config(callbackURL)
+
+	if accessToken == "" {
+		// Redirect user to Facebook's consent page to ask for permission
+		// for the scopes specified above.
+		redirectURL = conf.AuthCodeURL("state")
+		return
 	}
-	// Redirect user to Facebook's consent page to ask for permission
-	// for the scopes specified above.
-	redirectURL = conf.AuthCodeURL("state")
+
+	// If access token was sent with URL, just get user info.
+	userFacebook, err := getUserFromFacebook(c, accessToken)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	_, user, err = getOrCreateUser(c, s.db, userFacebook)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
 	return
 }
 
-func (s service) Callback(ctx context.Context, callbackURL string, r callbackRequest) (tokenAccess, tokenRefresh model.Token, err error) {
-	l := logger.Logger(ctx)
+func (s service) Callback(c *gin.Context, callbackURL string, r callbackRequest) (user model.User, err error) {
+	log := logger.Logger(c)
 
-	conf := &oauth2.Config{
-		ClientID:     s.cfg.Auth.Facebook.ClientID,
-		ClientSecret: s.cfg.Auth.Facebook.ClientSecret,
+	conf := createOAuth2Config(callbackURL)
+
+	oauthToken, err := conf.Exchange(c, r.Code)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	userFacebook, err := getUserFromFacebook(c, oauthToken.AccessToken)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	_, user, err = getOrCreateUser(c, s.db, userFacebook)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	return
+}
+
+func createOAuth2Config(callbackURL string) (conf *oauth2.Config) {
+	conf = &oauth2.Config{
+		ClientID:     viper.GetString("auth.facebook.client_id"),
+		ClientSecret: viper.GetString("auth.facebook.client_secret"),
 		RedirectURL:  callbackURL,
 		Scopes: []string{
 			"public_profile",
@@ -84,102 +109,71 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		},
 		Endpoint: facebook.Endpoint,
 	}
+	return
+}
 
-	oauthToken, err := conf.Exchange(ctx, r.Code)
+func getUserFromFacebook(c *gin.Context, accessToken string) (userFacebook model.UserFacebook, err error) {
+
+	resp, err := http.Get("https://graph.facebook.com/me?fields=id,name,email&access_token=" + url.QueryEscape(accessToken))
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	client := conf.Client(ctx, oauthToken)
-	resp, err := client.Get("https://graph.facebook.com/me?fields=id,name,email&access_token=" + url.QueryEscape(oauthToken.AccessToken))
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
+	if resp.StatusCode != 200 {
+		return userFacebook, errors.New("error to get info from Facebook")
 	}
 
 	response, err := ioutil.ReadAll(resp.Body)
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	type facebookUserInfo struct {
-		ID    string `json:"id"`
-		Email string `json:"email"`
-		Name  string `json:"name"`
-	}
+	err = json.Unmarshal(response, &userFacebook)
+	return
+}
 
-	facebookUser := facebookUserInfo{}
-	err = json.Unmarshal(response, &facebookUser)
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
-	}
+func getOrCreateUser(c *gin.Context, db *gorm.DB, userFacebook model.UserFacebook) (identity model.Identity, user model.User, err error) {
+	log := logger.Logger(c)
 
-	identity := model.Identity{}
-	// check if user exists in database.
-	err = s.db.Debug().Model(model.Identity{}).Where("provider = ? AND UID = ?", "facebook", facebookUser.ID).First(&identity).Error
+	err = db.Debug().Model(model.Identity{}).Where("provider = ? AND UID = ?", "facebook", userFacebook.ID).First(&identity).Error
+
 	if err == gorm.ErrRecordNotFound {
-		identity := model.Identity{}
-		user := model.User{}
 
-		idmodel.ID = uuid.New().String()
-		idmodel.CreatedAt = time.Now()
-		idmodel.LastLogin = idmodel.CreatedAt
-		idmodel.Provider = "facebook"
-		idmodel.UID = facebookUser.ID
-		//idmodel.Verified = false
-		//idmodel.VerifiedAt = idmodel.CreatedAt
+		identity.ID = uuid.New().String()
+		identity.CreatedAt = time.Now()
+		identity.LastLogin = identity.CreatedAt
+		identity.Provider = "facebook"
+		identity.UID = userFacebook.ID
 
-		t := true
+		active := true
 		user.ID = uuid.New().String()
 		user.CreatedAt = time.Now()
-		user.Name = facebookUser.Name
+		user.Name = userFacebook.Name
 		user.Role = "user"
-		user.Active = &t
+		user.Active = &active
 		user.Identities = append(user.Identities, identity)
 
-		err = s.db.Debug().Model(&model.User{}).Create(&user).Error
-		if err != nil {
-			l.Error().Caller().Msg(err.Error())
-			return
-		}
-	} else if err != nil {
-		l.Error().Caller().Msg(err.Error())
+		err = db.Debug().Model(&model.User{}).Create(&user).Error
+		return
+
 	}
 
-	// Get user info.
-	if idmodel.UserID == "" {
-		err = s.db.Debug().Model(&model.Identity{}).Where("provider = ? AND uid = ?", "facebook", facebookUser.ID).First(&identity).Error
-		if err != nil {
-			l.Error().Caller().Msg(err.Error())
-			return
-		}
-	}
-
-	user := model.User{}
-	err = s.db.Debug().Model(&model.User{}).Where("id = ?", idmodel.UserID).First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return tokenAccess, tokenRefresh, err
-	} else if err != nil {
-		return tokenAccess, tokenRefresh, err
-	}
-
-	tokenAccess, err = jwt.GenerateAccessToken(s.cfg.SecretKey, identity, user)
 	if err != nil {
-		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
-	}
-
-	tokenRefresh, err = jwt.GenerateRefreshToken(s.cfg.SecretKey, identity, user)
-	if err != nil {
-		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
-	}
-
-	tokenRefresh.UserID = idmodel.UserID
-	err = s.db.Debug().Model(&model.Token{}).Create(&tokenRefresh).Error
-	if err != nil {
+		log.Error().Caller().Msg(err.Error())
 		return
 	}
+
+	if identity.UserID == "" {
+		err = db.Debug().Model(&model.Identity{}).Where("provider = ? AND uid = ?", "facebook", userFacebook.ID).First(&identity).Error
+
+		if err != nil {
+			return
+		}
+	}
+
+	err = db.Debug().Model(&model.User{}).Where("id = ?", identity.UserID).First(&user).Error
+
 	return
 }
