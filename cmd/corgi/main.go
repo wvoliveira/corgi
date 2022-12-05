@@ -25,6 +25,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/debug"
+	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/jobs"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
@@ -36,6 +37,8 @@ import (
 )
 
 var (
+	version = "0.0.1"
+
 	flagDebug  bool
 	flagConfig string
 )
@@ -86,7 +89,7 @@ func main() {
 	store.Options(sessions.Options{
 		Path:     "/",
 		HttpOnly: true,
-		MaxAge:   60 * 60 * 24,
+		MaxAge:   60 * 60 * 24 * 30,
 	})
 
 	router.Use(sessions.Sessions("session", store))
@@ -145,17 +148,11 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	// {
-	// 	// Healthcheck endpoints.
-	// 	service := health.NewService(db, cfg, version)
-	// 	service.NewHTTP(rootRouter)
-	// }
-
-	// {
-	// 	// Info endpoint.
-	// 	service := info.NewService(db, cfg, version)
-	// 	service.NewHTTP(rootRouter)
-	// }
+	{
+		// Healthcheck endpoints.
+		service := health.NewService(db, version)
+		service.NewHTTP(rootRouter)
+	}
 
 	{
 		// Central business service: redirect short link.
@@ -181,11 +178,6 @@ func main() {
 	serviceCron := jobs.NewService(db)
 	serviceCron.Start()
 
-	// Help func to get endpoints.
-	// if flagDebug {
-	// 	util.PrintRoutes([]*mux.Router{rootRouter, apiRouter})
-	// }
-
 	srv := &http.Server{
 		Addr:         ":" + viper.GetString("server.http_port"),
 		Handler:      router,
@@ -201,9 +193,11 @@ func main() {
 	// it won't block the graceful shutdown handling below
 	go func() {
 		log.Info().Caller().Msg(fmt.Sprintf("server listening http://127.0.0.1:%s", viper.GetString("server.http_port")))
+
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error().Caller().Msg(err.Error())
 		}
+
 	}()
 
 	// Listen for the interrupt signal.
@@ -211,6 +205,7 @@ func main() {
 
 	// Restore default behavior on the interrupt signal and notify user of shutdown.
 	stop()
+
 	log.Info().Caller().Msg("shutting down gracefully..")
 
 	// Stop cronjobs.
@@ -219,9 +214,12 @@ func main() {
 	// The context is used to inform the server it has 5 seconds to finish
 	// the request it is currently handling
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+
 	defer cancel()
+
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Warn().Caller().Msg(fmt.Sprintf("server forced to shutdown: %s", err.Error()))
 	}
+
 	log.Info().Caller().Msg("server exited")
 }

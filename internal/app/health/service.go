@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2/facebook"
@@ -19,10 +19,10 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Health(ctx context.Context) ([]model.Health, error)
+	Health(*gin.Context) ([]model.Health, error)
 
-	NewHTTP(r *mux.Router)
-	HTTPHealth(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPHealth(*gin.Context)
 }
 
 type service struct {
@@ -37,7 +37,8 @@ func NewService(db *gorm.DB, version string) Service {
 
 // Health make a healt check for system dependencies
 // like database, social network authentication, etc.
-func (s service) Health(ctx context.Context) (hs []model.Health, err error) {
+func (s service) Health(c *gin.Context) (hs []model.Health, err error) {
+
 	var wg sync.WaitGroup
 
 	// Increase async group and check a dependencie.
@@ -45,28 +46,30 @@ func (s service) Health(ctx context.Context) (hs []model.Health, err error) {
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		hs = append(hs, s.healthDatabase(ctx))
+		hs = append(hs, s.healthDatabase(c))
 	}()
 
 	// Checking Google authentication.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		hs = append(hs, s.healthAuthentication(ctx, "google"))
+		hs = append(hs, s.healthAuthentication(c, "google"))
 	}()
 
 	// Checking Facebook authentication.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		hs = append(hs, s.healthAuthentication(ctx, "facebook"))
+		hs = append(hs, s.healthAuthentication(c, "facebook"))
 	}()
 
 	wg.Wait()
+
 	return
 }
 
-func (s service) healthDatabase(ctx context.Context) (h model.Health) {
+func (s service) healthDatabase(c *gin.Context) (h model.Health) {
+
 	h = model.Health{
 		Required:    true,
 		Status:      "OK",
@@ -77,14 +80,17 @@ func (s service) healthDatabase(ctx context.Context) (h model.Health) {
 	// You can mock a error with below one or create one yourself.
 	// err := errors.New("database is locked. Call your admin hero")
 	err := s.db.Exec("PRAGMA integrity_check").Error
+
 	if err != nil {
 		h.Status = "Fail"
 		h.Description = fmt.Sprintf("Integrity check return error: %s", err.Error())
 	}
+
 	return
 }
 
 func (s service) healthAuthentication(ctx context.Context, provider string) (h model.Health) {
+
 	provider = strings.ToLower(provider)
 	component := fmt.Sprintf("%s Auth", cases.Title(language.English, cases.Compact).String(provider))
 
@@ -126,5 +132,6 @@ func (s service) healthAuthentication(ctx context.Context, provider string) (h m
 		h.Status = "OK"
 		h.Description = fmt.Sprintf("%s is OK", component)
 	}
+
 	return
 }
