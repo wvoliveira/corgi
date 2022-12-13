@@ -23,13 +23,13 @@ type Service interface {
 }
 
 type service struct {
-	db    *gorm.DB
-	cache *badger.DB
+	db *gorm.DB
+	kv *badger.DB
 }
 
-// NewService creates a new authentication service.
-func NewService(db *gorm.DB, cache *badger.DB) Service {
-	return service{db, cache}
+// NewService creates a new user management service.
+func NewService(db *gorm.DB, kv *badger.DB) Service {
+	return service{db, kv}
 }
 
 // Find get a shortener link from ID.

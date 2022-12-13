@@ -27,13 +27,13 @@ type Service interface {
 
 type service struct {
 	// TODO: still use cache or remove?
-	db    *gorm.DB
-	cache *badger.DB
+	db *gorm.DB
+	kv *badger.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, cache *badger.DB) Service {
-	return service{db, cache}
+func NewService(db *gorm.DB, kv *badger.DB) Service {
+	return service{db, kv}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.

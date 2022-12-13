@@ -86,11 +86,14 @@ func codeFrom(err error) int {
 	switch err {
 	case ErrNotFound, ErrLinkNotFound:
 		return http.StatusNotFound
+
 	case ErrInconsistentIDs, ErrAccountDeleteYourSelf, ErrLinkAlreadyExists, ErrAlreadyExists,
 		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists:
 		return http.StatusBadRequest
+
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:
 		return http.StatusUnauthorized
+
 	default:
 		return http.StatusInternalServerError
 	}

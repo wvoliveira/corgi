@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/dgraph-io/badger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/util"
 	"gorm.io/gorm/logger"
@@ -19,8 +20,8 @@ import (
 	"gorm.io/gorm"
 )
 
-// New create a gorm database object.
-func New() (db *gorm.DB) {
+// NewSQL create a gorm database object.
+func NewSQL() (db *gorm.DB) {
 	newLogger := logger.New(
 		&log.Logger,
 		logger.Config{
@@ -40,6 +41,22 @@ func New() (db *gorm.DB) {
 	dbFile := filepath.Join(appFolder, "data")
 
 	db, err = gorm.Open(sqlite.Open(dbFile), &cfg)
+	if err != nil {
+		panic("failed to connect in sqlite database")
+	}
+	return
+}
+
+// NewKV create a badger database object.
+func NewKV() (db *badger.DB) {
+	appFolder, err := util.GetOrCreateDataFolder()
+	if err != nil {
+		log.Fatal().Caller().Msg(err.Error())
+	}
+
+	dbFile := filepath.Join(appFolder, "kv")
+
+	db, err = badger.Open(badger.DefaultOptions(dbFile))
 	if err != nil {
 		panic("failed to connect in sqlite database")
 	}

@@ -24,12 +24,12 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
+	"github.com/wvoliveira/corgi/internal/app/clicks"
 	"github.com/wvoliveira/corgi/internal/app/debug"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
-	"github.com/wvoliveira/corgi/internal/pkg/cache"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -64,8 +64,8 @@ func init() {
 // var nextFS embed.FS
 
 func main() {
-	db := database.New()
-	cache := cache.New()
+	db := database.NewSQL()
+	kv := database.NewKV()
 
 	// Seed first users. Most admins.
 	if err := db.AutoMigrate(
@@ -119,13 +119,13 @@ func main() {
 
 	{
 		// Auth password service.
-		service := password.NewService(db, cache)
+		service := password.NewService(db, kv)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
-		// User service. Like profile view and edit.
-		service := user.NewService(db, cache)
+		// User management service. Like profile view and edit.
+		service := user.NewService(db, kv)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -156,8 +156,14 @@ func main() {
 	{
 		// Central business service: redirect short link.
 		// Note: this service is on root router.
-		service := redirect.NewService(db)
+		service := redirect.NewService(db, kv)
 		service.NewHTTP(rootRouter)
+	}
+
+	{
+		// Clicks service. Metrics for each link.
+		service := clicks.NewService(db, kv)
+		service.NewHTTP(apiRouter)
 	}
 
 	// {

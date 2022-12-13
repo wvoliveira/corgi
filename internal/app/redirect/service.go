@@ -2,7 +2,9 @@ package redirect
 
 import (
 	"fmt"
+	"time"
 
+	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
@@ -20,11 +22,12 @@ type Service interface {
 
 type service struct {
 	db *gorm.DB
+	kv *badger.DB
 }
 
 // NewService creates a new public service.
-func NewService(db *gorm.DB) Service {
-	return service{db}
+func NewService(db *gorm.DB, kv *badger.DB) Service {
+	return service{db, kv}
 }
 
 // Find get a shortener link from keyword.
@@ -46,6 +49,9 @@ func (s service) Find(c *gin.Context, domain, keyword string) (m model.Link, err
 		log.Error().Caller().Msg(err.Error())
 		return m, e.ErrInternalServerError
 	}
+
+	link := fmt.Sprintf("%s/%s", domain, keyword)
+	go increaseClick(c, s.kv, link, time.Now())
 
 	return
 }
