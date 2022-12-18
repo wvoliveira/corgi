@@ -3,70 +3,42 @@ package health
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/health").Subrouter()
-
-	rr.HandleFunc("", s.HTTPHealth).Methods("GET")
-
-	rr.HandleFunc("/database", s.HTTPHealthDatabase).Methods("GET")
-
-	rr.HandleFunc("/auth", s.HTTPHealthAuth).Methods("GET")
-	rr.HandleFunc("/auth/{provider}", s.HTTPHealthAuthProvider).Methods("GET")
-
-	rr.HandleFunc("/live", s.HTTPHealthLive).Methods("GET")
-	rr.HandleFunc("/ready", s.HTTPHealthReady).Methods("GET")
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/health")
+	r.GET("", s.HTTPHealth)
+	r.GET("/live", s.HTTPLive)
+	r.GET("/ready", s.HTTPReady)
 }
 
-func (s service) HTTPHealth(w http.ResponseWriter, r *http.Request) {
-	healths, err := s.Health(r.Context())
+func (s service) HTTPHealth(c *gin.Context) {
+
+	healths, err := s.Health(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	response.Default(w, healths, "", http.StatusOK)
-}
+	httpStatusCode := http.StatusOK
 
-func (s service) HTTPHealthDatabase(w http.ResponseWriter, r *http.Request) {
-	health := s.HealthDatabase(r.Context())
-	response.Default(w, health, "", http.StatusOK)
-}
-
-func (s service) HTTPHealthAuth(w http.ResponseWriter, r *http.Request) {
-	healths, err := s.HealthAuth(r.Context(), nil)
-	if err != nil {
-		e.EncodeError(w, err)
-		return
+	for _, item := range healths {
+		if item.Required && item.Status != "OK" {
+			httpStatusCode = http.StatusServiceUnavailable
+		}
 	}
 
-	response.Default(w, healths, "", http.StatusOK)
+	response.Default(c, healths, "", httpStatusCode)
 }
 
-func (s service) HTTPHealthAuthProvider(w http.ResponseWriter, r *http.Request) {
-	provider, err := decodeHealthAuthProvider(r)
-	if err != nil {
-		e.EncodeError(w, err)
-		return
-	}
-
-	healths, err := s.HealthAuth(r.Context(), []string{provider})
-	if err != nil {
-		e.EncodeError(w, err)
-		return
-	}
-
-	response.Default(w, healths[0], "", http.StatusOK)
+func (s service) HTTPLive(c *gin.Context) {
+	response.Default(c, "Live", "", http.StatusOK)
 }
 
-func (s service) HTTPHealthLive(w http.ResponseWriter, r *http.Request) {
-	response.Default(w, "Live", "", http.StatusOK)
-}
-
-func (s service) HTTPHealthReady(w http.ResponseWriter, r *http.Request) {
-	s.HTTPHealth(w, r)
+func (s service) HTTPReady(c *gin.Context) {
+	response.Default(c, "Ready", "", http.StatusOK)
 }

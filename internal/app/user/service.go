@@ -1,43 +1,42 @@
 package user
 
 import (
-	"context"
 	"fmt"
-	"net/http"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/dgraph-io/badger"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"gorm.io/gorm"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Find(ctx context.Context, userID string) (entity.User, error)
-	Update(ctx context.Context, user entity.User) (entity.User, error)
+	Find(*gin.Context, string) (model.User, error)
+	Update(*gin.Context, model.User) (model.User, error)
 
-	NewHTTP(r *mux.Router)
-	HTTPFind(w http.ResponseWriter, r *http.Request)
-	HTTPUpdate(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPFind(*gin.Context)
+	HTTPUpdate(*gin.Context)
 }
 
 type service struct {
-	db     *gorm.DB
-	secret string
-	store  *sessions.CookieStore
+	db *gorm.DB
+	kv *badger.DB
 }
 
-// NewService creates a new authentication service.
-func NewService(db *gorm.DB, secret string, store *sessions.CookieStore) Service {
-	return service{db, secret, store}
+// NewService creates a new user management service.
+func NewService(db *gorm.DB, kv *badger.DB) Service {
+	return service{db, kv}
 }
 
 // Find get a shortener link from ID.
-func (s service) Find(ctx context.Context, userID string) (user entity.User, err error) {
-	l := logger.Logger(ctx)
+func (s service) Find(c *gin.Context, userID string) (user model.User, err error) {
+	var (
+		log = logger.Logger(c.Request.Context())
+	)
 
 	if userID == "anonymous" {
 		user.Name = "Anonymous"
@@ -45,43 +44,50 @@ func (s service) Find(ctx context.Context, userID string) (user entity.User, err
 	}
 
 	user.ID = userID
+
 	err = s.db.
 		Model(&user).
 		Preload("Identities").
 		Find(&user).Error
 
 	if err == gorm.ErrRecordNotFound {
-		l.Info().Caller().Msg(fmt.Sprintf("the user with user_id '%s' not found", userID))
+		log.Info().Caller().Msg(fmt.Sprintf("the user with user_id \"%s\" was not found", userID))
 		return user, e.ErrUserNotFound
-	} else if err == nil {
+	}
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	l.Error().Caller().Msg(err.Error())
 	return
 }
 
 // Update change specific link by ID.
-func (s service) Update(ctx context.Context, reqUser entity.User) (user entity.User, err error) {
-	l := logger.Logger(ctx)
+func (s service) Update(c *gin.Context, reqUser model.User) (user model.User, err error) {
+	var (
+		log = logger.Logger(c.Request.Context())
+	)
 
 	if reqUser.ID == "anonymous" {
 		return user, e.ErrUnauthorized
 	}
 
 	reqUser.UpdatedAt = time.Now()
-	err = s.db.Model(&entity.User{}).
+	err = s.db.Model(&model.User{}).
 		Where("id = ?", reqUser.ID).
 		Updates(&reqUser).Error
 
 	if err == gorm.ErrRecordNotFound {
-		l.Info().Caller().Msg(fmt.Sprintf("the user with id '%s' not found", reqUser.ID))
+		log.Info().Caller().Msg(fmt.Sprintf("the user with id '%s' not found", reqUser.ID))
 		return user, e.ErrUserNotFound
-	} else if err == nil {
-		user = reqUser
+	}
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	l.Error().Caller().Msg(err.Error())
+	user = reqUser
 	return
 }

@@ -3,8 +3,6 @@ package model
 import (
 	"encoding/json"
 	"time"
-
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 )
 
 type Session struct {
@@ -16,7 +14,7 @@ type Session struct {
 	TokenRefresh string    `json:"token_refresh"`
 	ExpiresIn    time.Time `json:"expires_in"`
 
-	User entity.User `json:"user"`
+	User User `json:"user"`
 }
 
 func (s Session) Encode() (value []byte) {

@@ -1,49 +1,44 @@
 package auth
 
 import (
-	"net/http"
-
-	"github.com/gorilla/mux"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/v1/auth").Subrouter()
-	rr.Use(middleware.Checks)
-	rr.Use(middleware.Auth(s.secret))
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/auth")
+	r.Use(middleware.Auth())
 
-	rr.HandleFunc("/logout", s.HTTPLogout).Methods("GET")
+	r.GET("/logout", s.HTTPLogout)
 }
 
-func (s service) HTTPLogout(w http.ResponseWriter, r *http.Request) {
-	l := log.Ctx(r.Context())
+func (s service) HTTPLogout(c *gin.Context) {
+	l := log.Ctx(c)
 
-	// Decode request to object.
-	dr, err := decodeLogout(r)
+	user, err := decodeLogout(c)
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Business logic.
-	err = s.Logout(r.Context(), dr.Token)
+	err = s.Logout(c, user)
 	if err != nil {
 		l.Error().Caller().Msg(err.Error())
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	cookieAccess := http.Cookie{Name: "access_token", MaxAge: -1}
-	cookieRefresh := http.Cookie{Name: "refresh_token_id", MaxAge: -1}
-	cookieLogged := http.Cookie{Name: "logged", MaxAge: -1}
+	session := sessions.Default(c)
+	session.Delete("user")
+	session.Save()
 
-	http.SetCookie(w, &cookieAccess)
-	http.SetCookie(w, &cookieRefresh)
-	http.SetCookie(w, &cookieLogged)
-
-	response.Default(w, nil, "", http.StatusOK)
+	c.JSON(200, response.Response{
+		Status:  "successful",
+		Message: "Logout success!",
+	})
 }

@@ -1,36 +1,33 @@
 package redirect
 
 import (
-	"net/http"
-
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/").Subrouter()
-	//rr.Use(middleware.SesssionRedirect(s.store, "_corgi"))
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/")
+	r.Use(middleware.UniqueUserForKeywords())
 
-	rr.HandleFunc("/{keyword}", s.HTTPFind).Methods("GET")
+	r.GET("/:keyword", s.HTTPFind)
 }
 
-func (s service) HTTPFind(w http.ResponseWriter, r *http.Request) {
-	// Decode request to request object.
-	dr, err := decodeFindByKeyword(r)
+func (s service) HTTPFind(c *gin.Context) {
+
+	dr, err := decodeFindByKeyword(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	link, err := s.Find(r.Context(), dr.Domain, dr.Keyword)
+	link, err := s.Find(c, dr.Domain, dr.Keyword)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Pass decode request to from gin context to use in middleware.
-	// c.Set("findByKeywordResponse", link)
-
-	// Redirect! Not encode for response.
-	http.Redirect(w, r, link.URL, http.StatusMovedPermanently)
+	c.Redirect(301, link.URL)
 }

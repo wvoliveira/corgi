@@ -11,14 +11,14 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-// CreateDataFolder create Corgi folder for settings, database, etc.
-func CreateDataFolder(name string) (folder string, err error) {
+// GetOrCreateDataFolder create Corgi folder for settings, database, etc.
+func GetOrCreateDataFolder() (folder string, err error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return
 	}
 
-	folder = filepath.Join(home, name)
+	folder = filepath.Join(home, ".corgi")
 	if _, err = os.Stat(folder); os.IsNotExist(err) {
 		err = os.Mkdir(folder, os.ModePerm)
 		if err != nil {

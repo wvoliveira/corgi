@@ -8,16 +8,16 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/jwt"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"gorm.io/gorm"
 )
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Refresh(ctx context.Context, token entity.Token) (entity.Token, entity.Token, error)
+	Refresh(ctx context.Context, token model.Token) (model.Token, model.Token, error)
 
 	NewHTTP(r *mux.Router)
 	HTTPRefresh(w http.ResponseWriter, r *http.Request)
@@ -37,10 +37,10 @@ func NewService(db *gorm.DB, secret string, tokenExpiration int, store *sessions
 
 // Refresh authenticates a user and generates a new access and refresh JWT token if needed.
 // Otherwise, an error is returned.
-func (s service) Refresh(ctx context.Context, payload entity.Token) (tokenAccess, tokenRefresh entity.Token, err error) {
+func (s service) Refresh(ctx context.Context, payload model.Token) (tokenAccess, tokenRefresh model.Token, err error) {
 	l := logger.Logger(ctx)
 
-	if err = s.db.Model(&entity.Token{}).Where("id = ?", payload.ID).First(&tokenRefresh).Error; err != nil {
+	if err = s.db.Model(&model.Token{}).Where("id = ?", payload.ID).First(&tokenRefresh).Error; err != nil {
 		l.Warn().Caller().Msg(err.Error())
 		return tokenAccess, tokenRefresh, e.ErrUnauthorized
 	}
@@ -74,11 +74,11 @@ func (s service) Refresh(ctx context.Context, payload entity.Token) (tokenAccess
 	}
 
 	if genRefresh {
-		if err = s.db.Model(&entity.Token{}).Create(&tokenRefresh).Error; err != nil {
+		if err = s.db.Model(&model.Token{}).Create(&tokenRefresh).Error; err != nil {
 			l.Error().Caller().Msg(err.Error())
 			return tokenAccess, tokenRefresh, errors.New("error to create refresh token")
 		}
-		if err = s.db.Model(&entity.Token{}).Where("id = ?", payload.ID).Delete(&payload).Error; err != nil {
+		if err = s.db.Model(&model.Token{}).Where("id = ?", payload.ID).Delete(&payload).Error; err != nil {
 			l.Error().Caller().Msg(err.Error())
 			return tokenAccess, tokenRefresh, errors.New("error to delete refresh token from database")
 		}

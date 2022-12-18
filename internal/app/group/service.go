@@ -8,17 +8,17 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"gorm.io/gorm"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Add(ctx context.Context, requestGroup entity.Group, userID string) (group entity.Group, err error)
-	List(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []entity.Group, err error)
-	FindByID(ctx context.Context, groupID, userID string) (group entity.Group, err error)
+	Add(ctx context.Context, requestGroup model.Group, userID string) (group model.Group, err error)
+	List(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []model.Group, err error)
+	FindByID(ctx context.Context, groupID, userID string) (group model.Group, err error)
 
 	NewHTTP(r *mux.Router)
 	HTTPAdd(w http.ResponseWriter, r *http.Request)
@@ -35,17 +35,17 @@ func NewService(database *gorm.DB, secret string) Service {
 	return service{database, secret}
 }
 
-func (s service) Add(ctx context.Context, requestGroup entity.Group, userID string) (group entity.Group, err error) {
+func (s service) Add(ctx context.Context, requestGroup model.Group, userID string) (group model.Group, err error) {
 	l := logger.Logger(ctx)
 
-	err = s.db.Model(&entity.Group{}).
+	err = s.db.Model(&model.Group{}).
 		Where("name = ?", requestGroup.Name).
 		Take(&group).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		group = requestGroup
 		group.CreatedBy = userID
-		group.Users = append(group.Users, entity.User{ID: userID})
+		group.Users = append(group.Users, model.User{ID: userID})
 
 		err = s.db.Create(&group).Save(&group).Error
 		if err == nil {
@@ -62,7 +62,7 @@ func (s service) Add(ctx context.Context, requestGroup entity.Group, userID stri
 	return group, e.ErrInternalServerError
 }
 
-func (s service) List(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []entity.Group, err error) {
+func (s service) List(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []model.Group, err error) {
 	l := logger.Logger(ctx)
 	pages = 1
 
@@ -108,7 +108,7 @@ func (s service) List(ctx context.Context, offset, limit int, sort, userID strin
 }
 
 // FindByID get a group details filtering with group ID.
-func (s service) FindByID(ctx context.Context, groupID, userID string) (group entity.Group, err error) {
+func (s service) FindByID(ctx context.Context, groupID, userID string) (group model.Group, err error) {
 	l := logger.Logger(ctx)
 
 	query := `SELECT groups.*
@@ -128,7 +128,7 @@ func (s service) FindByID(ctx context.Context, groupID, userID string) (group en
 		l.Error().Caller().Msg(err.Error())
 	}
 
-	users := []entity.User{}
+	users := []model.User{}
 	queryUsers := `SELECT users.*
 		FROM users 
 		JOIN user_groups 

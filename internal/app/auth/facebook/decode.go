@@ -2,6 +2,8 @@ package facebook
 
 import (
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type loginRequest struct{}
@@ -19,8 +21,8 @@ type callbackRequest struct {
 	Prompt   string
 }
 
-func decodeCallbackRequest(r *http.Request) (req callbackRequest, err error) {
-	q := r.URL.Query()
+func decodeCallbackRequest(c *gin.Context) (req callbackRequest, err error) {
+	q := c.Request.URL.Query()
 	var scopes []string
 	req = callbackRequest{
 		q.Get("state"),

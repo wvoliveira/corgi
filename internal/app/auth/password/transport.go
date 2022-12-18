@@ -1,90 +1,83 @@
 package password
 
 import (
-	"net/http"
-
-	"github.com/gorilla/mux"
-	"github.com/rs/zerolog/log"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/middleware"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/v1/auth/password").Subrouter()
-	rr.Use(middleware.Checks)
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/auth/password")
 
-	rr.HandleFunc("/login", s.HTTPLogin).Methods("POST")
-	rr.HandleFunc("/register", s.HTTPRegister).Methods("POST")
+	r.POST("/login", s.HTTPLogin)
+	r.POST("/register", s.HTTPRegister)
 }
 
-func (s service) HTTPLogin(w http.ResponseWriter, r *http.Request) {
-	// Decode request to request object.
-	dr, err := decodeLoginRequest(r)
-	if err != nil {
-		e.EncodeError(w, err)
-		return
-	}
-	identity := entity.Identity{Provider: "email", UID: dr.Email, Password: dr.Password}
+func (s service) HTTPLogin(c *gin.Context) {
 
-	// Business logic.
-	session, err := s.Login(r.Context(), identity)
+	dr, err := decodeLogin(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	cookieAccess := http.Cookie{
-		Name:    "access_token",
-		Value:   session.TokenAccess,
-		Path:    "/",
-		Expires: session.ExpiresIn,
-		// RawExpires
-		Secure:   false,
-		HttpOnly: false,
+	identity := model.Identity{
+		Provider: "email",
+		UID:      dr.Email,
+		Password: dr.Password,
 	}
 
-	cookieRefresh := http.Cookie{
-		Name:    "refresh_token_id",
-		Value:   session.TokenRefresh,
-		Path:    "/",
-		Expires: session.ExpiresIn,
-		// RawExpires
-		Secure:   false,
-		HttpOnly: false,
+	user, err := s.Login(c, identity)
+
+	if err != nil {
+		e.EncodeError(c, err)
+		return
 	}
 
-	http.SetCookie(w, &cookieAccess)
-	http.SetCookie(w, &cookieRefresh)
+	session := sessions.Default(c)
+	session.Set("user", user)
 
-	w.WriteHeader(200)
+	err = session.Save()
+
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	data := gin.H{
+		"name":   user.Name,
+		"role":   user.Role,
+		"active": user.Active,
+	}
+
+	c.JSON(200, response.Response{
+		Status: "successful",
+		Data:   data,
+	})
 }
 
-func (s service) HTTPRegister(w http.ResponseWriter, r *http.Request) {
-	// Decode request and create a object with it.
-	dr, err := decodeRegisterRequest(r)
+func (s service) HTTPRegister(c *gin.Context) {
+
+	dr, err := decodeRegister(c)
+
 	if err != nil {
-		log.Error().Caller().Msg(err.Error())
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Business logic.
-	err = s.Register(r.Context(), entity.Identity{
+	err = s.Register(c, model.Identity{
 		Provider: "email",
 		UID:      dr.Email,
 		Password: dr.Password,
 	})
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Encode response to send to final-user.
-	err = encodeRegister(w)
-	if err != nil {
-		log.Error().Caller().Msg(err.Error())
-		e.EncodeError(w, err)
-		return
-	}
+	encodeRegister(c)
 }

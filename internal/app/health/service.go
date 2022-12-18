@@ -7,9 +7,9 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/pkg/config"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2/facebook"
 	"golang.org/x/oauth2/google"
 	"golang.org/x/text/cases"
@@ -19,62 +19,56 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Health(ctx context.Context) ([]entity.Health, error)
-	HealthDatabase(ctx context.Context) (h entity.Health)
-	HealthAuth(ctx context.Context, providers []string) ([]entity.Health, error)
+	Health(*gin.Context) ([]model.Health, error)
 
-	NewHTTP(r *mux.Router)
-	HTTPHealth(w http.ResponseWriter, r *http.Request)
-	HTTPHealthAuth(w http.ResponseWriter, r *http.Request)
-	HTTPHealthAuthProvider(w http.ResponseWriter, r *http.Request)
-	HTTPHealthLive(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPHealth(*gin.Context)
 }
 
 type service struct {
 	db      *gorm.DB
-	cfg     config.Config
 	version string
 }
 
 // NewService creates a new healthcheck service.
-func NewService(db *gorm.DB, cfg config.Config, version string) Service {
-	return service{db, cfg, version}
+func NewService(db *gorm.DB, version string) Service {
+	return service{db, version}
 }
 
 // Health make a health check for system dependencies
 // like database, social network authentication, etc.
-func (s service) Health(ctx context.Context) (hs []entity.Health, err error) {
-	// Increase async group and check a dependence.
-	// It's useful for non-blocking healthcheck.
+func (s service) Health(c *gin.Context) (hs []model.Health, err error) {
+
 	var wg sync.WaitGroup
 
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		hs = append(hs, s.HealthDatabase(ctx))
+		hs = append(hs, s.healthDatabase(c))
 	}()
 
 	// Checking Google authentication.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		hs = append(hs, s.healthAuthentication(ctx, "google"))
+		hs = append(hs, s.healthAuthentication(c, "google"))
 	}()
 
 	// Checking Facebook authentication.
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
-		hs = append(hs, s.healthAuthentication(ctx, "facebook"))
+		hs = append(hs, s.healthAuthentication(c, "facebook"))
 	}()
 
 	wg.Wait()
+
 	return
 }
 
 // HealthAuth make a health check for auth dependencies.
 // like Google auth, Facebook auth or another social network.
-func (s service) HealthAuth(ctx context.Context, providers []string) (hs []entity.Health, err error) {
+func (s service) HealthAuth(ctx context.Context, providers []string) (hs []model.Health, err error) {
 	// Increase async group and check a dependence.
 	// It's useful for non-blocking healthcheck.
 	var wg sync.WaitGroup
@@ -96,11 +90,13 @@ func (s service) HealthAuth(ctx context.Context, providers []string) (hs []entit
 	}
 
 	wg.Wait()
+
 	return
 }
 
-func (s service) HealthDatabase(ctx context.Context) (h entity.Health) {
-	h = entity.Health{
+func (s service) healthDatabase(c *gin.Context) (h model.Health) {
+
+	h = model.Health{
 		Required:    true,
 		Status:      "ok",
 		Component:   "database",
@@ -110,19 +106,22 @@ func (s service) HealthDatabase(ctx context.Context) (h entity.Health) {
 	// You can mock a error with below one or create one yourself.
 	// err := errors.New("database is locked. Call your admin hero")
 	err := s.db.Exec("PRAGMA integrity_check").Error
+
 	if err != nil {
 		h.Status = "error"
 		h.Description = fmt.Sprintf("Integrity check return error: %s", err.Error())
 	}
+
 	return
 }
 
-func (s service) healthAuthentication(ctx context.Context, provider string) (h entity.Health) {
+func (s service) healthAuthentication(ctx context.Context, provider string) (h model.Health) {
+
 	provider = strings.ToLower(provider)
 	component := fmt.Sprintf("%s Auth", cases.Title(language.English, cases.Compact).String(provider))
 
 	// The default config is disabled social authentication
-	h = entity.Health{
+	h = model.Health{
 		Required:    false,
 		Status:      "disabled",
 		Component:   component,
@@ -134,12 +133,12 @@ func (s service) healthAuthentication(ctx context.Context, provider string) (h e
 	switch provider {
 	case "google":
 		endpoint = google.Endpoint.AuthURL
-		if s.cfg.Auth.Google.ClientID == "" || s.cfg.Auth.Google.ClientSecret == "" {
+		if viper.GetString("auth.google.client_id") == "" || viper.GetString("auth.google.client_secret") == "" {
 			return
 		}
 	case "facebook":
 		endpoint = facebook.Endpoint.AuthURL
-		if s.cfg.Auth.Facebook.ClientID == "" || s.cfg.Auth.Facebook.ClientSecret == "" {
+		if viper.GetString("auth.facebook.client_id") == "" || viper.GetString("auth.facebook.client_secret") == "" {
 			return
 		}
 	}
@@ -159,5 +158,6 @@ func (s service) healthAuthentication(ctx context.Context, provider string) (h e
 		h.Status = "ok"
 		h.Description = fmt.Sprintf("%s is OK", component)
 	}
+
 	return
 }

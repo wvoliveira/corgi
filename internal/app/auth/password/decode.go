@@ -2,7 +2,8 @@ package password
 
 import (
 	"encoding/json"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
 type loginRequest struct {
@@ -16,15 +17,15 @@ type registerRequest struct {
 	Password string `json:"password"`
 }
 
-func decodeLoginRequest(r *http.Request) (req loginRequest, err error) {
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+func decodeLogin(c *gin.Context) (req loginRequest, err error) {
+	if err = json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		return req, err
 	}
 	return req, nil
 }
 
-func decodeRegisterRequest(r *http.Request) (req registerRequest, err error) {
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
+func decodeRegister(c *gin.Context) (req registerRequest, err error) {
+	if err = json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
 		return req, err
 	}
 	return req, nil

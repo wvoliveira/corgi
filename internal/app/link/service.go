@@ -1,54 +1,50 @@
 package link
 
 import (
-	"context"
 	"errors"
 	"math"
-	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
 	"github.com/teris-io/shortid"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Add(ctx context.Context, payload entity.Link) (link entity.Link, err error)
-	FindByID(ctx context.Context, linkID, userID string) (link entity.Link, err error)
-	FindAll(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, links []entity.Link, err error)
-	Update(ctx context.Context, payload entity.Link) (link entity.Link, err error)
-	Delete(ctx context.Context, linkID, userID string) (err error)
+	Add(*gin.Context, model.Link) (link model.Link, err error)
+	FindByID(*gin.Context, string, string) (link model.Link, err error)
+	FindAll(*gin.Context, int, int, string, string) (total int64, pages int, links []model.Link, err error)
+	Update(*gin.Context, model.Link) (link model.Link, err error)
+	Delete(*gin.Context, string, string) (err error)
 
-	NewHTTP(r *mux.Router)
-	HTTPAdd(w http.ResponseWriter, r *http.Request)
-	HTTPFindByID(w http.ResponseWriter, r *http.Request)
-	HTTPFindAll(w http.ResponseWriter, r *http.Request)
-	HTTPUpdate(w http.ResponseWriter, r *http.Request)
-	HTTPDelete(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPAdd(*gin.Context)
+	HTTPFindByID(*gin.Context)
+	HTTPFindAll(*gin.Context)
+	HTTPUpdate(*gin.Context)
+	HTTPDelete(*gin.Context)
 }
 
 type service struct {
-	db     *gorm.DB
-	secret string
-	store  *sessions.CookieStore
+	db *gorm.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, secret string, store *sessions.CookieStore) Service {
-	return service{db, secret, store}
+func NewService(db *gorm.DB) Service {
+	return service{db}
 }
 
 // Add create a new shortener link.
-func (s service) Add(ctx context.Context, link entity.Link) (li entity.Link, err error) {
-	l := logger.Logger(ctx)
+func (s service) Add(c *gin.Context, link model.Link) (m model.Link, err error) {
+	l := logger.Logger(c)
 
-	if err = checkLink(ctx, link); err != nil {
+	if err = checkLink(link); err != nil {
 		return
 	}
 
@@ -56,9 +52,13 @@ func (s service) Add(ctx context.Context, link entity.Link) (li entity.Link, err
 	if link.UserID == "anonymous" {
 		sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
 		link.Keyword, _ = sid.Generate()
-	} else {
+
+	}
+
+	if link.UserID != "anonymous" {
+
 		if link.Domain == "" {
-			return li, e.ErrLinkInvalidDomain
+			return m, e.ErrLinkInvalidDomain
 		}
 
 		if link.Keyword == "" {
@@ -67,58 +67,69 @@ func (s service) Add(ctx context.Context, link entity.Link) (li entity.Link, err
 		}
 	}
 
-	err = s.db.Model(&entity.Link{}).
+	err = s.db.Model(&model.Link{}).
 		Where("domain = ? AND keyword = ?", link.Domain, link.Keyword).
-		Take(&li).Error
+		Take(&m).Error
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
-		li.ID = uuid.New().String()
-		li.CreatedAt = time.Now()
-		li.Domain = link.Domain
-		li.Keyword = link.Keyword
-		li.URL = link.URL
-		li.Active = "true"
-		li.UserID = link.UserID
 
-		err = s.db.Model(&entity.Link{}).Create(&li).Error
+		m.ID = uuid.New().String()
+		m.CreatedAt = time.Now()
+		m.Domain = link.Domain
+		m.Keyword = link.Keyword
+		m.URL = link.URL
+		m.Title = link.Title
+		m.Active = "true"
+		m.UserID = link.UserID
+
+		err = s.db.
+			Model(&model.Link{}).
+			Create(&m).Error
+
 		if err == nil {
 			l.Info().Caller().Msg("short link created with successfully")
 		}
-		return li, err
 
-	} else if err == nil {
-		l.Warn().Caller().Msg("domain with keyword already exists")
-		return li, e.ErrAlreadyExists
+		return m, err
 	}
 
-	return li, e.ErrInternalServerError
+	if err == nil {
+		l.Warn().Caller().Msg("domain with keyword already exists")
+		return m, e.ErrAlreadyExists
+	}
+
+	return m, e.ErrInternalServerError
 }
 
 // FindByID get a shortener link from ID.
-func (s service) FindByID(ctx context.Context, linkID, userID string) (li entity.Link, err error) {
-	l := logger.Logger(ctx)
+func (s service) FindByID(c *gin.Context, linkID, userID string) (li model.Link, err error) {
 
-	err = s.db.Model(&entity.Link{}).
+	log := logger.Logger(c)
+
+	err = s.db.Model(&model.Link{}).
 		Where("id = ? AND user_id = ?", linkID, userID).
 		Take(&li).Error
 
 	if err == gorm.ErrRecordNotFound {
-		l.Warn().Caller().Msg("link not found")
+		log.Warn().Caller().Msg("link not found")
 		return li, e.ErrLinkNotFound
 
-	} else if err == nil {
+	}
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	l.Error().Caller().Msg(err.Error())
 	return
 }
 
 // FindAll get a list of links from database.
-func (s service) FindAll(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, links []entity.Link, err error) {
-	l := logger.Logger(ctx)
+func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID string) (total int64, pages int, links []model.Link, err error) {
 
-	err = s.db.Model(&entity.Link{}).Where("user_id = ?", userID).
+	log := logger.Logger(c)
+
+	err = s.db.Model(&model.Link{}).Where("user_id = ?", userID).
 		Count(&total).
 		Offset(offset).
 		Limit(limit).
@@ -126,54 +137,64 @@ func (s service) FindAll(ctx context.Context, offset, limit int, sort, userID st
 		Find(&links).Error
 
 	if err == gorm.ErrRecordNotFound {
-		l.Info().Caller().Msg("links not found")
+		log.Info().Caller().Msg("links not found")
 		return total, pages, links, e.ErrLinkNotFound
+	}
 
-	} else if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return total, pages, links, e.ErrInternalServerError
 	}
 
 	pages = int(math.Ceil(float64(total) / float64(limit)))
+
 	return
 }
 
 // Update change specific link by ID.
-func (s service) Update(ctx context.Context, link entity.Link) (li entity.Link, err error) {
-	l := logger.Logger(ctx)
+func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err error) {
 
-	err = s.db.Model(&entity.Link{}).
+	log := logger.Logger(c)
+
+	err = s.db.Model(&model.Link{}).
 		Where("id = ? AND user_id = ?", link.ID, link.UserID).
 		Updates(&link).
-		First(&li).Error
+		First(&m).Error
 
 	if err == gorm.ErrRecordNotFound {
-		l.Info().Caller().Msg("link not found")
-		return li, e.ErrLinkNotFound
-	} else if err != nil {
-		return li, e.ErrInternalServerError
+		log.Info().Caller().Msg("link not found")
+		return m, e.ErrLinkNotFound
+
 	}
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return m, e.ErrInternalServerError
+	}
+
 	return
 }
 
 // Delete delete a link by ID.
-func (s service) Delete(ctx context.Context, linkID, userID string) (err error) {
-	l := logger.Logger(ctx)
+func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 
-	stat := s.db.
-		Model(&entity.Link{}).
+	log := logger.Logger(c)
+
+	err = s.db.
+		Model(&model.Link{}).
+		Clauses(clause.Returning{}).
 		Where("id = ? AND user_id = ?", linkID, userID).
-		Delete(&entity.Link{ID: linkID, UserID: userID})
+		Delete(&model.Link{ID: linkID, UserID: userID}).Error
 
-	err = stat.Error
-	count := stat.RowsAffected
-
-	if err == gorm.ErrRecordNotFound || count == 0 {
+	if err == gorm.ErrRecordNotFound {
+		log.Info().Caller().Msg("link not found")
 		return e.ErrLinkNotFound
-	} else if err == nil {
-		return
 	}
 
-	l.Error().Caller().Msg(err.Error())
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return e.ErrInternalServerError
+	}
+
 	return
 }

@@ -1,12 +1,13 @@
 package errors
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-//nolint
+// nolint
 var (
 	ErrInconsistentIDs = errors.New("inconsistent IDs")
 	ErrAlreadyExists   = errors.New("already exists")
@@ -64,25 +65,29 @@ type response struct {
 }
 
 /*
-	Errorer is implemented by all concrete response types that may contain
-	errors. It allows us to change the HTTP response code without needing to
-	trigger an endpoint (transport-level) error. For more information, read the
-	big comment in endpoints.go.
+Errorer is implemented by all concrete response types that may contain
+errors. It allows us to change the HTTP response code without needing to
+trigger an endpoint (transport-level) error. For more information, read the
+big comment in endpoints.go.
 */
 type Errorer interface {
 	Error() error
 }
 
 // EncodeError generate a response for errors.
-func EncodeError(w http.ResponseWriter, err error) {
+func EncodeError(c *gin.Context, err error) {
+
+	resp := response{
+		Status: "error",
+		Data:   nil,
+	}
+
 	if err == nil {
 		panic("encodeError with nil error")
 	}
-	r := response{Status: "error", Data: nil, Message: err.Error()}
-	w.Header().Set("Content-Type", "application/json")
 
-	w.WriteHeader(codeFrom(err))
-	_ = json.NewEncoder(w).Encode(r)
+	resp.Message = err.Error()
+	c.JSON(codeFrom(err), resp)
 }
 
 func codeFrom(err error) int {
@@ -90,8 +95,8 @@ func codeFrom(err error) int {
 	case ErrNotFound, ErrLinkNotFound, ErrGroupNotFound:
 		return http.StatusNotFound
 
-	case ErrInconsistentIDs, ErrUserDeleteYourSelf, ErrLinkAlreadyExists, ErrAlreadyExists,
-		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists, ErrGroupAlreadyExists:
+	case ErrInconsistentIDs, ErrLinkAlreadyExists, ErrAlreadyExists,
+		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists:
 		return http.StatusBadRequest
 
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:

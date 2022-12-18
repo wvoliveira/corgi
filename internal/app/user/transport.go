@@ -3,39 +3,40 @@ package user
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/v1/user").Subrouter()
-	rr.Use(middleware.Checks)
-	rr.Use(middleware.Auth(s.secret))
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/user")
+	// rr.Use(middleware.Checks)
+	r.Use(middleware.Auth())
 
-	rr.HandleFunc("/me", s.HTTPFind).Methods("GET")
-	rr.HandleFunc("/me", s.HTTPUpdate).Methods("PATCH")
+	r.GET("/me", s.HTTPFind)
+	r.PATCH("/me", s.HTTPUpdate)
 }
 
-func (s service) HTTPFind(w http.ResponseWriter, r *http.Request) {
-	// Decode request to request object.
-	dr, err := decodeFind(r)
+func (s service) HTTPFind(c *gin.Context) {
+
+	var identities = []identity{}
+
+	user, err := decodeFind(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Business logic.
-	user, err := s.Find(r.Context(), dr.UserID)
+	user, err = s.Find(c, user.ID)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Encode object to answer request (response).
-	var identities []identity
 	for _, i := range user.Identities {
 		idt := identity{
 			Provider: i.Provider,
@@ -44,30 +45,36 @@ func (s service) HTTPFind(w http.ResponseWriter, r *http.Request) {
 		identities = append(identities, idt)
 	}
 
-	ur := userResponse{Name: user.Name, Role: user.Role, Identities: identities}
-	response.Default(w, ur, "", http.StatusOK)
+	resp := userResponse{
+		Name:       user.Name,
+		Role:       user.Role,
+		Identities: identities,
+	}
+
+	response.Default(c, resp, "", http.StatusOK)
 }
 
-func (s service) HTTPUpdate(w http.ResponseWriter, r *http.Request) {
-	// Decode request to request object.
-	dr, err := decodeUpdate(r)
+func (s service) HTTPUpdate(c *gin.Context) {
+
+	user, err := decodeUpdate(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Business logic.
-	user, err := s.Update(r.Context(), entity.User{ID: dr.UserID, Name: dr.Name})
+	user, err = s.Update(c, model.User{ID: user.ID, Name: user.Name})
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Encode object to answer request (response).
-	sr := updateResponse{
+	resp := updateResponse{
 		UpdatedAt: user.UpdatedAt,
 		Name:      user.Name,
 		Err:       err,
 	}
-	response.Default(w, sr, "", http.StatusOK)
+
+	response.Default(c, resp, "", http.StatusOK)
 }
