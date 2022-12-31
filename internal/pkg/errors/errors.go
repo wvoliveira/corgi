@@ -95,7 +95,7 @@ func codeFrom(err error) int {
 	case ErrNotFound, ErrLinkNotFound, ErrGroupNotFound:
 		return http.StatusNotFound
 
-	case ErrInconsistentIDs, ErrLinkAlreadyExists, ErrAlreadyExists,
+	case ErrRequestNeedBody, ErrInconsistentIDs, ErrLinkAlreadyExists, ErrAlreadyExists,
 		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists:
 		return http.StatusBadRequest
 

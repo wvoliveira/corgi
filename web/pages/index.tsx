@@ -3,6 +3,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { Inter } from '@next/font/google'
 import styles from '../styles/Home.module.css'
+import LinkForm from '../components/link/LinkForm'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -27,10 +28,7 @@ export default function Home() {
           <Link href="/register">Register</Link>
         </p>
 
-        <p>Create a anonymous short link:
-          { ' ' } <input type="text" placeholder="https://" />
-          { ' ' } <button>Create</button>
-        </p>
+        <LinkForm />
 
       </main>
     </>

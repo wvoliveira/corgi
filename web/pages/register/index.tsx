@@ -15,14 +15,26 @@ export default function Register() {
           <h1>Corgi</h1>
       </Link>
 
-      <p>
-        <Link href="/login">Login</Link>
-      </p>
+      <form>
+        <p>
+          <label htmlFor="name">Name</label><br/>
+          <input type="text"/>
+        </p>
 
-      <p><input type="email" placeholder="user@email.com"/></p>
-      <p><input type="password" placeholder="password"/></p>
-      <p><input type="password" placeholder="password"/></p>
-      <p><button>Register</button></p>
+        <p>
+          <label htmlFor="email">Email</label><br/>
+          <input type="email"/>
+        </p>
+
+        <p>
+          <label htmlFor="password">Password</label><br/>
+          <input type="password"/>
+        </p>
+
+        <p><button>Create an account</button></p>
+      </form>
+
+      <p>Already a user? <Link href="/login">Log In</Link></p>
 
     </>
   )

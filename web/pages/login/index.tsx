@@ -15,13 +15,22 @@ export default function Login() {
           <h1>Corgi</h1>
       </Link>
 
-      <p>
-        <Link href="/register">Register</Link>
-      </p>
+      <form>
+        <p>
+          <label htmlFor="email">Email</label><br/>
+          <input type="email"/>
+        </p>
 
-      <p><input type="email" placeholder="user@email.com"/></p>
-      <p><input type="password" placeholder="password"/></p>
-      <p><button>Login</button></p>
+        <p>
+          <label htmlFor="password">Password</label><br/>
+          <input type="password"/>
+        </p>
+
+        <p><button>Login</button></p>
+      </form>
+
+      <p>Don't have an account? <Link href="/register">Register</Link></p>
+      <p><Link href="/password/reset">Forgot password?</Link></p>
 
     </>
   )

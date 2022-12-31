@@ -59,7 +59,7 @@ func Checks() gin.HandlerFunc {
 			if c.Request.Body == http.NoBody {
 				log.Warn().Caller().Msg("Empty body in POST or PATCH request")
 				e.EncodeError(c, e.ErrRequestNeedBody)
-				return
+				c.Abort()
 			}
 		}
 
