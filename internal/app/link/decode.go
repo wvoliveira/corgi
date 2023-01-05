@@ -58,10 +58,6 @@ func decodeAdd(c *gin.Context) (r addRequest, err error) {
 		return r, err
 	}
 
-	if err != nil {
-		return
-	}
-
 	// TODO: insert this logic in config env/file.
 	// with default domain if not send in payload.
 	if r.Domain == "" {

@@ -1,14 +1,15 @@
 package group
 
 import (
-	"encoding/json"
 	"errors"
-	"net/http"
 	"strconv"
 	"strings"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
 type addRequest struct {
@@ -31,17 +32,16 @@ type findByIDRequest struct {
 	UserID string `json:"-"`
 }
 
-func decodeAdd(r *http.Request) (payload addRequest, userID string, err error) {
-	ctx := r.Context()
+func decodeAdd(c *gin.Context) (payload addRequest, userID string, err error) {
+	session := sessions.Default(c)
+	v := session.Get("user")
 
-	data := ctx.Value(entity.IdentityInfo{})
-	if data == nil {
-		err = errors.New("impossible to get identity/user from context")
-		return
+	if v == nil {
+		return payload, userID, errors.New("impossible to get user from session")
 	}
 
-	if err = json.NewDecoder(r.Body).Decode(&payload); err != nil {
-		return
+	if err = c.ShouldBindJSON(&payload); err != nil {
+		return payload, userID, err
 	}
 
 	payload.Name = strings.ToLower(payload.Name)
@@ -50,22 +50,21 @@ func decodeAdd(r *http.Request) (payload addRequest, userID string, err error) {
 		return
 	}
 
-	identity := data.(entity.IdentityInfo)
-	userID = identity.UserID
+	r.UserID = v.(model.User).ID
 	return
 }
 
-func decodeList(r *http.Request) (request listRequest, err error) {
+func decodeList(c *gin.Context) (request listRequest, err error) {
 	ctx := r.Context()
 	params := r.URL.Query()
 
-	data := ctx.Value(entity.IdentityInfo{})
+	data := ctx.Value(model.IdentityInfo{})
 	if data == nil {
 		err = e.ErrUserNotFoundInContext
 		return
 	}
 
-	ii := data.(entity.IdentityInfo)
+	ii := data.(model.IdentityInfo)
 
 	page, _ := strconv.Atoi(params.Get("page"))
 	limit, _ := strconv.Atoi(params.Get("limit"))
@@ -94,16 +93,16 @@ func decodeList(r *http.Request) (request listRequest, err error) {
 	return
 }
 
-func decodeFindByID(r *http.Request) (req findByIDRequest, err error) {
+func decodeFindByID(c *gin.Context) (req findByIDRequest, err error) {
 	ctx := r.Context()
 	vars := mux.Vars(r)
 
-	data := ctx.Value(entity.IdentityInfo{})
+	data := ctx.Value(model.IdentityInfo{})
 	if data == nil {
 		return req, errors.New("impossible to get identity from context")
 	}
 
-	identity := data.(entity.IdentityInfo)
+	identity := data.(model.IdentityInfo)
 
 	GroupID := vars["id"]
 	if GroupID == "" {

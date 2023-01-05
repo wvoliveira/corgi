@@ -1,5 +1,4 @@
 import Link from "next/link"
-import Head from "next/head"
 
 export default function Login() {
   return (
@@ -18,7 +17,7 @@ export default function Login() {
         <p><button>Login</button></p>
       </form>
 
-      <p>Don't have an account? <Link href="/register">Register</Link></p>
+      <p>Don&apos;t have an account? <Link href="/register">Register</Link></p>
       <p><Link href="/password/reset">Forgot password?</Link></p>
 
     </>

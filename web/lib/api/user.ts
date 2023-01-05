@@ -12,10 +12,10 @@ const UserAPI = {
       });
       return response;
     } catch (error) {
-      return error.response;
+      return error;
     }
   },
-  login: async (email, password) => {
+  login: async (email: string, password: string) => {
     try {
       const response = await axios.post(
         `/api/users/login`,
@@ -28,10 +28,10 @@ const UserAPI = {
       );
       return response;
     } catch (error) {
-      return error.response;
+      return error;
     }
   },
-  register: async (username, email, password) => {
+  register: async (username: string, email: string, password: string) => {
     try {
       const response = await axios.post(
         `/api/users`,
@@ -44,10 +44,10 @@ const UserAPI = {
       );
       return response;
     } catch (error) {
-      return error.response;
+      return error;
     }
   },
-  save: async (user) => {
+  save: async (user: any) => {
     try {
       const response = await axios.put(
         `/api/user`,
@@ -60,45 +60,9 @@ const UserAPI = {
       );
       return response;
     } catch (error) {
-      return error.response;
+      return error;
     }
-  },
-  follow: async (username) => {
-    const user: any = JSON.parse(window.localStorage.getItem("user"));
-    const token = user?.token;
-    try {
-      const response = await axios.post(
-        `/api/profiles/${username}/follow`,
-        {},
-        {
-          headers: {
-            Authorization: `Token ${encodeURIComponent(token)}`,
-          },
-        }
-      );
-      return response;
-    } catch (error) {
-      return error.response;
-    }
-  },
-  unfollow: async (username) => {
-    const user: any = JSON.parse(window.localStorage.getItem("user"));
-    const token = user?.token;
-    try {
-      const response = await axios.delete(
-        `/api/profiles/${username}/follow`,
-        {
-          headers: {
-            Authorization: `Token ${encodeURIComponent(token)}`,
-          },
-        }
-      );
-      return response;
-    } catch (error) {
-      return error.response;
-    }
-  },
-  get: async (username) => axios.get(`/api/profiles/${username}`),
+  }
 };
 
 export default UserAPI;

@@ -3,34 +3,34 @@ package group
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/v1/groups").Subrouter()
-	rr.Use(middleware.Auth(s.secret))
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/groups")
+	r.Use(middleware.Auth())
 
-	rr.HandleFunc("", s.HTTPAdd).Methods("POST")
-	rr.HandleFunc("", s.HTTPList).Methods("GET")
-	rr.HandleFunc("/{id}", s.HTTPFindByID).Methods("GET")
+	r.POST("", s.HTTPAdd)
+	r.GET("", s.HTTPList)
+	r.GET("/:id", s.HTTPFindByID)
 }
 
-func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {
-	payload, userID, err := decodeAdd(r)
+func (s service) HTTPAdd(c *gin.Context) {
+	payload, userID, err := decodeAdd(c)
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
 	group := model.Group{Name: payload.Name, DisplayName: payload.DisplayName, Description: payload.Description}
 
-	group, err = s.Add(r.Context(), group, userID)
+	group, err = s.Add(c, group, userID)
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
@@ -46,19 +46,19 @@ func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {
 		UserIDs:     userIDs,
 	}
 
-	response.Default(w, resp, "", http.StatusOK)
+	response.Default(c, resp, "", http.StatusOK)
 }
 
-func (s service) HTTPList(w http.ResponseWriter, r *http.Request) {
-	payload, err := decodeList(r)
+func (s service) HTTPList(c *gin.Context) {
+	payload, err := decodeList(c)
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	total, pages, groups, err := s.List(r.Context(), payload.Offset, payload.Limit, payload.Sort, payload.UserID)
+	total, pages, groups, err := s.List(c, payload.Offset, payload.Limit, payload.Sort, payload.UserID)
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
@@ -71,21 +71,21 @@ func (s service) HTTPList(w http.ResponseWriter, r *http.Request) {
 		Pages:  pages,
 	}
 
-	response.Default(w, resp, "", http.StatusOK)
+	response.Default(c, resp, "", http.StatusOK)
 }
 
-func (s service) HTTPFindByID(w http.ResponseWriter, r *http.Request) {
-	payload, err := decodeFindByID(r)
+func (s service) HTTPFindByID(c *gin.Context) {
+	payload, err := decodeFindByID(c)
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	group, err := s.FindByID(r.Context(), payload.ID, payload.UserID)
+	group, err := s.FindByID(c, payload.ID, payload.UserID)
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	response.Default(w, group, "", http.StatusOK)
+	response.Default(c, group, "", http.StatusOK)
 }
