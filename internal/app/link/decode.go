@@ -24,11 +24,12 @@ type findByIDRequest struct {
 }
 
 type findAllRequest struct {
-	Page   int    `json:"page"`
-	Sort   string `json:"sort"`
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
-	UserID string `json:"user_id"`
+	Page         int    `json:"page"`
+	Sort         string `json:"sort"`
+	Offset       int    `json:"offset"`
+	Limit        int    `json:"limit"`
+	UserID       string `json:"user_id"`
+	ShortenedURL string
 }
 
 type updateRequest struct {
@@ -99,9 +100,10 @@ func decodeFindAll(c *gin.Context) (r findAllRequest, err error) {
 		return r, errors.New("impossible to get user from session")
 	}
 
-	page, _ := strconv.Atoi(c.Param("page"))
-	limit, _ := strconv.Atoi(c.Param("limit"))
-	sort := c.Param("sort")
+	page, _ := strconv.Atoi(c.Query("page"))
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	sort := c.Query("sort")
+	shortenedURL := c.Query("u")
 
 	if page == 0 {
 		page = 1
@@ -124,6 +126,7 @@ func decodeFindAll(c *gin.Context) (r findAllRequest, err error) {
 	r.Limit = limit
 	r.Offset = offset
 	r.UserID = v.(model.User).ID
+	r.ShortenedURL = shortenedURL
 
 	return r, nil
 }

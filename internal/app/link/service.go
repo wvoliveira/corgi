@@ -11,6 +11,7 @@ import (
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"github.com/wvoliveira/corgi/internal/pkg/util"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -19,7 +20,7 @@ import (
 type Service interface {
 	Add(*gin.Context, model.Link) (link model.Link, err error)
 	FindByID(*gin.Context, string, string) (link model.Link, err error)
-	FindAll(*gin.Context, int, int, string, string) (total int64, pages int, links []model.Link, err error)
+	FindAll(*gin.Context, int, int, string, string, string) (total int64, pages int, links []model.Link, err error)
 	Update(*gin.Context, model.Link) (link model.Link, err error)
 	Delete(*gin.Context, string, string) (err error)
 
@@ -125,11 +126,19 @@ func (s service) FindByID(c *gin.Context, linkID, userID string) (li model.Link,
 }
 
 // FindAll get a list of links from database.
-func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID string) (total int64, pages int, links []model.Link, err error) {
+func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID, shortenedURL string) (total int64, pages int, links []model.Link, err error) {
 
 	log := logger.Logger(c)
 
-	err = s.db.Model(&model.Link{}).Where("user_id = ?", userID).
+	domain, keyword := util.SplitURL(shortenedURL)
+
+	query := s.db.Model(&model.Link{}).Where("user_id = ?", userID)
+
+	if domain != "" && keyword != "" {
+		query = query.Where("domain = ? AND keyword = ?", domain, keyword)
+	}
+
+	err = query.
 		Count(&total).
 		Offset(offset).
 		Limit(limit).

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
@@ -68,4 +69,17 @@ func Contains(list []string, item string) bool {
 		}
 	}
 	return false
+}
+
+// SplitURL domain and keyword from shortened URL
+func SplitURL(url string) (domain, keyword string) {
+	if url != "" {
+		splited := strings.Split(url, "/")
+
+		if len(splited) == 2 {
+			domain = splited[0]
+			keyword = splited[1]
+		}
+	}
+	return
 }

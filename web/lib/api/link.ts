@@ -29,9 +29,14 @@ const LinkAPI = {
       return error.response;
     }
   },
-  list: async () => {
+  list: async (url = "") => {
+    var uri = `/api/links`;
+    if (url != "") {
+      uri = `${uri}?u=${url}`
+    }
+
     try {
-      const response = await axios.get(`/api/links`, {
+      const response = await axios.get(uri, {
         headers: {
           "Content-Type": "application/json",
         },

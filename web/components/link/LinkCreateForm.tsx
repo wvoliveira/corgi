@@ -2,7 +2,7 @@ import React from "react";
 import LinkAPI from "../../lib/api/link";
 import LinkCopy from "./LinkCopy";
 
-export default function LinkForm() {
+export default function LinkCreateForm() {
   const [isLoading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
   const [urlFull, setURLFull] = React.useState("");
