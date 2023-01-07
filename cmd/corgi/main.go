@@ -165,18 +165,23 @@ func main() {
 		service.NewHTTP(rootRouter)
 	}
 
-	// {
-	// 	// Start web application. User interface.
-	// 	// Embedded UI.
-	// 	distFS, err := fs.Sub(nextFS, "web")
-	// 	if err != nil {
-	// 		log.Fatal().Caller().Msg(err.Error())
-	// 		os.Exit(2)
-	// 	}
+	{
+		// Start web application. User interface.
+		// webHandler := http.FileServer(http.FS(web.DistDirFS))
 
-	// 	webHandler := http.FileServer(http.FS(distFS))
-	// 	webRouter.PathPrefix("").Handler(webHandler)
-	// }
+		router.Use(func(c *gin.Context) {
+
+		})
+
+		// router.StaticFS("/", web.DistFS)
+
+		// router.GET("/", func(c *gin.Context) {
+		// 	c.FileFromFS("/", http.FS(web.DistFS))
+		// 	c.FileFromFS("/_next/*", http.FS(web.DistFS))
+		// })
+
+		// router.Any("/", http.FileServer(http.FS(web.DistFS)))
+	}
 
 	srv := &http.Server{
 		Addr:         ":" + viper.GetString("server.http_port"),
