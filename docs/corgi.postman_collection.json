@@ -1,8 +1,9 @@
 {
 	"info": {
-		"_postman_id": "92466c8c-2608-4f04-90d4-e8245598c59b",
+		"_postman_id": "e3a72ce3-26bc-416e-8a4f-26cbf19b4b65",
 		"name": "Corgi",
-		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "2226970"
 	},
 	"item": [
 		{
@@ -26,12 +27,14 @@
 									}
 								},
 								"url": {
-									"raw": "localhost:8081/auth/password/login",
+									"raw": "localhost:8081/api/v1/auth/password/login",
 									"host": [
 										"localhost"
 									],
 									"port": "8081",
 									"path": [
+										"api",
+										"v1",
 										"auth",
 										"password",
 										"login"
@@ -130,13 +133,14 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/api/auth/logout",
+							"raw": "localhost:8081/api/v1/auth/logout",
 							"host": [
 								"localhost"
 							],
 							"port": "8081",
 							"path": [
 								"api",
+								"v1",
 								"auth",
 								"logout"
 							],
@@ -158,6 +162,19 @@
 			"item": [
 				{
 					"name": "GET /api/v1/links",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"param_link_id\", jsonData.data.data?.[0].id);",
+									"postman.setEnvironmentVariable(\"header_host\", jsonData.data.data?.[0].domain);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
 					"request": {
 						"auth": {
 							"type": "noauth"
@@ -165,7 +182,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/api/v1/links?page=1&limit=10",
+							"raw": "localhost:8081/api/v1/links",
 							"host": [
 								"localhost"
 							],
@@ -178,16 +195,67 @@
 							"query": [
 								{
 									"key": "page",
-									"value": "1"
+									"value": "1",
+									"disabled": true
 								},
 								{
 									"key": "limit",
-									"value": "10"
+									"value": "10",
+									"disabled": true
 								}
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "GET /api/v1/links",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/api/v1/links?page=1&limit=10",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"api",
+										"v1",
+										"links"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 14 Sep 2022 03:10:45 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "333"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"data\": [\n            {\n                \"id\": \"ae821428-748d-4369-9595-f7a6059bc776\",\n                \"created_at\": \"2022-09-14T00:10:31.762929-03:00\",\n                \"updated_at\": \"2022-09-14T00:10:31.762938-03:00\",\n                \"domain\": \"elga.io\",\n                \"keyword\": \"l_PQeCDaM\",\n                \"url\": \"https://elga.io\",\n                \"title\": \"\",\n                \"active\": \"true\"\n            }\n        ],\n        \"limit\": 10,\n        \"page\": 1,\n        \"sort\": \"ID desc\",\n        \"total\": 1,\n        \"pages\": 1\n    }\n}"
+						}
+					]
 				},
 				{
 					"name": "POST /api/v1/links",
@@ -196,7 +264,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"domain\": \"elga.io\",\r\n    \"keyword\": \"Asdferz10aaaaa\",\r\n    \"url\": \"https://elga.io\",\r\n    \"title\": \"ELGA home\"\r\n}\r\n",
+							"raw": "{\r\n    \"domain\": \"localhost\",\r\n    \"keyword\": \"globo\",\r\n    \"url\": \"https://globo.com\",\r\n    \"title\": \"Globo homepage\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -222,9 +290,15 @@
 					"name": "GET /api/v1/links/:id",
 					"request": {
 						"method": "GET",
-						"header": [],
+						"header": [
+							{
+								"key": "Host",
+								"value": "{{header_host}}",
+								"type": "text"
+							}
+						],
 						"url": {
-							"raw": "localhost:8081/api/v1/links/03f6133a-73ce-42fd-b4b1-695150216b26",
+							"raw": "localhost:8081/api/v1/links/{{param_link_id}}",
 							"host": [
 								"localhost"
 							],
@@ -233,7 +307,7 @@
 								"api",
 								"v1",
 								"links",
-								"03f6133a-73ce-42fd-b4b1-695150216b26"
+								"{{param_link_id}}"
 							]
 						}
 					},
@@ -322,23 +396,346 @@
 			"name": "Health",
 			"item": [
 				{
-					"name": "GET /health/ping",
+					"name": "GET /health",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/health/ping",
+							"raw": "localhost:8081/health",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"health"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET /health",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/health",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"health"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 24 Sep 2022 04:46:46 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "380"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": [\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Facebook Auth\",\n            \"description\": \"Facebook Auth config is not proper configured\"\n        },\n        {\n            \"required\": true,\n            \"status\": \"OK\",\n            \"component\": \"Database\",\n            \"description\": \"Integrity check is OK\"\n        },\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Google Auth\",\n            \"description\": \"Google Auth config is not proper configured\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "GET /health/live",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/health/live",
 							"host": [
 								"localhost"
 							],
 							"port": "8081",
 							"path": [
 								"health",
-								"ping"
+								"live"
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "GET /health/live",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/health/live",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"health",
+										"live"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 24 Sep 2022 04:46:38 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "38"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": \"Live\"\n}"
+						}
+					]
+				},
+				{
+					"name": "GET /health/ready",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/health/ready",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"health",
+								"ready"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET /health/ready",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/health/ready",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"health",
+										"ready"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 24 Sep 2022 04:46:01 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "380"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": [\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Facebook Auth\",\n            \"description\": \"Facebook Auth config is not proper configured\"\n        },\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Google Auth\",\n            \"description\": \"Google Auth config is not proper configured\"\n        },\n        {\n            \"required\": true,\n            \"status\": \"OK\",\n            \"component\": \"Database\",\n            \"description\": \"Integrity check is OK\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "GET /health/database",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/health/database",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"health",
+								"database"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET /health/database",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/health/database",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"health",
+										"database"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 24 Sep 2022 04:44:04 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "124"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"required\": true,\n        \"status\": \"OK\",\n        \"component\": \"Database\",\n        \"description\": \"Integrity check is OK\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "GET /health/auth",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/health/auth",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"health",
+								"auth"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET /health/auth",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/health/auth",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"health",
+										"auth"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 24 Sep 2022 04:44:45 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "287"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": [\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Facebook Auth\",\n            \"description\": \"Facebook Auth config is not proper configured\"\n        },\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Google Auth\",\n            \"description\": \"Google Auth config is not proper configured\"\n        }\n    ]\n}"
+						}
+					]
+				},
+				{
+					"name": "GET /health/auth/:provider",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "localhost:8081/health/auth/{{provider}}",
+							"host": [
+								"localhost"
+							],
+							"port": "8081",
+							"path": [
+								"health",
+								"auth",
+								"{{provider}}"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET /health/auth/:provider",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/health/auth/{{provider}}",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"health",
+										"auth",
+										"{{provider}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 24 Sep 2022 04:45:50 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "156"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"required\": false,\n        \"status\": \"Disabled\",\n        \"component\": \"Google Auth\",\n        \"description\": \"Google Auth config is not proper configured\"\n    }\n}"
+						}
+					]
 				}
 			]
 		},
@@ -373,7 +770,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"Admin\"\r\n}",
+							"raw": "{\r\n    \"name\": \"Admininistrator\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"

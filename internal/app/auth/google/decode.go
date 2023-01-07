@@ -1,14 +1,6 @@
 package google
 
-import (
-	"net/http"
-)
-
-type loginRequest struct{}
-
-func decodeLoginRequest(r *http.Request) (req loginRequest, err error) {
-	return req, nil
-}
+import "github.com/gin-gonic/gin"
 
 type callbackRequest struct {
 	State    string   //state=state
@@ -19,8 +11,8 @@ type callbackRequest struct {
 	Prompt   string   //prompt = consent
 }
 
-func decodeCallbackRequest(r *http.Request) (req callbackRequest, err error) {
-	q := r.URL.Query()
+func decodeCallbackRequest(c *gin.Context) (req callbackRequest, err error) {
+	q := c.Request.URL.Query()
 	var scopes []string
 	req = callbackRequest{
 		q.Get("state"),

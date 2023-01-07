@@ -6,19 +6,24 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
-// CreateDataFolder create Corgi folder for settings, database, etc.
-func CreateDataFolder(name string) (folder string, err error) {
+// GetOrCreateDataFolder create Corgi folder for settings, database, etc.
+func GetOrCreateDataFolder() (folder string, err error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
 		return
 	}
 
-	folder = filepath.Join(home, name)
+	folder = filepath.Join(home, ".corgi")
 	if _, err = os.Stat(folder); os.IsNotExist(err) {
 		err = os.Mkdir(folder, os.ModePerm)
 		if err != nil {
@@ -58,4 +63,40 @@ func PrintRoutes(rs []*mux.Router) {
 // AddContextInfo add any information inside context.
 func AddContextInfo(ctx context.Context, key interface{}, value string) context.Context {
 	return context.WithValue(ctx, key, value)
+}
+
+// Contains check if contain a specific item in a list.
+func Contains(list []string, item string) bool {
+	for _, a := range list {
+		if a == item {
+			return true
+		}
+	}
+	return false
+}
+
+// SplitURL domain and keyword from shortened URL
+func SplitURL(url string) (domain, keyword string) {
+	if url != "" {
+		splited := strings.Split(url, "/")
+
+		if len(splited) == 2 {
+			domain = splited[0]
+			keyword = splited[1]
+		}
+	}
+	return
+}
+
+// GetUserFromSession get user from gin context.
+func GetUserFromSession(c *gin.Context) (userID string, err error) {
+	session := sessions.Default(c)
+	v := session.Get("user")
+
+	if v == nil {
+		return userID, e.ErrUserFromSession
+	}
+
+	userID = v.(model.User).ID
+	return
 }

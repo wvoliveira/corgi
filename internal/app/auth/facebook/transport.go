@@ -4,89 +4,105 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/middleware"
+	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/v1/auth/facebook").Subrouter()
-	rr.Use(middleware.Checks)
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/auth/facebook")
 
-	rr.HandleFunc("/login", s.HTTPLogin).Methods("GET")
-	rr.HandleFunc("/callback", s.HTTPCallback).Methods("GET")
+	r.GET("/login", s.HTTPLogin)
+	r.GET("/callback", s.HTTPCallback)
 }
 
-func (s service) HTTPLogin(w http.ResponseWriter, r *http.Request) {
-	// Decode request to request object.
-	_, err := decodeLoginRequest(r)
-	if err != nil {
-		e.EncodeError(w, err)
-		return
-	}
+func (s service) HTTPLogin(c *gin.Context) {
 
-	// Business logic.
+	// Remove this and set in decode function
+	accessToken, _ := c.GetQuery("access_token")
+
 	schema := "http"
-	if r.TLS != nil {
+	if c.Request.TLS != nil {
 		schema = "https"
 	}
-	callbackURL := fmt.Sprintf("%s://%s", schema, r.Host+"/auth/facebook/callback")
-	redirectURL, err := s.Login(r.Context(), callbackURL)
+
+	// Ex.: http://localhost:8081/api/auth/facebook/callback
+	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/auth/facebook/callback")
+
+	user, redirectURL, err := s.Login(c, accessToken, callbackURL)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Encode object to answer request (response).
-	if err != nil {
-		e.EncodeError(w, err)
+	if user.ID != "" {
+		session := sessions.Default(c)
+		session.Set("user", user)
+
+		err = session.Save()
+
+		if err != nil {
+			e.EncodeError(c, err)
+			return
+		}
+
+		c.JSON(200, response.Response{
+			Status: "successful",
+			Data:   user,
+		})
+
+		return
 	}
-	http.Redirect(w, r, redirectURL, http.StatusMovedPermanently)
+
+	c.Redirect(http.StatusMovedPermanently, redirectURL)
 }
 
-func (s service) HTTPCallback(w http.ResponseWriter, r *http.Request) {
-	// Decode request to request object.
-	dr, err := decodeCallbackRequest(r)
+func (s service) HTTPCallback(c *gin.Context) {
+
+	dr, err := decodeCallbackRequest(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Business logic.
 	schema := "http"
-	if r.TLS != nil {
+	if c.Request.TLS != nil {
 		schema = "https"
 	}
-	callbackURL := fmt.Sprintf("%s://%s", schema, r.Host+"/auth/facebook/callback")
-	tokenAccess, tokenRefresh, err := s.Callback(r.Context(), callbackURL, dr)
+
+	callbackURL := fmt.Sprintf("%s://%s", schema, c.Request.Host+"/auth/facebook/callback")
+
+	user, err := s.Callback(c, callbackURL, dr)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	// Encode object to answer request (response).
-	cookieAccess := http.Cookie{
-		Name:    "access_token",
-		Value:   tokenAccess.Token,
-		Path:    "/",
-		Expires: tokenAccess.ExpiresIn,
-		// RawExpires
-		Secure:   false,
-		HttpOnly: false,
+	session := sessions.Default(c)
+	session.Set("user", user)
+
+	err = session.Save()
+
+	if err != nil {
+		e.EncodeError(c, err)
+		return
 	}
 
-	cookieRefresh := http.Cookie{
-		Name:    "refresh_token_id",
-		Value:   tokenRefresh.ID,
-		Path:    "/",
-		Expires: tokenRefresh.ExpiresIn,
-		// RawExpires
-		Secure:   false,
-		HttpOnly: false,
+	data := gin.H{
+		"name":   user.Name,
+		"role":   user.Role,
+		"active": user.Active,
 	}
 
-	http.SetCookie(w, &cookieAccess)
-	http.SetCookie(w, &cookieRefresh)
+	c.JSON(200, response.Response{
+		Status: "successful",
+		Data:   data,
+	})
 
-	http.Redirect(w, r, s.cfg.RedirectURL, http.StatusMovedPermanently)
+	c.Redirect(http.StatusMovedPermanently, viper.GetString("app.redirect_url"))
 }

@@ -1,13 +1,19 @@
 package errors
 
 import (
-	"encoding/json"
 	"errors"
 	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-//nolint
+// nolint
 var (
+	// Internal errors.
+
+	// ErrUserFromSession when get user from session.
+	ErrUserFromSession = errors.New("impossible to get user from session")
+
 	ErrInconsistentIDs = errors.New("inconsistent IDs")
 	ErrAlreadyExists   = errors.New("already exists")
 	ErrNotFound        = errors.New("not found")
@@ -28,8 +34,12 @@ var (
 
 	// ErrUserNotFound error when user not found in database.
 	ErrUserNotFound = errors.New("user not found")
-	// ErrAccountDeleteYourSelf user admin or user with permission with that cannot delete yourself.
-	ErrAccountDeleteYourSelf = errors.New("delete yourself? this is not a good idea")
+
+	// ErrUserDeleteYourSelf user admin or user with permission with that cannot delete yourself.
+	ErrUserDeleteYourSelf = errors.New("delete yourself? this is not a good idea")
+
+	// ErrUserNotFoundInContext impossible to get identity or user from context of request.
+	ErrUserNotFoundInContext = errors.New("impossible to get identity/user from context")
 
 	// ErrLinkNotFound link not found in database.
 	ErrLinkNotFound       = errors.New("domain and keyword combination not found")
@@ -47,6 +57,10 @@ var (
 
 	// ErrRequestNeedBody error if client not send a body payload.
 	ErrRequestNeedBody = errors.New("methods POST and PATCH needs a body payload")
+
+	// ErrGroupAlreadyExists error when user try to create a group with a existent group name.
+	ErrGroupAlreadyExists = errors.New("group with this name already exists. Choose another one")
+	ErrGroupNotFound      = errors.New("group with this ID was not found")
 )
 
 type response struct {
@@ -56,36 +70,43 @@ type response struct {
 }
 
 /*
-	Errorer is implemented by all concrete response types that may contain
-	errors. It allows us to change the HTTP response code without needing to
-	trigger an endpoint (transport-level) error. For more information, read the
-	big comment in endpoints.go.
+Errorer is implemented by all concrete response types that may contain
+errors. It allows us to change the HTTP response code without needing to
+trigger an endpoint (transport-level) error. For more information, read the
+big comment in endpoints.go.
 */
 type Errorer interface {
 	Error() error
 }
 
 // EncodeError generate a response for errors.
-func EncodeError(w http.ResponseWriter, err error) {
+func EncodeError(c *gin.Context, err error) {
+
+	resp := response{
+		Status: "error",
+		Data:   nil,
+	}
+
 	if err == nil {
 		panic("encodeError with nil error")
 	}
-	r := response{Status: "error", Data: nil, Message: err.Error()}
-	w.Header().Set("Content-Type", "application/json")
 
-	w.WriteHeader(codeFrom(err))
-	_ = json.NewEncoder(w).Encode(r)
+	resp.Message = err.Error()
+	c.JSON(codeFrom(err), resp)
 }
 
 func codeFrom(err error) int {
 	switch err {
-	case ErrNotFound, ErrLinkNotFound:
+	case ErrNotFound, ErrLinkNotFound, ErrGroupNotFound:
 		return http.StatusNotFound
-	case ErrInconsistentIDs, ErrAccountDeleteYourSelf, ErrLinkAlreadyExists, ErrAlreadyExists,
+
+	case ErrRequestNeedBody, ErrInconsistentIDs, ErrLinkAlreadyExists, ErrAlreadyExists,
 		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists:
 		return http.StatusBadRequest
+
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:
 		return http.StatusUnauthorized
+
 	default:
 		return http.StatusInternalServerError
 	}

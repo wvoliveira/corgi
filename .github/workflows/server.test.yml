@@ -20,12 +20,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
-
-      - name: Build Web UI
-        run: make build-web
-
       - name: Setup
         uses: actions/setup-go@v3
         with:

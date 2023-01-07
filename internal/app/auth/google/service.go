@@ -1,21 +1,19 @@
 package google
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/sessions"
-	"github.com/wvoliveira/corgi/internal/pkg/config"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
-	"github.com/wvoliveira/corgi/internal/pkg/jwt"
+	"github.com/spf13/viper"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
 	"gorm.io/gorm"
@@ -23,61 +21,88 @@ import (
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(ctx context.Context, redirectURL string) (string, error)
-	Callback(ctx context.Context, callbackURL string, r callbackRequest) (entity.Token, entity.Token, error)
+	Login(*gin.Context, string, string) (model.User, string, error)
+	Callback(*gin.Context, string, callbackRequest) (model.User, error)
 
-	NewHTTP(r *mux.Router)
-	HTTPLogin(w http.ResponseWriter, r *http.Request)
-	HTTPCallback(w http.ResponseWriter, r *http.Request)
-}
-
-// Identity represents an authenticated user identity.
-type Identity interface {
-	// GetID returns the user ID.
-	GetID() string
-	// GetUID returns the e-mail, google id, facebook id, etc.
-	GetUID() string
-	// GetRole returns the role.
-	GetRole() string
+	NewHTTP(*gin.RouterGroup)
+	HTTPLogin(*gin.Context)
+	HTTPCallback(*gin.Context)
 }
 
 type service struct {
-	db    *gorm.DB
-	cfg   config.Config
-	store *sessions.CookieStore
+	db *gorm.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, cfg config.Config, store *sessions.CookieStore) Service {
-	return service{db, cfg, store}
+func NewService(db *gorm.DB) Service {
+	return service{db}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 // Otherwise, an error is returned.
-func (s service) Login(ctx context.Context, callbackURL string) (redirectURL string, err error) {
-	conf := &oauth2.Config{
-		ClientID:     s.cfg.Auth.Google.ClientID,
-		ClientSecret: s.cfg.Auth.Google.ClientSecret,
-		RedirectURL:  callbackURL,
-		Scopes: []string{
-			"https://www.googleapis.com/auth/userinfo.email",
-			"https://www.googleapis.com/auth/userinfo.profile",
-			"openid",
-		},
-		Endpoint: google.Endpoint,
+func (s service) Login(c *gin.Context, accessToken, callbackURL string) (user model.User, redirectURL string, err error) {
+	log := logger.Logger(c)
+
+	conf := createOAuth2Config(callbackURL)
+
+	if accessToken == "" {
+		// Redirect user to Google's consent page to ask for permission
+		// for the scopes specified above.
+		redirectURL = conf.AuthCodeURL("state")
+		return
 	}
-	// Redirect user to Google's consent page to ask for permission
-	// for the scopes specified above.
-	redirectURL = conf.AuthCodeURL("state")
+
+	// If access token was sent with URL, just get user info.
+	userGoogle, err := getUserFromGoogle(c, accessToken)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	_, user, err = getOrCreateUser(s.db, userGoogle)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
 	return
 }
 
-func (s service) Callback(ctx context.Context, callbackURL string, r callbackRequest) (tokenAccess, tokenRefresh entity.Token, err error) {
-	l := logger.Logger(ctx)
+func (s service) Callback(c *gin.Context, callbackURL string, r callbackRequest) (user model.User, err error) {
+	log := logger.Logger(c)
 
-	conf := &oauth2.Config{
-		ClientID:     s.cfg.Auth.Google.ClientID,
-		ClientSecret: s.cfg.Auth.Google.ClientSecret,
+	conf := createOAuth2Config(callbackURL)
+
+	oauthToken, err := conf.Exchange(c, r.Code)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	userGoogle, err := getUserFromGoogle(c, oauthToken.AccessToken)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	_, user, err = getOrCreateUser(s.db, userGoogle)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	return
+}
+
+func createOAuth2Config(callbackURL string) (conf *oauth2.Config) {
+	conf = &oauth2.Config{
+		ClientID:     viper.GetString("auth.google.client_id"),
+		ClientSecret: viper.GetString("auth.google.client_secret"),
 		RedirectURL:  callbackURL,
 		Scopes: []string{
 			"https://www.googleapis.com/auth/userinfo.email",
@@ -86,96 +111,94 @@ func (s service) Callback(ctx context.Context, callbackURL string, r callbackReq
 		},
 		Endpoint: google.Endpoint,
 	}
+	return
+}
 
-	oauthToken, err := conf.Exchange(ctx, r.Code)
+func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle model.UserGoogle, err error) {
+
+	resp, err := http.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(accessToken))
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	client := conf.Client(ctx, oauthToken)
-	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo?access_token=" + url.QueryEscape(oauthToken.AccessToken))
+	if resp.StatusCode == 401 {
+		return userGoogle, e.ErrUnauthorized
+	}
+
+	if resp.StatusCode != 200 {
+		return userGoogle, errors.New("error to get info from Google")
+	}
+
+	if resp.StatusCode == 401 {
+		return userGoogle, e.ErrUnauthorized
+	}
+
+	if resp.StatusCode != 200 {
+		return userGoogle, errors.New("error to get info from Google")
+	}
+
+	response, err := io.ReadAll(resp.Body)
+
 	if err != nil {
-		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	response, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
-	}
+	err = json.Unmarshal(response, &userGoogle)
+	return
+}
 
-	googleUser := entity.GoogleUserInfo{}
-	err = json.Unmarshal(response, &googleUser)
-	if err != nil {
-		l.Error().Caller().Msg(err.Error())
-		return
-	}
+func getOrCreateUser(db *gorm.DB, userGoogle model.UserGoogle) (identity model.Identity, user model.User, err error) {
 
-	identity := entity.Identity{}
-	// check if user exists in database.
-	err = s.db.Debug().Model(entity.Identity{}).Where("provider = ? AND UID = ?", "google", googleUser.ID).First(&identity).Error
+	err = db.
+		Model(model.Identity{}).
+		Where("provider = ? AND UID = ?", "google", userGoogle.ID).
+		First(&identity).Error
+
 	if err == gorm.ErrRecordNotFound {
-		identity := entity.Identity{}
-		user := entity.User{}
 
 		identity.ID = uuid.New().String()
 		identity.CreatedAt = time.Now()
 		identity.LastLogin = identity.CreatedAt
 		identity.Provider = "google"
-		identity.UID = googleUser.ID
-		identity.Verified = &googleUser.VerifiedEmail
-		identity.VerifiedAt = identity.CreatedAt
+		identity.UID = userGoogle.ID
+		identity.Verified = &userGoogle.VerifiedEmail
 
-		t := true
+		active := true
 		user.ID = uuid.New().String()
 		user.CreatedAt = time.Now()
-		user.Name = googleUser.Name
+		user.Name = userGoogle.Name
 		user.Role = "user"
-		user.Active = &t
+		user.Active = &active
 		user.Identities = append(user.Identities, identity)
 
-		err = s.db.Debug().Model(&entity.User{}).Create(&user).Error
-		if err != nil {
-			l.Error().Caller().Msg(err.Error())
-			return
-		}
-	} else if err != nil {
-		l.Error().Caller().Msg(err.Error())
+		err = db.
+			Model(&model.User{}).
+			Create(&user).Error
+
+		return
+
 	}
 
-	// Get user info.
-	if identity.UserID == "" {
-		err = s.db.Debug().Model(&entity.Identity{}).Where("provider = ? AND uid = ?", "google", googleUser.ID).First(&identity).Error
-		if err != nil {
-			l.Error().Caller().Msg(err.Error())
-			return
-		}
-	}
-
-	user := entity.User{}
-	err = s.db.Debug().Model(&entity.User{}).Where("id = ?", identity.UserID).First(&user).Error
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-		return tokenAccess, tokenRefresh, err
-	} else if err != nil {
-		return tokenAccess, tokenRefresh, err
-	}
-
-	tokenAccess, err = jwt.GenerateAccessToken(s.cfg.SecretKey, identity, user)
-	if err != nil {
-		return tokenAccess, tokenRefresh, errors.New("error to generate access token: " + err.Error())
-	}
-
-	tokenRefresh, err = jwt.GenerateRefreshToken(s.cfg.SecretKey, identity, user)
-	if err != nil {
-		return tokenAccess, tokenRefresh, errors.New("error to generate refresh token: " + err.Error())
-	}
-
-	tokenRefresh.UserID = identity.UserID
-	err = s.db.Debug().Model(&entity.Token{}).Create(&tokenRefresh).Error
 	if err != nil {
 		return
 	}
+
+	if identity.UserID == "" {
+		err = db.
+			Model(&model.Identity{}).
+			Where("provider = ? AND uid = ?", "google", userGoogle.ID).
+			First(&identity).Error
+
+		if err != nil {
+			return
+		}
+	}
+
+	err = db.
+		Model(&model.User{}).
+		Where("id = ?", identity.UserID).
+		First(&user).Error
+
 	return
 }

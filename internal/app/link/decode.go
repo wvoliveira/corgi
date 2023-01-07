@@ -1,14 +1,13 @@
 package link
 
 import (
-	"encoding/json"
 	"errors"
-	"net/http"
 	"strconv"
 	"time"
 
-	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
 type addRequest struct {
@@ -25,23 +24,18 @@ type findByIDRequest struct {
 }
 
 type findAllRequest struct {
-	Page   int    `json:"page"`
-	Sort   string `json:"sort"`
-	Offset int    `json:"offset"`
-	Limit  int    `json:"limit"`
-	UserID string `json:"user_id"`
+	Page         int    `json:"page"`
+	Sort         string `json:"sort"`
+	Offset       int    `json:"offset"`
+	Limit        int    `json:"limit"`
+	UserID       string `json:"user_id"`
+	ShortenedURL string
 }
 
 type updateRequest struct {
 	ID        string    `json:"id"`
-	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
-	Domain    string    `json:"domain"`
-	Keyword   string    `json:"keyword"`
-	URL       string    `json:"url"`
 	Title     string    `json:"title"`
-	Active    string    `json:"active"`
-	UserID    string    `json:"user_id"`
 }
 
 type deleteRequest struct {
@@ -51,65 +45,61 @@ type deleteRequest struct {
 	UserID  string `json:"user_id"`
 }
 
-func decodeAdd(r *http.Request) (req addRequest, err error) {
-	ctx := r.Context()
+func decodeAdd(c *gin.Context) (r addRequest, err error) {
 
-	data := ctx.Value(entity.IdentityInfo{})
-	if data == nil {
-		return req, errors.New("impossible to get identity from context")
+	session := sessions.Default(c)
+	v := session.Get("user")
+
+	if v == nil {
+		return r, errors.New("impossible to get user from session")
 	}
 
-	ii := data.(entity.IdentityInfo)
-
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return req, err
+	if err = c.ShouldBindJSON(&r); err != nil {
+		return r, err
 	}
 
 	// TODO: insert this logic in config env/file.
 	// with default domain if not send in payload.
-	if req.Domain == "" {
-		req.Domain = r.Host
+	if r.Domain == "" {
+		r.Domain = c.Request.Host
 	}
 
-	req.UserID = ii.UserID
-	return req, nil
+	r.UserID = v.(model.User).ID
+	return r, nil
 }
 
-func decodeFindByID(r *http.Request) (req findByIDRequest, err error) {
-	ctx := r.Context()
-	vars := mux.Vars(r)
+func decodeFindByID(c *gin.Context) (r findByIDRequest, err error) {
 
-	data := ctx.Value(entity.IdentityInfo{})
-	if data == nil {
-		return req, errors.New("impossible to get identity from context")
+	session := sessions.Default(c)
+	v := session.Get("user")
+
+	if v == nil {
+		return r, errors.New("impossible to get user from session")
 	}
 
-	ii := data.(entity.IdentityInfo)
-
-	linkID := vars["id"]
+	linkID := c.Param("id")
 	if linkID == "" {
-		return req, errors.New("impossible to get link id")
+		return r, errors.New("impossible to get link id from path")
 	}
 
-	req.ID = linkID
-	req.UserID = ii.UserID
-	return req, nil
+	r.ID = linkID
+	r.UserID = v.(model.User).ID
+	return r, nil
 }
 
-func decodeFindAll(r *http.Request) (req findAllRequest, err error) {
-	ctx := r.Context()
-	params := r.URL.Query()
+func decodeFindAll(c *gin.Context) (r findAllRequest, err error) {
 
-	data := ctx.Value(entity.IdentityInfo{})
-	if data == nil {
-		return req, errors.New("impossible to get identity from context")
+	session := sessions.Default(c)
+	v := session.Get("user")
+
+	if v == nil {
+		return r, errors.New("impossible to get user from session")
 	}
 
-	ii := data.(entity.IdentityInfo)
-
-	page, _ := strconv.Atoi(params.Get("page"))
-	limit, _ := strconv.Atoi(params.Get("limit"))
-	sort := params.Get("sort")
+	page, _ := strconv.Atoi(c.Query("page"))
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	sort := c.Query("sort")
+	shortenedURL := c.Query("u")
 
 	if page == 0 {
 		page = 1
@@ -124,58 +114,59 @@ func decodeFindAll(r *http.Request) (req findAllRequest, err error) {
 	case limit <= 0:
 		limit = 10
 	}
+
 	offset := (page - 1) * limit
 
-	req.Page = page
-	req.Sort = sort
-	req.Limit = limit
-	req.Offset = offset
-	req.UserID = ii.UserID
-	return req, nil
+	r.Page = page
+	r.Sort = sort
+	r.Limit = limit
+	r.Offset = offset
+	r.UserID = v.(model.User).ID
+	r.ShortenedURL = shortenedURL
+
+	return r, nil
 }
 
-func decodeUpdate(r *http.Request) (req updateRequest, err error) {
-	ctx := r.Context()
-	vars := mux.Vars(r)
+func decodeUpdate(c *gin.Context) (r updateRequest, userID string, err error) {
 
-	data := ctx.Value(entity.IdentityInfo{})
-	if data == nil {
-		return req, errors.New("impossible to get identity from context")
+	session := sessions.Default(c)
+	v := session.Get("user")
+
+	if v == nil {
+		return r, userID, errors.New("impossible to get user from session")
 	}
 
-	ii := data.(entity.IdentityInfo)
-
-	linkID := vars["id"]
+	linkID := c.Param("id")
 	if linkID == "" {
-		return req, errors.New("impossible to get link id")
+		return r, userID, errors.New("impossible to get link id from path")
 	}
 
-	if err = json.NewDecoder(r.Body).Decode(&req); err != nil {
-		return req, err
+	if err = c.ShouldBindJSON(&r); err != nil {
+		return r, userID, err
 	}
 
-	req.ID = linkID
-	req.UserID = ii.UserID
-	return req, nil
+	r.ID = linkID
+	userID = v.(model.User).ID
+
+	return r, userID, nil
 }
 
-func decodeDelete(r *http.Request) (req deleteRequest, err error) {
-	ctx := r.Context()
-	vars := mux.Vars(r)
+func decodeDelete(c *gin.Context) (r deleteRequest, err error) {
 
-	data := ctx.Value(entity.IdentityInfo{})
-	if data == nil {
-		return req, errors.New("impossible to get identity from context")
+	session := sessions.Default(c)
+	v := session.Get("user")
+
+	if v == nil {
+		return r, errors.New("impossible to get user from session")
 	}
 
-	ii := data.(entity.IdentityInfo)
-
-	linkID := vars["id"]
+	linkID := c.Param("id")
 	if linkID == "" {
-		return req, errors.New("impossible to get link id")
+		return r, errors.New("impossible to get link id from path")
 	}
 
-	req.ID = linkID
-	req.UserID = ii.UserID
-	return req, nil
+	r.ID = linkID
+	r.UserID = v.(model.User).ID
+
+	return r, nil
 }

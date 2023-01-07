@@ -3,69 +3,84 @@ package link
 import (
 	"net/http"
 
-	"github.com/gorilla/mux"
-	"github.com/wvoliveira/corgi/internal/pkg/entity"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
-func (s service) NewHTTP(r *mux.Router) {
-	rr := r.PathPrefix("/v1/links").Subrouter()
-	rr.Use(middleware.Checks)
-	rr.Use(middleware.Auth(s.secret))
+func (s service) NewHTTP(rg *gin.RouterGroup) {
+	r := rg.Group("/links")
+	r.Use(middleware.Checks())
+	r.Use(middleware.Auth())
 
-	rr.HandleFunc("", nil).Methods("OPTIONS")
-	rr.HandleFunc("", s.HTTPAdd).Methods("POST")
-	rr.HandleFunc("/{id}", s.HTTPFindByID).Methods("GET")
-	rr.HandleFunc("/status/{id}", s.HTTPFindByID).Methods("GET")
-	rr.HandleFunc("", s.HTTPFindAll).Methods("GET")
-	rr.HandleFunc("/{id}", s.HTTPUpdate).Methods("PATCH")
-	rr.HandleFunc("/{id}", s.HTTPDelete).Methods("DELETE")
+	r.OPTIONS("", nil)
+	r.POST("", s.HTTPAdd)
+	r.GET("/:id", s.HTTPFindByID)
+	r.GET("/status/:id", s.HTTPFindByID)
+	r.GET("", s.HTTPFindAll)
+	r.PATCH("/:id", s.HTTPUpdate)
+	r.DELETE("/:id", s.HTTPDelete)
 }
 
-func (s service) HTTPAdd(w http.ResponseWriter, r *http.Request) {
-	dr, err := decodeAdd(r)
+func (s service) HTTPAdd(c *gin.Context) {
+
+	d, err := decodeAdd(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	link, err := s.Add(r.Context(), entity.Link{Domain: dr.Domain, Keyword: dr.Keyword, URL: dr.URL, Title: dr.Title, UserID: dr.UserID})
+	link, err := s.Add(c, model.Link{
+		Domain:  d.Domain,
+		Keyword: d.Keyword,
+		URL:     d.URL,
+		Title:   d.Title,
+		UserID:  d.UserID,
+	})
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	response.Default(w, link, "", http.StatusCreated)
+	response.Default(c, link, "", http.StatusCreated)
 }
 
-func (s service) HTTPFindByID(w http.ResponseWriter, r *http.Request) {
-	dr, err := decodeFindByID(r)
+func (s service) HTTPFindByID(c *gin.Context) {
+
+	d, err := decodeFindByID(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	link, err := s.FindByID(r.Context(), dr.ID, dr.UserID)
+	link, err := s.FindByID(c, d.ID, d.UserID)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	response.Default(w, link, "", http.StatusOK)
+	response.Default(c, link, "", http.StatusOK)
 }
 
-func (s service) HTTPFindAll(w http.ResponseWriter, r *http.Request) {
-	dr, err := decodeFindAll(r)
+func (s service) HTTPFindAll(c *gin.Context) {
+
+	dr, err := decodeFindAll(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	total, pages, links, err := s.FindAll(r.Context(), dr.Offset, dr.Limit, dr.Sort, dr.UserID)
+	total, pages, links, err := s.FindAll(c, dr.Offset, dr.Limit, dr.Sort, dr.UserID, dr.ShortenedURL)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
@@ -79,45 +94,47 @@ func (s service) HTTPFindAll(w http.ResponseWriter, r *http.Request) {
 		Err:   err,
 	}
 
-	response.Default(w, sr, "", http.StatusOK)
+	response.Default(c, sr, "", http.StatusOK)
 }
 
-func (s service) HTTPUpdate(w http.ResponseWriter, r *http.Request) {
-	dr, err := decodeUpdate(r)
+func (s service) HTTPUpdate(c *gin.Context) {
+
+	dr, userID, err := decodeUpdate(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	link, err := s.Update(r.Context(), entity.Link{
-		ID:      dr.ID,
-		Domain:  dr.Domain,
-		Keyword: dr.Keyword,
-		URL:     dr.URL,
-		Title:   dr.Title,
-		Active:  dr.Active,
-		UserID:  dr.UserID,
+	link, err := s.Update(c, model.Link{
+		ID:     dr.ID,
+		Title:  dr.Title,
+		UserID: userID,
 	})
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	response.Default(w, link, "", http.StatusOK)
+	response.Default(c, link, "", http.StatusOK)
 }
 
-func (s service) HTTPDelete(w http.ResponseWriter, r *http.Request) {
-	dr, err := decodeDelete(r)
+func (s service) HTTPDelete(c *gin.Context) {
+
+	dr, err := decodeDelete(c)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	err = s.Delete(r.Context(), dr.ID, dr.UserID)
+	err = s.Delete(c, dr.ID, dr.UserID)
+
 	if err != nil {
-		e.EncodeError(w, err)
+		e.EncodeError(c, err)
 		return
 	}
 
-	response.Default(w, nil, "", http.StatusOK)
+	response.Default(c, nil, "", http.StatusOK)
 }

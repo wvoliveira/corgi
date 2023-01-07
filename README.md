@@ -14,7 +14,7 @@ Corgi is a link shortener system.
 * **Your own domain** - Reduce links using your own domain and increase click-through rate.
 * **Groups** - Manage links as a group, assigning roles to who can change and view information about the links.
 * **API** - Use one of the available APIs to manage links effectively.
-* **Statistics** - Check the amount of clicks on shortened links..
+* **Statistics** - Check the amount of clicks on shortened linkdb.Debug()
 * **Shortener** - Use any link, no matter the size. Corgi will always shorten it.
 * **Manage** - Optimize and customize each link to take advantage. Use an alias, affiliate programs, create QR code and much more..
 
