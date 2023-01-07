@@ -1,13 +1,11 @@
 package group
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"math"
-	"net/http"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -16,27 +14,26 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Add(ctx context.Context, requestGroup model.Group, userID string) (group model.Group, err error)
-	List(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []model.Group, err error)
-	FindByID(ctx context.Context, groupID, userID string) (group model.Group, err error)
+	Add(*gin.Context, model.Group, string) (model.Group, error)
+	List(*gin.Context, int, int, string, string) (int64, int, []model.Group, error)
+	FindByID(*gin.Context, string, string) (model.Group, error)
 
-	NewHTTP(r *mux.Router)
-	HTTPAdd(w http.ResponseWriter, r *http.Request)
-	HTTPList(w http.ResponseWriter, r *http.Request)
+	NewHTTP(*gin.RouterGroup)
+	HTTPAdd(*gin.Context)
+	HTTPList(*gin.Context)
 }
 
 type service struct {
-	db     *gorm.DB
-	secret string
+	db *gorm.DB
 }
 
 // NewService creates a new group service.
-func NewService(database *gorm.DB, secret string) Service {
-	return service{database, secret}
+func NewService(database *gorm.DB) Service {
+	return service{database}
 }
 
-func (s service) Add(ctx context.Context, requestGroup model.Group, userID string) (group model.Group, err error) {
-	l := logger.Logger(ctx)
+func (s service) Add(c *gin.Context, requestGroup model.Group, userID string) (group model.Group, err error) {
+	l := logger.Logger(c)
 
 	err = s.db.Model(&model.Group{}).
 		Where("name = ?", requestGroup.Name).
@@ -62,8 +59,8 @@ func (s service) Add(ctx context.Context, requestGroup model.Group, userID strin
 	return group, e.ErrInternalServerError
 }
 
-func (s service) List(ctx context.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []model.Group, err error) {
-	l := logger.Logger(ctx)
+func (s service) List(c *gin.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []model.Group, err error) {
+	l := logger.Logger(c)
 	pages = 1
 
 	// TODO: make a single transaction to get total and list of items.
@@ -108,8 +105,8 @@ func (s service) List(ctx context.Context, offset, limit int, sort, userID strin
 }
 
 // FindByID get a group details filtering with group ID.
-func (s service) FindByID(ctx context.Context, groupID, userID string) (group model.Group, err error) {
-	l := logger.Logger(ctx)
+func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.Group, err error) {
+	l := logger.Logger(c)
 
 	query := `SELECT groups.*
 		FROM groups 

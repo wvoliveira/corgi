@@ -8,8 +8,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-gonic/gin"
 	"github.com/gorilla/mux"
 	"github.com/rs/zerolog/log"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
 // GetOrCreateDataFolder create Corgi folder for settings, database, etc.
@@ -81,5 +85,18 @@ func SplitURL(url string) (domain, keyword string) {
 			keyword = splited[1]
 		}
 	}
+	return
+}
+
+// GetUserFromSession get user from gin context.
+func GetUserFromSession(c *gin.Context) (userID string, err error) {
+	session := sessions.Default(c)
+	v := session.Get("user")
+
+	if v == nil {
+		return userID, e.ErrUserFromSession
+	}
+
+	userID = v.(model.User).ID
 	return
 }

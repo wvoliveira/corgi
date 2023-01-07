@@ -1,16 +1,8 @@
 package facebook
 
 import (
-	"net/http"
-
 	"github.com/gin-gonic/gin"
 )
-
-type loginRequest struct{}
-
-func decodeLoginRequest(r *http.Request) (req loginRequest, err error) {
-	return req, nil
-}
 
 type callbackRequest struct {
 	State    string

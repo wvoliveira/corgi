@@ -3,7 +3,7 @@ package google
 import (
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"time"
@@ -138,7 +138,7 @@ func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle model.Use
 		return userGoogle, errors.New("error to get info from Google")
 	}
 
-	response, err := ioutil.ReadAll(resp.Body)
+	response, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		return

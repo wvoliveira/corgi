@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
+	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
@@ -27,6 +28,8 @@ func (lrw *loggingResponseWriter) WriteHeader(code int) {
 // Auth check if auth ok and set claims in request header.
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		log := logger.Logger(c)
+
 		session := sessions.Default(c)
 		user := model.User{}
 
@@ -37,13 +40,25 @@ func Auth() gin.HandlerFunc {
 			user.Name = "Anonymous"
 
 			session.Set("user", user)
-			session.Save()
+			err := session.Save()
+
+			if err != nil {
+				log.Error().Caller().Msg(err.Error())
+				e.EncodeError(c, e.ErrRequestNeedBody)
+				return
+			}
 		}
 
 		if v != nil {
 			user = v.(model.User)
 			session.Set("user", user)
-			session.Save()
+
+			err := session.Save()
+			if err != nil {
+				log.Error().Caller().Msg(err.Error())
+				e.EncodeError(c, e.ErrRequestNeedBody)
+				return
+			}
 		}
 
 		c.Next()
@@ -79,7 +94,13 @@ func UniqueUserForKeywords() gin.HandlerFunc {
 
 		if v == nil {
 			session.Set("keywords", []string{keyword})
-			_ = session.Save()
+			err := session.Save()
+
+			if err != nil {
+				log.Error().Caller().Msg(err.Error())
+				e.EncodeError(c, e.ErrRequestNeedBody)
+				return
+			}
 
 			c.Next()
 			return
@@ -99,7 +120,13 @@ func UniqueUserForKeywords() gin.HandlerFunc {
 		keywords = append(keywords, keyword)
 
 		session.Set("keywords", keywords)
-		session.Save()
+		err := session.Save()
+
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+			e.EncodeError(c, e.ErrRequestNeedBody)
+			return
+		}
 
 		c.Next()
 	}

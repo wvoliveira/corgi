@@ -35,7 +35,13 @@ func (s service) HTTPLogout(c *gin.Context) {
 
 	session := sessions.Default(c)
 	session.Delete("user")
-	session.Save()
+
+	err = session.Save()
+	if err != nil {
+		l.Error().Caller().Msg(err.Error())
+		e.EncodeError(c, err)
+		return
+	}
 
 	c.JSON(200, response.Response{
 		Status:  "successful",

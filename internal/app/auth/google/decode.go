@@ -2,8 +2,6 @@ package google
 
 import "github.com/gin-gonic/gin"
 
-type loginRequest struct{}
-
 type callbackRequest struct {
 	State    string   //state=state
 	Code     string   // code=4/0AX4XfWjLX8K0dMCvLgUA86jMy_nTuRhuAKLtxGSC0gFvD8xWiNx-JjEDZ-XX4c93Wq1wzg

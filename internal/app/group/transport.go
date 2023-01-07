@@ -50,13 +50,14 @@ func (s service) HTTPAdd(c *gin.Context) {
 }
 
 func (s service) HTTPList(c *gin.Context) {
-	payload, err := decodeList(c)
+	payload, userID, err := decodeList(c)
+
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	total, pages, groups, err := s.List(c, payload.Offset, payload.Limit, payload.Sort, payload.UserID)
+	total, pages, groups, err := s.List(c, payload.Offset, payload.Limit, payload.Sort, userID)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -75,13 +76,13 @@ func (s service) HTTPList(c *gin.Context) {
 }
 
 func (s service) HTTPFindByID(c *gin.Context) {
-	payload, err := decodeFindByID(c)
+	payload, userID, err := decodeFindByID(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	group, err := s.FindByID(c, payload.ID, payload.UserID)
+	group, err := s.FindByID(c, payload.ID, userID)
 	if err != nil {
 		e.EncodeError(c, err)
 		return

@@ -9,6 +9,11 @@ import (
 
 // nolint
 var (
+	// Internal errors.
+
+	// ErrUserFromSession when get user from session.
+	ErrUserFromSession = errors.New("impossible to get user from session")
+
 	ErrInconsistentIDs = errors.New("inconsistent IDs")
 	ErrAlreadyExists   = errors.New("already exists")
 	ErrNotFound        = errors.New("not found")

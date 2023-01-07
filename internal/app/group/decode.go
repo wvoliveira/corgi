@@ -5,11 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/gorilla/mux"
-	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"github.com/wvoliveira/corgi/internal/pkg/util"
 )
 
 type addRequest struct {
@@ -24,20 +21,17 @@ type listRequest struct {
 	Sort   string `json:"sort"`
 	Offset int    `json:"offset"`
 	Limit  int    `json:"limit"`
-	UserID string `json:"-"`
 }
 
 type findByIDRequest struct {
-	ID     string `json:"id"`
-	UserID string `json:"-"`
+	ID string `json:"id"`
 }
 
 func decodeAdd(c *gin.Context) (payload addRequest, userID string, err error) {
-	session := sessions.Default(c)
-	v := session.Get("user")
+	userID, err = util.GetUserFromSession(c)
 
-	if v == nil {
-		return payload, userID, errors.New("impossible to get user from session")
+	if err != nil {
+		return
 	}
 
 	if err = c.ShouldBindJSON(&payload); err != nil {
@@ -49,26 +43,19 @@ func decodeAdd(c *gin.Context) (payload addRequest, userID string, err error) {
 	if err != nil {
 		return
 	}
-
-	r.UserID = v.(model.User).ID
 	return
 }
 
-func decodeList(c *gin.Context) (request listRequest, err error) {
-	ctx := r.Context()
-	params := r.URL.Query()
+func decodeList(c *gin.Context) (request listRequest, userID string, err error) {
+	userID, err = util.GetUserFromSession(c)
 
-	data := ctx.Value(model.IdentityInfo{})
-	if data == nil {
-		err = e.ErrUserNotFoundInContext
+	if err != nil {
 		return
 	}
 
-	ii := data.(model.IdentityInfo)
-
-	page, _ := strconv.Atoi(params.Get("page"))
-	limit, _ := strconv.Atoi(params.Get("limit"))
-	sort := params.Get("sort")
+	page, _ := strconv.Atoi(c.Query("page"))
+	limit, _ := strconv.Atoi(c.Query("limit"))
+	sort := c.Query("sort")
 
 	if page == 0 {
 		page = 1
@@ -89,27 +76,22 @@ func decodeList(c *gin.Context) (request listRequest, err error) {
 	request.Sort = sort
 	request.Limit = limit
 	request.Offset = offset
-	request.UserID = ii.UserID
 	return
 }
 
-func decodeFindByID(c *gin.Context) (req findByIDRequest, err error) {
-	ctx := r.Context()
-	vars := mux.Vars(r)
+func decodeFindByID(c *gin.Context) (req findByIDRequest, userID string, err error) {
+	userID, err = util.GetUserFromSession(c)
 
-	data := ctx.Value(model.IdentityInfo{})
-	if data == nil {
-		return req, errors.New("impossible to get identity from context")
+	if err != nil {
+		return
 	}
 
-	identity := data.(model.IdentityInfo)
+	GroupID := c.Param("id")
 
-	GroupID := vars["id"]
 	if GroupID == "" {
-		return req, errors.New("impossible to get group id")
+		return req, userID, errors.New("impossible to get group id")
 	}
 
 	req.ID = GroupID
-	req.UserID = identity.UserID
-	return req, nil
+	return req, userID, err
 }

@@ -41,5 +41,8 @@ func New(configFile string) {
 		log.Warn().Caller().Msg(err.Error())
 	}
 
-	viper.BindPFlags(flag.CommandLine)
+	err = viper.BindPFlags(flag.CommandLine)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+	}
 }
