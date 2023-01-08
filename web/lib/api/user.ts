@@ -62,6 +62,21 @@ const UserAPI = {
     } catch (error) {
       return error;
     }
+  },
+  logout: async () => {
+    try {
+      const response = await axios.get(
+        `/api/auth/logout`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response;
+    } catch (error) {
+      return error;
+    }
   }
 };
 
