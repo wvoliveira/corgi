@@ -18,10 +18,10 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Add(*gin.Context, model.Link) (link model.Link, err error)
-	FindByID(*gin.Context, string, string) (link model.Link, err error)
-	FindAll(*gin.Context, int, int, string, string, string) (total int64, pages int, links []model.Link, err error)
-	Update(*gin.Context, model.Link) (link model.Link, err error)
+	Add(*gin.Context, model.Link) (model.Link, error)
+	FindByID(*gin.Context, string, string) (model.Link, error)
+	FindAll(*gin.Context, int, int, string, string, string) (int64, int, []model.Link, error)
+	Update(*gin.Context, model.Link) (model.Link, error)
 	Delete(*gin.Context, string, string) (err error)
 
 	NewHTTP(*gin.RouterGroup)
@@ -53,15 +53,9 @@ func (s service) Add(c *gin.Context, link model.Link) (m model.Link, err error) 
 	if link.UserID == "anonymous" {
 		sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
 		link.Keyword, _ = sid.Generate()
-
 	}
 
 	if link.UserID != "anonymous" {
-
-		if link.Domain == "" {
-			return m, e.ErrLinkInvalidDomain
-		}
-
 		if link.Keyword == "" {
 			sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
 			link.Keyword, _ = sid.Generate()
@@ -104,7 +98,6 @@ func (s service) Add(c *gin.Context, link model.Link) (m model.Link, err error) 
 
 // FindByID get a shortener link from ID.
 func (s service) FindByID(c *gin.Context, linkID, userID string) (li model.Link, err error) {
-
 	log := logger.Logger(c)
 
 	err = s.db.Model(&model.Link{}).
@@ -127,7 +120,6 @@ func (s service) FindByID(c *gin.Context, linkID, userID string) (li model.Link,
 
 // FindAll get a list of links from database.
 func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID, shortenedURL string) (total int64, pages int, links []model.Link, err error) {
-
 	log := logger.Logger(c)
 
 	domain, keyword := util.SplitURL(shortenedURL)
@@ -146,7 +138,7 @@ func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID, shorte
 		Find(&links).Error
 
 	if err == gorm.ErrRecordNotFound {
-		log.Info().Caller().Msg("links not found")
+		log.Info().Caller().Msg(err.Error())
 		return total, pages, links, e.ErrLinkNotFound
 	}
 
@@ -162,7 +154,6 @@ func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID, shorte
 
 // Update change specific link by ID.
 func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err error) {
-
 	log := logger.Logger(c)
 
 	err = s.db.Model(&model.Link{}).
@@ -171,7 +162,7 @@ func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err erro
 		First(&m).Error
 
 	if err == gorm.ErrRecordNotFound {
-		log.Info().Caller().Msg("link not found")
+		log.Info().Caller().Msg(err.Error())
 		return m, e.ErrLinkNotFound
 
 	}
@@ -186,7 +177,6 @@ func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err erro
 
 // Delete delete a link by ID.
 func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
-
 	log := logger.Logger(c)
 
 	err = s.db.
@@ -196,7 +186,7 @@ func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 		Delete(&model.Link{ID: linkID, UserID: userID}).Error
 
 	if err == gorm.ErrRecordNotFound {
-		log.Info().Caller().Msg("link not found")
+		log.Info().Caller().Msg(err.Error())
 		return e.ErrLinkNotFound
 	}
 

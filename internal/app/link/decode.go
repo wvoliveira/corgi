@@ -2,11 +2,13 @@ package link
 
 import (
 	"errors"
+	"net"
 	"strconv"
 	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
@@ -51,17 +53,20 @@ func decodeAdd(c *gin.Context) (r addRequest, err error) {
 	v := session.Get("user")
 
 	if v == nil {
-		return r, errors.New("impossible to get user from session")
+		return r, e.ErrUserFromSession
 	}
 
 	if err = c.ShouldBindJSON(&r); err != nil {
 		return r, err
 	}
 
-	// TODO: insert this logic in config env/file.
-	// with default domain if not send in payload.
 	if r.Domain == "" {
-		r.Domain = c.Request.Host
+		host, _, err := net.SplitHostPort(c.Request.Host)
+		if err != nil {
+			return r, err
+		}
+
+		r.Domain = host
 	}
 
 	r.UserID = v.(model.User).ID
