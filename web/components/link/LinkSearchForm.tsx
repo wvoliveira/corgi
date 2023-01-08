@@ -39,7 +39,7 @@ export default function LinkSearchForm() {
     <>
       <form onSubmit={handleSubmit}>
           <input 
-            type="text" placeholder="domain/keyword"
+            type="text" placeholder="Type a domain or keyword to search"
             value={urlShort}
             onChange={handleURLFullChange}
             required={false}

@@ -1,7 +1,16 @@
 import Link from "next/link";
-import React from "react";
 
-export default function Navbar() {
+import useSWR from "swr";
+import checkLogin from "../../lib/utils/checkLogin";
+import storage from "../../lib/utils/storage";
+
+
+export default function Navbar() { 
+  const { data: currentUser } = useSWR("user", storage);
+  const isLoggedIn = checkLogin(currentUser);
+
+  console.log("current user: ", currentUser);
+  console.log("is logged in: ", isLoggedIn);
 
   return (
     <>
@@ -11,10 +20,19 @@ export default function Navbar() {
         { ' ' } | { ' ' }
         <Link href="/search">Search</Link>
         { ' ' } | { ' ' }
-        <Link href="/login">Login</Link>
-        { ' ' } | { ' ' }
-        <Link
-         href="/register">Register</Link>
+
+        {isLoggedIn ? 
+        <>
+          <Link href="/profile">Profile</Link>
+        </> 
+        : 
+        <>
+          <Link href="/login">Login</Link>
+          { ' ' } | { ' ' }
+          <Link
+          href="/register">Register</Link>
+        </>
+        }
       </p>
 
     </>

@@ -18,8 +18,8 @@ const UserAPI = {
   login: async (email: string, password: string) => {
     try {
       const response = await axios.post(
-        `/api/users/login`,
-        JSON.stringify({ user: { email, password } }),
+        `/api/auth/password/login`,
+        JSON.stringify({ email: email, password: password}),
         {
           headers: {
             "Content-Type": "application/json",

@@ -10,7 +10,7 @@ export default function Layout({ children }:{children:any}) {
     <>
 
       <Head>
-        <title>Corgi | Register</title>
+        <title>Corgi</title>
         <meta name="description" content="Corgi | A shortener system" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
