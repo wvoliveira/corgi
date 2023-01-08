@@ -2,6 +2,7 @@ package redirect
 
 import (
 	"errors"
+	"net"
 
 	"github.com/gin-gonic/gin"
 )
@@ -13,17 +14,22 @@ type findByKeywordRequest struct {
 }
 
 func decodeFindByKeyword(c *gin.Context) (r findByKeywordRequest, err error) {
-
-	domain := c.Request.Host
-
 	keyword := c.Param("keyword")
 
 	if keyword == "" {
 		return r, errors.New("impossible to get redirect keyword from path")
 	}
 
-	r.Domain = domain
 	r.Keyword = keyword
+
+	if r.Domain == "" {
+		host, _, err := net.SplitHostPort(c.Request.Host)
+		if err != nil {
+			return r, err
+		}
+
+		r.Domain = host
+	}
 
 	return r, nil
 }

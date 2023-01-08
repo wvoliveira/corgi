@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -33,6 +34,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"github.com/wvoliveira/corgi/web"
 )
 
 var (
@@ -92,17 +94,35 @@ func main() {
 
 	router.Use(sessions.Sessions("session", store))
 
-	rootRouter := router.Group("/")
-	apiRouter := rootRouter.Group("/api")
+	// First, check if request path is inside web app.
+	// If yes, just answer the request and finish the request.
+	router.Use(func(c *gin.Context) {
+		reqPath := c.Request.URL.Path
 
-	// rootRouter := router.PathPrefix("/").Subrouter().StrictSlash(true)
-	// apiRouter := router.PathPrefix("/api").Subrouter().StrictSlash(true)
-	// webRouter := router.MatcherFunc(func(req *http.Request, match *mux.RouteMatch) bool {
-	// 	// Serve local web routes when either:
-	// 	// - The request is for theses URIs:
-	// 	// - / and /_next
-	// 	return (req.URL.Path == "/" || strings.HasPrefix(req.URL.Path, "/_next"))
-	// }).Subrouter().StrictSlash(true)
+		if reqPath == "/" {
+			c.FileFromFS(reqPath, http.FS(web.DistFS))
+			c.Abort()
+		}
+
+		webPrefixPaths := []string{
+			"/_next", "/favicon.ico", "/search", "/login", "/register", "/settings", "/profile",
+		}
+
+		for _, path := range webPrefixPaths {
+
+			if strings.HasPrefix(reqPath, path) {
+				router.RedirectTrailingSlash = false
+
+				c.FileFromFS(reqPath, http.FS(web.DistFS))
+				c.Abort()
+				return
+			}
+
+		}
+	})
+
+	rootRouter := router.Group("")
+	apiRouter := rootRouter.Group("/api")
 
 	if flagDebug {
 		pprof.Register(router)
@@ -163,24 +183,6 @@ func main() {
 		// Note: this service is on root router.
 		service := redirect.NewService(db, kv)
 		service.NewHTTP(rootRouter)
-	}
-
-	{
-		// Start web application. User interface.
-		// webHandler := http.FileServer(http.FS(web.DistDirFS))
-
-		router.Use(func(c *gin.Context) {
-
-		})
-
-		// router.StaticFS("/", web.DistFS)
-
-		// router.GET("/", func(c *gin.Context) {
-		// 	c.FileFromFS("/", http.FS(web.DistFS))
-		// 	c.FileFromFS("/_next/*", http.FS(web.DistFS))
-		// })
-
-		// router.Any("/", http.FileServer(http.FS(web.DistFS)))
 	}
 
 	srv := &http.Server{

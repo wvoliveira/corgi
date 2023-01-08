@@ -13,11 +13,11 @@ const LoginForm = () => {
   const [password, setPassword] = React.useState("");
 
   const handleEmailChange = React.useCallback(
-    (e) => setEmail(e.target.value),
+    (e: any) => setEmail(e.target.value),
     []
   );
   const handlePasswordChange = React.useCallback(
-    (e) => setPassword(e.target.value),
+    (e: any) => setPassword(e.target.value),
     []
   );
 
