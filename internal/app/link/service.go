@@ -68,8 +68,10 @@ func (s service) Add(c *gin.Context, link model.Link) (m model.Link, err error) 
 
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 
+		t := time.Now()
 		m.ID = uuid.New().String()
-		m.CreatedAt = time.Now()
+		m.CreatedAt = t
+		m.UpdatedAt = t
 		m.Domain = link.Domain
 		m.Keyword = link.Keyword
 		m.URL = link.URL
