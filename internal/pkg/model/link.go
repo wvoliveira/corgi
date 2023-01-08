@@ -40,19 +40,3 @@ type LinkLog struct {
 
 	LinkID string `json:"link_id" gorm:"index"`
 }
-
-// func (l *Link) BeforeCreate(tx *gorm.DB) (err error) {
-// 	l.ID = uuid.New().String()
-// 	l.CreatedAt = time.Now()
-// 	return
-// }
-
-// func (l *Link) BeforeUpdate(tx *gorm.DB) (err error) {
-// 	l.UpdatedAt = time.Now()
-// 	return
-// }
-
-// func (l *LinkLog) BeforeCreate(tx *gorm.DB) (err error) {
-// 	l.ID = uuid.New().String()
-// 	return
-// }

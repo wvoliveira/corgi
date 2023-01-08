@@ -158,6 +158,8 @@ func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID, shorte
 func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err error) {
 	log := logger.Logger(c)
 
+	link.UpdatedAt = time.Now()
+
 	err = s.db.Model(&model.Link{}).
 		Where("id = ? AND user_id = ?", link.ID, link.UserID).
 		Updates(&link).
@@ -166,7 +168,6 @@ func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err erro
 	if err == gorm.ErrRecordNotFound {
 		log.Info().Caller().Msg(err.Error())
 		return m, e.ErrLinkNotFound
-
 	}
 
 	if err != nil {

@@ -10,9 +10,6 @@ import (
 )
 
 func increaseClick(c context.Context, db *badger.DB, link string, t time.Time) {
-
-	fmt.Println("LINK TO INCREASE CLICK: ", link)
-
 	log := logger.Logger(c)
 
 	err := db.Update(func(txn *badger.Txn) (err error) {
