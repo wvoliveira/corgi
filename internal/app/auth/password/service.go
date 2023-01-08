@@ -1,7 +1,6 @@
 package password
 
 import (
-	"errors"
 	"fmt"
 	"time"
 
@@ -61,7 +60,7 @@ func (s service) Login(c *gin.Context, identity model.Identity) (user model.User
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-		return user, err
+		return user, e.ErrAuthPasswordInternalError
 	}
 
 	return
@@ -81,7 +80,7 @@ func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
 
 	if err == nil {
 		log.Warn().Caller().Msg(fmt.Sprintf("provider '%s' and uid '%s' already exists", identity.Provider, identity.UID))
-		return e.ErrAlreadyExists
+		return e.ErrAuthPasswordUserAlreadyExists
 	}
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(identity.Password), 8)
@@ -106,7 +105,7 @@ func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-		return errors.New("error to create a user: " + err.Error())
+		return e.ErrAuthPasswordInternalError
 	}
 
 	return

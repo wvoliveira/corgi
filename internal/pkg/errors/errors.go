@@ -9,10 +9,9 @@ import (
 
 // nolint
 var (
-	// Internal errors.
-
-	// ErrUserFromSession when get user from session.
-	ErrUserFromSession = errors.New("impossible to get user from session")
+	/**
+		Internal errors.
+	**/
 
 	ErrInconsistentIDs = errors.New("inconsistent IDs")
 	ErrAlreadyExists   = errors.New("already exists")
@@ -32,6 +31,10 @@ var (
 	ErrNoTokenFound     = errors.New("token authorization not found in header")
 	ErrAuthHeaderFormat = errors.New("must provide Authorization header with format `Bearer {token}`")
 
+	/**
+		User errors.
+	**/
+
 	// ErrUserNotFound error when user not found in database.
 	ErrUserNotFound = errors.New("user not found")
 
@@ -40,6 +43,23 @@ var (
 
 	// ErrUserNotFoundInContext impossible to get identity or user from context of request.
 	ErrUserNotFoundInContext = errors.New("impossible to get identity/user from context")
+
+	// ErrUserFromSession when get user from session.
+	ErrUserFromSession = errors.New("impossible to get user from session")
+
+	/**
+		Auth/password errors.
+	**/
+
+	// ErrAuthPasswordInternalError when an unkown error happens in auth/password category.
+	ErrAuthPasswordInternalError = errors.New("unknown error happens when register user. Sorry about that")
+
+	// ErrAuthPasswordUserAlreadyExists when anyone try to register with same e-mail.
+	ErrAuthPasswordUserAlreadyExists = errors.New("this e-mail already exists in our database. Try another one")
+
+	/**
+		Link errors.
+	**/
 
 	// ErrLinkNotFound link not found in database.
 	ErrLinkNotFound            = errors.New("domain and keyword combination not found")

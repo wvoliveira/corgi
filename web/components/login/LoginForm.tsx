@@ -70,7 +70,7 @@ const LoginForm = () => {
       </form>
 
       <p>Don&apos;t have an account? <Link href="/register">Register</Link></p>
-      <p><Link href="/password/reset">Forgot password?</Link></p>
+      <p><Link href="/login/reset">Forgot password?</Link></p>
 
     </>
   );
