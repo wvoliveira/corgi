@@ -42,11 +42,12 @@ var (
 	ErrUserNotFoundInContext = errors.New("impossible to get identity/user from context")
 
 	// ErrLinkNotFound link not found in database.
-	ErrLinkNotFound       = errors.New("domain and keyword combination not found")
-	ErrLinkAlreadyExists  = errors.New("this link keyword already exists in our database")
-	ErrLinkInvalidDomain  = errors.New("try to input a valid domain")
-	ErrLinkInvalidKeyword = errors.New("try to input a valid keyword between 6 and 15 chars")
-	ErrLinkInvalidURL     = errors.New("try to input a valid destination (URL)")
+	ErrLinkNotFound            = errors.New("domain and keyword combination not found")
+	ErrLinkAlreadyExists       = errors.New("this link keyword already exists in our database")
+	ErrLinkInvalidDomain       = errors.New("try to input a valid domain")
+	ErrLinkInvalidKeyword      = errors.New("try to input a valid keyword between 6 and 15 chars")
+	ErrLinkKeywordNotPermitted = errors.New("this keyword is not permitted")
+	ErrLinkInvalidURL          = errors.New("try to input a valid destination (URL)")
 
 	// With anonymous access, we can not create a shortener link with same URL.
 	ErrAnonymousURLAlreadyExists = errors.New("with anonymous access, we can not create a shortener link with same URL")
@@ -101,7 +102,8 @@ func codeFrom(err error) int {
 		return http.StatusNotFound
 
 	case ErrRequestNeedBody, ErrInconsistentIDs, ErrLinkAlreadyExists, ErrAlreadyExists,
-		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkInvalidURL, ErrAnonymousURLAlreadyExists:
+		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkKeywordNotPermitted, ErrLinkInvalidURL,
+		ErrAnonymousURLAlreadyExists:
 		return http.StatusBadRequest
 
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:

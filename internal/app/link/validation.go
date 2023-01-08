@@ -1,6 +1,8 @@
 package link
 
 import (
+	"strings"
+
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/rs/zerolog/log"
@@ -9,7 +11,15 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
+var BLOCK_PREFIX_LIST = []string{"_next", "favicon", "search", "login", "register", "settings", "profile"}
+
 func checkLink(link model.Link) (err error) {
+	for _, prefix := range BLOCK_PREFIX_LIST {
+		if strings.HasPrefix(link.Keyword, prefix) {
+			return e.ErrLinkKeywordNotPermitted
+		}
+	}
+
 	err = validation.Validate(link.URL,
 		validation.Required,
 		is.URL,
