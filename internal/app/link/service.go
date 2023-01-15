@@ -2,6 +2,7 @@ package link
 
 import (
 	"errors"
+	"fmt"
 	"math"
 	"time"
 
@@ -20,7 +21,7 @@ import (
 type Service interface {
 	Add(*gin.Context, model.Link) (model.Link, error)
 	FindByID(*gin.Context, string, string) (model.Link, error)
-	FindAll(*gin.Context, int, int, string, string, string) (int64, int, []model.Link, error)
+	FindAll(*gin.Context, findAllRequest) (int64, int, []model.Link, error)
 	Update(*gin.Context, model.Link) (model.Link, error)
 	Delete(*gin.Context, string, string) (err error)
 
@@ -121,22 +122,27 @@ func (s service) FindByID(c *gin.Context, linkID, userID string) (li model.Link,
 }
 
 // FindAll get a list of links from database.
-func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID, shortenedURL string) (total int64, pages int, links []model.Link, err error) {
+func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages int, links []model.Link, err error) {
 	log := logger.Logger(c)
 
-	domain, keyword := util.SplitURL(shortenedURL)
+	query := s.db.Model(&model.Link{})
+	query = query.Where("user_id = ?", r.UserID)
 
-	query := s.db.Model(&model.Link{}).Where("user_id = ?", userID)
+	if len(r.SearchText) >= 3 {
+		st := fmt.Sprintf("%%%s%%", r.SearchText)
+		query = query.Where("domain LIKE ? OR keyword LIKE ?", st, st)
+	}
 
+	domain, keyword := util.SplitURL(r.ShortenedURL)
 	if domain != "" && keyword != "" {
 		query = query.Where("domain = ? AND keyword = ?", domain, keyword)
 	}
 
 	err = query.
 		Count(&total).
-		Offset(offset).
-		Limit(limit).
-		Order(sort).
+		Offset(r.Offset).
+		Limit(r.Limit).
+		Order(r.Sort).
 		Find(&links).Error
 
 	if err == gorm.ErrRecordNotFound {
@@ -149,7 +155,7 @@ func (s service) FindAll(c *gin.Context, offset, limit int, sort, userID, shorte
 		return total, pages, links, e.ErrInternalServerError
 	}
 
-	pages = int(math.Ceil(float64(total) / float64(limit)))
+	pages = int(math.Ceil(float64(total) / float64(r.Limit)))
 
 	return
 }

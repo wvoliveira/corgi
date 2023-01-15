@@ -77,7 +77,7 @@ func (s service) HTTPFindAll(c *gin.Context) {
 		return
 	}
 
-	total, pages, links, err := s.FindAll(c, dr.Offset, dr.Limit, dr.Sort, dr.UserID, dr.ShortenedURL)
+	total, pages, links, err := s.FindAll(c, dr)
 
 	if err != nil {
 		e.EncodeError(c, err)

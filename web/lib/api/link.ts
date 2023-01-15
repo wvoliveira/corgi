@@ -29,10 +29,11 @@ const LinkAPI = {
       return error.response;
     }
   },
-  list: async (url = "") => {
+  FindAll: async (searchText = "") => {
     var uri = `/api/links`;
-    if (url != "") {
-      uri = `${uri}?u=${url}`
+
+    if (searchText != "") {
+      uri = `${uri}?q=${searchText}`
     }
 
     try {
@@ -46,7 +47,7 @@ const LinkAPI = {
       return error.response;
     }
   },
-  find: async (id: string) => {
+  findByID: async (id: string) => {
     try {
       const response = await axios.get(`/api/links/${id}`, {
         headers: {

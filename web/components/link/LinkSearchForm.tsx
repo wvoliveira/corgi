@@ -5,11 +5,11 @@ import LinkList from "./LinkList";
 export default function LinkSearchForm() {
   const [isLoading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
-  const [urlShort, setURLShort] = React.useState("");
+  const [searchText, setSearchText] = React.useState("");
   const [links, setLinks] = React.useState([]);
 
   const handleURLFullChange = React.useCallback(
-    (e: any) => setURLShort(e.target.value),
+    (e: any) => setSearchText(e.target.value),
     []
   );
 
@@ -18,7 +18,7 @@ export default function LinkSearchForm() {
     setLoading(true);
 
     try {
-      const { data, status } = await LinkAPI.list(urlShort);
+      const { data, status } = await LinkAPI.FindAll(searchText);
       if (status !== 200) {
         setError(data.message);
       }
@@ -38,9 +38,9 @@ export default function LinkSearchForm() {
   return (
     <>
       <form onSubmit={handleSubmit}>
-          <input 
-            type="text" placeholder="Type a domain or keyword to search"
-            value={urlShort}
+          <input
+            type="text" placeholder="Type a text to search."
+            value={searchText}
             onChange={handleURLFullChange}
             required={false}
           />
