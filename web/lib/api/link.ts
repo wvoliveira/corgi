@@ -30,19 +30,20 @@ const LinkAPI = {
     }
   },
   FindAll: async (searchText = "") => {
-    var uri = `/api/links`;
+    var url = `/api/links`;
 
     if (searchText != "") {
-      uri = `${uri}?q=${searchText}`
+      url = `${url}?q=${searchText}`
     }
 
     try {
-      const response = await axios.get(uri, {
+      const response = await axios.get(url, {
         headers: {
           "Content-Type": "application/json",
         },
       });
       return response;
+
     } catch (error: any) {
       return error.response;
     }
