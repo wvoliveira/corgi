@@ -12,18 +12,16 @@ export default function LinkSearchForm() {
   const [searchText, setSearchText] = React.useState("");
   const [links, setLinks] = React.useState([]);
 
-  const handleURLFullChange = React.useCallback(
+  const handleSearchTextChange = React.useCallback(
     (e: any) => setSearchText(e.target.value),
     []
   );
 
   const getLinks = async () => {
-    let text = router.query.q?.toString();
-
     setLoading(true);
 
     try {
-      const { data, status, statusText } = await LinkAPI.FindAll(text);
+      const { data, status, statusText } = await LinkAPI.FindAll(searchText);
 
       if (status == 500) {
         console.log("Error 500");
@@ -54,23 +52,20 @@ export default function LinkSearchForm() {
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
-    setLoading(true);
-    setLinks([]);
-    setError("");
-
     router.replace({
       query: { ...router.query, q: searchText },
     });
 
-    getLinks();
 
   };
 
   useEffect(() => {
-    let paramQ = router.query.q?.toString()
-    setSearchText(paramQ ? paramQ : "");
+    let q = router.query.q?.toString();
+    setSearchText(q ? q : "");
+
+    console.log("search Text: ", searchText);
     getLinks();
-  }, [router.isReady])
+  }, [router])
 
   if (!router.isReady) {
     return <>Loading...</>
@@ -82,7 +77,7 @@ export default function LinkSearchForm() {
           <input
             type="text" placeholder="Type a text to search."
             value={searchText}
-            onChange={handleURLFullChange}
+            onChange={handleSearchTextChange}
             required={false}
           />
 
