@@ -2,7 +2,6 @@ package link
 
 import (
 	"errors"
-	"net"
 	"strconv"
 	"time"
 
@@ -62,12 +61,7 @@ func decodeAdd(c *gin.Context) (r addRequest, err error) {
 	}
 
 	if r.Domain == "" {
-		host, _, err := net.SplitHostPort(c.Request.Host)
-		if err != nil {
-			return r, err
-		}
-
-		r.Domain = host
+		r.Domain = c.Request.Host
 	}
 
 	r.UserID = v.(model.User).ID

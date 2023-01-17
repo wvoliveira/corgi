@@ -27,8 +27,9 @@ const UserAPI = {
         }
       );
       return response;
-    } catch (error) {
-      return error;
+    } catch (error: any) {
+      console.log(error);
+      return error?.response;
     }
   },
   register: async (name: string, email: string, password: string) => {

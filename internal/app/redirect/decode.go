@@ -2,7 +2,6 @@ package redirect
 
 import (
 	"errors"
-	"net"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,15 +20,7 @@ func decodeFindByKeyword(c *gin.Context) (r findByKeywordRequest, err error) {
 	}
 
 	r.Keyword = keyword
-
-	if r.Domain == "" {
-		host, _, err := net.SplitHostPort(c.Request.Host)
-		if err != nil {
-			return r, err
-		}
-
-		r.Domain = host
-	}
+	r.Domain = c.Request.Host
 
 	return r, nil
 }

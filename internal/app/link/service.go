@@ -47,6 +47,7 @@ func (s service) Add(c *gin.Context, link model.Link) (m model.Link, err error) 
 	l := logger.Logger(c)
 
 	if err = checkLink(link); err != nil {
+		l.Error().Caller().Msg(err.Error())
 		return
 	}
 

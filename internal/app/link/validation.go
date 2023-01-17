@@ -1,6 +1,7 @@
 package link
 
 import (
+	"fmt"
 	"strings"
 
 	validation "github.com/go-ozzo/ozzo-validation/v4"
@@ -33,6 +34,8 @@ func checkLink(link model.Link) (err error) {
 	domain_allowed := false
 	domain_default := viper.Get("app.domain_default").(string)
 	domain_alternatives := viper.Get("app.domain_alternatives").([]string)
+
+	log.Debug().Caller().Msg(fmt.Sprintf("Default domain: %s", domain_default))
 
 	if link.Domain == domain_default {
 		domain_allowed = true

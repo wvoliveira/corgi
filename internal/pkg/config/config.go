@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/mitchellh/go-homedir"
@@ -17,12 +18,12 @@ func New(configFile string) {
 	viper.SetDefault("app.secret_key", "CHANGE_FOR_SOMETHING_MORE_SECURITY")
 	viper.SetDefault("app.redirect_url", "http://127.0.0.1:8081")
 
-	viper.SetDefault("app.domain_default", "localhost")
-	viper.SetDefault("app.domain_alternatives", []string{})
-
 	viper.SetDefault("server.http_port", 8081)
 	viper.SetDefault("server.read_timeout", 10)
 	viper.SetDefault("server.write_timeout", 10)
+
+	viper.SetDefault("app.domain_default", fmt.Sprintf("localhost:%d", viper.GetInt("server.http_port")))
+	viper.SetDefault("app.domain_alternatives", []string{})
 
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("CORGI")

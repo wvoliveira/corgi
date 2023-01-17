@@ -12,11 +12,6 @@ export default function Navbar() {
   const [error, setError] = React.useState("");
 
   const { mutate } = useSWRConfig()
-  const { data: currentUser } = useSWR("user", storage);
-  const isLoggedIn = checkLogin(currentUser);
-
-  console.log("current user: ", currentUser);
-  console.log("is logged in: ", isLoggedIn);
 
   const handleLogout = async (e: any) => {
     e.preventDefault();
@@ -42,6 +37,16 @@ export default function Navbar() {
       }, 1000);
     }
   };
+
+  const { data: currentUser } = useSWR("user", storage);
+  const isLoggedIn = checkLogin(currentUser);
+
+  if (!currentUser) {
+    return <>Loading...</>
+  }
+
+  console.log("current user: ", currentUser);
+  console.log("is logged in: ", isLoggedIn);
 
   return (
     <>

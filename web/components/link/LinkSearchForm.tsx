@@ -7,7 +7,7 @@ import LinkList from "./LinkList";
 export default function LinkSearchForm() {
   const router = useRouter();
 
-  const [isLoading, setLoading] = React.useState(false);
+  const [isLoading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
   const [searchText, setSearchText] = React.useState("");
   const [links, setLinks] = React.useState([]);
@@ -17,11 +17,13 @@ export default function LinkSearchForm() {
     []
   );
 
-  const getLinks = async () => {
+  const getLinks = async (text="") => {
     setLoading(true);
 
+    text = text ?? searchText
+
     try {
-      const { data, status, statusText } = await LinkAPI.FindAll(searchText);
+      const { data, status, statusText } = await LinkAPI.FindAll(text);
 
       if (status == 500) {
         console.log("Error 500");
@@ -55,19 +57,20 @@ export default function LinkSearchForm() {
     router.replace({
       query: { ...router.query, q: searchText },
     });
-
-
   };
 
   useEffect(() => {
-    let q = router.query.q?.toString();
-    setSearchText(q ? q : "");
+    if (!router.isReady || !router.query) {
+      return
+    }
+    const { q } = router.query;
 
-    console.log("search Text: ", searchText);
-    getLinks();
+    let text = q?.toString()
+    setSearchText(text);
+    getLinks(text);
   }, [router])
 
-  if (!router.isReady) {
+  if (isLoading) {
     return <>Loading...</>
   }
 
@@ -83,23 +86,16 @@ export default function LinkSearchForm() {
 
           { ' ' }
 
-          <button 
-            type="submit"
-            disabled={isLoading}
-          >
-            Search
-          </button>
-
+          <button type="submit">Search</button>
       </form>
 
-      {error != "" ?
+      {error ?
         <>
           Error: {error}
         </>
       : null}
 
       <LinkList links={links} />
-
     </>
   )
 }

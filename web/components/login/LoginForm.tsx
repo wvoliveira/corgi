@@ -8,7 +8,8 @@ import Link from "next/link";
 
 const LoginForm = () => {
   const [isLoading, setLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState([]);
+  const [message, setMessage] = React.useState("");
+  const [error, setError] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
@@ -21,28 +22,38 @@ const LoginForm = () => {
     []
   );
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: any) => {
     e.preventDefault();
-    setLoading(true);
 
-    console.log("Email: ", email);
-    console.log("Password: ", password);
+    setLoading(true);
+    setError("");
+    setMessage("");
 
     try {
       const { data, status } = await UserAPI.login(email, password);
-      if (status !== 200) {
-        setErrors(data);
+
+      console.log("data: ", data);
+      console.log("status: ", status);
+
+      if (status == 401) {
+        setError("Email or password invalid!");
+        console.log("Message: ", data?.message);
+        return
       }
 
-      if (data?.data) {
+      if (status == 200 && data?.data) {
         window.localStorage.setItem("user", JSON.stringify(data.data));
-        console.log(data);
+        console.log("Data: ", data);
 
-        mutate("user", data?.data);
-        Router.push("/");
+        setMessage("Authenticated! Reloading...")
+
+        setTimeout(() => {
+          mutate("user", data.data);
+          Router.push("/");
+        }, 2000);
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error: ", error);
     } finally {
       setLoading(false);
     }
@@ -58,16 +69,28 @@ const LoginForm = () => {
       <form onSubmit={handleSubmit}>
         <p>
           <label htmlFor="email">Email</label><br/>
-          <input type="email" onChange={handleEmailChange}/>
+          <input type="email" autoComplete="true" onChange={handleEmailChange}/>
         </p>
 
         <p>
           <label htmlFor="password">Password</label><br/>
-          <input type="password" onChange={handlePasswordChange}/>
+          <input type="password" autoComplete="true" onChange={handlePasswordChange}/>
         </p>
 
         <p><button>Login</button></p>
       </form>
+
+      {error != "" ?
+        <>
+          Error: {error}
+        </>
+      : null}
+
+      {message != "" ?
+        <>
+          {message}
+        </>
+      : null}
 
       <p>Don&apos;t have an account? <Link href="/register">Register</Link></p>
       <p><Link href="/login/reset">Forgot password?</Link></p>

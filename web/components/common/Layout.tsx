@@ -8,7 +8,6 @@ export default function Layout({ children }:{children:any}) {
 
   return (
     <>
-
       <Head>
         <title>Corgi</title>
         <meta name="description" content="Corgi | A shortener system" />
