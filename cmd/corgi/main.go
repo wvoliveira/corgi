@@ -29,6 +29,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/debug"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
+	appLog "github.com/wvoliveira/corgi/internal/app/log"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
@@ -183,6 +184,13 @@ func main() {
 		// Note: this service is on root router.
 		service := redirect.NewService(db, kv)
 		service.NewHTTP(rootRouter)
+	}
+
+	{
+		// Central business service: redirect short link.
+		// Note: this service is on root router.
+		service := appLog.NewService()
+		service.NewHTTP(apiRouter)
 	}
 
 	srv := &http.Server{
