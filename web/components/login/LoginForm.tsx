@@ -32,9 +32,6 @@ const LoginForm = () => {
     try {
       const { data, status } = await UserAPI.login(email, password);
 
-      console.log("data: ", data);
-      console.log("status: ", status);
-
       if (status == 401) {
         setError("Email or password invalid!");
         console.log("Message: ", data?.message);
@@ -43,19 +40,20 @@ const LoginForm = () => {
 
       if (status == 200 && data?.data) {
         window.localStorage.setItem("user", JSON.stringify(data.data));
-        console.log("Data: ", data);
 
         setMessage("Authenticated! Reloading...")
 
+        // TODO: set user to storage when auth and reload the page.
         setTimeout(() => {
           mutate("user", data.data);
+          setLoading(false);
           Router.push("/");
-        }, 2000);
+        }, 1000);
       }
     } catch (error) {
       console.error("Error: ", error);
     } finally {
-      setLoading(false);
+      console.log("Finally handle.")
     }
   };
 
@@ -69,15 +67,15 @@ const LoginForm = () => {
       <form onSubmit={handleSubmit}>
         <p>
           <label htmlFor="email">Email</label><br/>
-          <input type="email" autoComplete="true" onChange={handleEmailChange}/>
+          <input type="email" autoComplete="true" onChange={handleEmailChange} readOnly={isLoading}/>
         </p>
 
         <p>
           <label htmlFor="password">Password</label><br/>
-          <input type="password" autoComplete="true" onChange={handlePasswordChange}/>
+          <input type="password" autoComplete="true" onChange={handlePasswordChange} readOnly={isLoading}/>
         </p>
 
-        <p><button>Login</button></p>
+        <p><button disabled={isLoading}>Login</button></p>
       </form>
 
       {error != "" ?
