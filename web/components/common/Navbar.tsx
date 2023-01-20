@@ -1,5 +1,5 @@
 import Link from "next/link";
-import React from "react";
+import React, { useEffect } from "react";
 
 import useSWR, { useSWRConfig } from "swr";
 import LinkUser from "../../lib/api/user";
@@ -8,10 +8,22 @@ import storage from "../../lib/utils/storage";
 
 
 export default function Navbar() { 
+  const { mutate } = useSWRConfig()
+
   const [isLoading, setLoading] = React.useState(false);
   const [error, setError] = React.useState("");
 
-  const { mutate } = useSWRConfig()
+  const [isLoggedIn, setIsLoggedIn] = React.useState(false);
+
+  const { data: currentUser } = useSWR("user", storage);
+
+  useEffect(() => {
+    console.log("current user: ", currentUser);
+
+    const isLoggedIn = checkLogin(currentUser);
+    setIsLoggedIn(isLoggedIn);
+  }, currentUser);
+
 
   const handleLogout = async (e: any) => {
     e.preventDefault();
@@ -37,16 +49,6 @@ export default function Navbar() {
       }, 1000);
     }
   };
-
-  const { data: currentUser } = useSWR("user", storage);
-  const isLoggedIn = checkLogin(currentUser);
-
-  if (!currentUser) {
-    return <>Loading...</>
-  }
-
-  console.log("current user: ", currentUser);
-  console.log("is logged in: ", isLoggedIn);
 
   return (
     <>
