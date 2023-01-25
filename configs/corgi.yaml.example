@@ -1,0 +1,19 @@
+app:
+  log_level: info
+  secret_key: CHANGE_FOR_SOMETHING_MORE_SECURITY
+  redirect_url: http://127.0.0.1:8081
+  domain_default: localhost:8081
+
+server:
+  http_port: 8081
+  read_timeout: 10
+  write_timeout: 10
+
+auth:
+  google:
+    client_id:
+    client_secret:
+
+  facebook:
+    client_id:
+    client_secret:
