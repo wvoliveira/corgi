@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wvoliveira/corgi/internal/pkg/util"
+	"github.com/wvoliveira/corgi/internal/pkg/common"
 )
 
 type addRequest struct {
@@ -28,7 +28,7 @@ type findByIDRequest struct {
 }
 
 func decodeAdd(c *gin.Context) (payload addRequest, userID string, err error) {
-	userID, err = util.GetUserFromSession(c)
+	userID, err = common.GetUserFromSession(c)
 
 	if err != nil {
 		return
@@ -47,7 +47,7 @@ func decodeAdd(c *gin.Context) (payload addRequest, userID string, err error) {
 }
 
 func decodeList(c *gin.Context) (request listRequest, userID string, err error) {
-	userID, err = util.GetUserFromSession(c)
+	userID, err = common.GetUserFromSession(c)
 
 	if err != nil {
 		return
@@ -80,7 +80,7 @@ func decodeList(c *gin.Context) (request listRequest, userID string, err error) 
 }
 
 func decodeFindByID(c *gin.Context) (req findByIDRequest, userID string, err error) {
-	userID, err = util.GetUserFromSession(c)
+	userID, err = common.GetUserFromSession(c)
 
 	if err != nil {
 		return

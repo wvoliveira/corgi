@@ -9,10 +9,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/teris-io/shortid"
+	"github.com/wvoliveira/corgi/internal/pkg/common"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"github.com/wvoliveira/corgi/internal/pkg/util"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -134,7 +134,7 @@ func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages i
 		query = query.Where("domain LIKE ? OR keyword LIKE ?", st, st)
 	}
 
-	domain, keyword := util.SplitURL(r.ShortenedURL)
+	domain, keyword := common.SplitURL(r.ShortenedURL)
 	if domain != "" && keyword != "" {
 		query = query.Where("domain = ? AND keyword = ?", domain, keyword)
 	}

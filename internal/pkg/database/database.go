@@ -8,8 +8,8 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
+	"github.com/wvoliveira/corgi/internal/pkg/common"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"github.com/wvoliveira/corgi/internal/pkg/util"
 	"gorm.io/gorm/logger"
 
 	"github.com/glebarez/sqlite"
@@ -31,14 +31,15 @@ func NewSQL() (db *gorm.DB) {
 			Colorful:                  false,
 		},
 	)
+
 	cfg := gorm.Config{Logger: newLogger}
 
-	appFolder, err := util.GetOrCreateDataFolder()
+	appFolder, err := common.GetOrCreateDataFolder()
 	if err != nil {
 		log.Fatal().Caller().Msg(err.Error())
 	}
 
-	dbFile := filepath.Join(appFolder, "data")
+	dbFile := filepath.Join(appFolder, "base")
 
 	db, err = gorm.Open(sqlite.Open(dbFile), &cfg)
 	if err != nil {
@@ -49,12 +50,12 @@ func NewSQL() (db *gorm.DB) {
 
 // NewKV create a badger database object.
 func NewKV() (db *badger.DB) {
-	appFolder, err := util.GetOrCreateDataFolder()
+	appFolder, err := common.GetOrCreateDataFolder()
 	if err != nil {
 		log.Fatal().Caller().Msg(err.Error())
 	}
 
-	dbFile := filepath.Join(appFolder, "kv")
+	dbFile := filepath.Join(appFolder, "cache")
 
 	db, err = badger.Open(badger.DefaultOptions(dbFile))
 	if err != nil {
@@ -103,13 +104,20 @@ func SeedUsers(db *gorm.DB) {
 
 	for _, user := range users {
 		var count int64
-		db.Model(&model.Identity{}).Where("provider = ? AND uid = ?", user.Identities[0].Provider, user.Identities[0].UID).Count(&count)
+
+		provider := user.Identities[0].Provider
+		uid := user.Identities[0].UID
+
+		db.Model(&model.Identity{}).
+			Where("provider = ? AND uid = ?", provider, uid).
+			Count(&count)
 
 		if count > 0 {
 			continue
 		}
 
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Identities[0].Password), 8)
+		plainTextPassword := user.Identities[0].Password
+		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainTextPassword), 8)
 
 		if err != nil {
 			log.Info().Caller().Msg(err.Error())
