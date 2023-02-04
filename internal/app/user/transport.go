@@ -12,7 +12,6 @@ import (
 
 func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r := rg.Group("/user")
-	// rr.Use(middleware.Checks)
 	r.Use(middleware.Auth())
 
 	r.GET("/me", s.HTTPFind)

@@ -1,46 +1,36 @@
 package main
 
 import (
-	"context"
 	"encoding/gob"
-	"fmt"
 	"net/http"
 	"os"
-	"os/signal"
 	"strings"
-	"syscall"
-	"time"
 
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
-	"github.com/gin-contrib/pprof"
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
-
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/wvoliveira/corgi/internal/app/auth"
 	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/clicks"
-	"github.com/wvoliveira/corgi/internal/app/debug"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	appLog "github.com/wvoliveira/corgi/internal/app/log"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
+	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
+	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"github.com/wvoliveira/corgi/internal/pkg/server"
 	"github.com/wvoliveira/corgi/web"
 )
 
 var (
-	version = "0.0.1"
-
 	flagDebug  bool
 	flagConfig string
 )
@@ -52,18 +42,10 @@ func init() {
 
 	config.New(flagConfig)
 
-	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stderr})
-	if flagDebug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
-	}
+	logger.Default(flagDebug)
 
 	gob.Register(model.User{})
 }
-
-// //go:embed all:web
-// var nextFS embed.FS
 
 func main() {
 	db := database.NewSQL()
@@ -86,14 +68,7 @@ func main() {
 	// I think its a good idea because we can manager user access with cookie based.
 	router := gin.Default()
 
-	store := cookie.NewStore([]byte(viper.GetString("secret_key")))
-	store.Options(sessions.Options{
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   60 * 60 * 24 * 30,
-	})
-
-	router.Use(sessions.Sessions("session", store))
+	server.AddStoreSession(router, viper.GetString("secret_key"))
 
 	// First, check if request path is inside web app.
 	// If yes, just answer the request and finish the request.
@@ -126,9 +101,7 @@ func main() {
 	apiRouter := rootRouter.Group("/api")
 
 	if flagDebug {
-		pprof.Register(router)
-		service := debug.NewService()
-		service.NewHTTP(rootRouter)
+		server.AddPProf(router, rootRouter)
 	}
 
 	{
@@ -144,12 +117,6 @@ func main() {
 	}
 
 	{
-		// User management service. Like profile view and edit.
-		service := user.NewService(db, kv)
-		service.NewHTTP(apiRouter)
-	}
-
-	{
 		// Auth with Google provider.
 		service := google.NewService(db)
 		service.NewHTTP(apiRouter)
@@ -158,6 +125,12 @@ func main() {
 	{
 		// Auth with Facebook provider.
 		service := facebook.NewService(db)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// User management service. Like profile view and edit.
+		service := user.NewService(db, kv)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -175,7 +148,7 @@ func main() {
 
 	{
 		// Healthcheck endpoints.
-		service := health.NewService(db, version)
+		service := health.NewService(db, constants.VERSION)
 		service.NewHTTP(rootRouter)
 	}
 
@@ -193,45 +166,5 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	srv := &http.Server{
-		Addr:         ":" + viper.GetString("server.http_port"),
-		Handler:      router,
-		ReadTimeout:  viper.GetDuration("server.read_timeout") * time.Second,
-		WriteTimeout: viper.GetDuration("server.write_timeout") * time.Second,
-	}
-
-	// Create context that listens for the interrupt signal from the OS.
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-	defer stop()
-
-	// Initializing the server in a goroutine so that
-	// it won't block the graceful shutdown handling below
-	go func() {
-		log.Info().Caller().Msg(fmt.Sprintf("server listening http://127.0.0.1:%s", viper.GetString("server.http_port")))
-
-		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Error().Caller().Msg(err.Error())
-		}
-
-	}()
-
-	// Listen for the interrupt signal.
-	<-ctx.Done()
-
-	// Restore default behavior on the interrupt signal and notify user of shutdown.
-	stop()
-
-	log.Info().Caller().Msg("shutting down gracefully..")
-
-	// The context is used to inform the server it has 5 seconds to finish
-	// the request it is currently handling
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-
-	defer cancel()
-
-	if err := srv.Shutdown(ctx); err != nil {
-		log.Warn().Caller().Msg(fmt.Sprintf("server forced to shutdown: %s", err.Error()))
-	}
-
-	log.Info().Caller().Msg("server exited")
+	server.Graceful(router, viper.GetString("server.http_port"))
 }

@@ -1,4 +1,4 @@
-package main
+package server
 
 import (
 	"context"
@@ -9,58 +9,20 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/spf13/viper"
-
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
-
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
-	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/debug"
-	"github.com/wvoliveira/corgi/internal/pkg/database"
 )
 
-func main() {
-	db := database.NewSQL()
-	kv := database.NewKV()
-
-	// Create a root router and attach session.
-	// I think its a good idea because we can manager user access with cookie based.
-	router := gin.Default()
-
-	store := cookie.NewStore([]byte(viper.GetString("secret_key")))
-	store.Options(sessions.Options{
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   60 * 60 * 24 * 30,
-	})
-
-	router.Use(sessions.Sessions("session", store))
-
-	rootRouter := router.Group("")
-	apiRouter := router.Group("/api")
-
-	if flagDebug {
-		pprof.Register(router)
-		service := debug.NewService()
-		service.NewHTTP(rootRouter)
-	}
-
-	{
-		// Auth password service.
-		service := password.NewService(db, kv)
-		service.NewHTTP(apiRouter)
-	}
-
-	serverHTTPPort := viper.GetString("server.http_port")
-
+func Graceful(router *gin.Engine, httpPort string) {
 	srv := &http.Server{
-		Addr:         ":" + serverHTTPPort,
+		Addr:         ":" + httpPort,
 		Handler:      router,
-		ReadTimeout:  viper.GetDuration("server.read_timeout") * time.Second,
-		WriteTimeout: viper.GetDuration("server.write_timeout") * time.Second,
+		ReadTimeout:  5 * time.Second,
+		WriteTimeout: 5 * time.Second,
 	}
 
 	// Create context that listens for the interrupt signal from the OS.
@@ -70,7 +32,7 @@ func main() {
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
-		log.Info().Caller().Msg(fmt.Sprintf("server listening http://127.0.0.1:%s", serverHTTPPort))
+		log.Info().Caller().Msg(fmt.Sprintf("server listening http://127.0.0.1:%s", httpPort))
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error().Caller().Msg(err.Error())
@@ -97,4 +59,23 @@ func main() {
 	}
 
 	log.Info().Caller().Msg("server exited")
+}
+
+func AddStoreSession(router *gin.Engine, secretKey string) {
+	store := cookie.NewStore([]byte(secretKey))
+	store.Options(sessions.Options{
+		Path:     "/",
+		HttpOnly: true,
+		MaxAge:   60 * 60 * 24 * 30,
+	})
+
+	router.Use(sessions.Sessions("session", store))
+}
+
+func AddPProf(r *gin.Engine, rg *gin.RouterGroup) {
+	pprof.Register(r)
+
+	// Debug service like env vars, pprof route, etc.
+	service := debug.NewService()
+	service.NewHTTP(rg)
 }
