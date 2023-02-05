@@ -1,9 +1,6 @@
 package main
 
 import (
-	"github.com/gin-contrib/sessions"
-	"github.com/gin-contrib/sessions/cookie"
-
 	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/app/auth"
 	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
@@ -16,21 +13,13 @@ import (
 )
 
 func main() {
-	db := database.NewSQL()
+	db := database.NewSQL(flagDatasource)
 	kv := database.NewKV()
 
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
 	router := gin.Default()
-
-	store := cookie.NewStore([]byte(flagSecretKey))
-	store.Options(sessions.Options{
-		Path:     "/",
-		HttpOnly: true,
-		MaxAge:   60 * 60 * 24 * 30,
-	})
-
-	router.Use(sessions.Sessions("session", store))
+	server.AddStoreSession(router, flagSecretKey)
 
 	rootRouter := router.Group("")
 	apiRouter := router.Group("/api")

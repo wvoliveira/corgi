@@ -2,6 +2,7 @@ package health
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"net/http"
 	"strings"
@@ -14,7 +15,6 @@ import (
 	"golang.org/x/oauth2/google"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
-	"gorm.io/gorm"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
@@ -26,12 +26,12 @@ type Service interface {
 }
 
 type service struct {
-	db      *gorm.DB
+	db      *sql.DB
 	version string
 }
 
 // NewService creates a new healthcheck service.
-func NewService(db *gorm.DB, version string) Service {
+func NewService(db *sql.DB, version string) Service {
 	return service{db, version}
 }
 

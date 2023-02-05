@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	db := database.NewSQL()
+	db := database.NewSQL(flagDatasource)
 
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.

@@ -36,3 +36,6 @@ load-test-2m:
 pprof-graph:
 	pprof -web "http://:8081/debug/pprof/profile?seconds=5"
 
+
+local-dep:
+	docker-compose -f deployments/container/docker-compose.yaml up

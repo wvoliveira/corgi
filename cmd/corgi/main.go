@@ -3,14 +3,12 @@ package main
 import (
 	"encoding/gob"
 	"net/http"
-	"os"
 	"strings"
 
 	flag "github.com/spf13/pflag"
 	"github.com/spf13/viper"
 
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	"github.com/wvoliveira/corgi/internal/app/auth"
 	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
@@ -52,16 +50,6 @@ func main() {
 	kv := database.NewKV()
 
 	// Seed first users. Most admins.
-	if err := db.AutoMigrate(
-		&model.User{},
-		&model.Identity{},
-		&model.Link{},
-		&model.Token{},
-	); err != nil {
-		log.Fatal().Caller().Msg(err.Error())
-		os.Exit(1)
-	}
-
 	database.SeedUsers(db)
 
 	// Create a root router and attach session.

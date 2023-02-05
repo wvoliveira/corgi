@@ -1,13 +1,14 @@
 package link
 
 import (
-	"errors"
+	"database/sql"
 	"fmt"
 	"math"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
+	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog/log"
 	"github.com/teris-io/shortid"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
@@ -34,11 +35,11 @@ type Service interface {
 }
 
 type service struct {
-	db *gorm.DB
+	db *sql.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB) Service {
+func NewService(db *sql.DB) Service {
 	return service{db}
 }
 
@@ -64,55 +65,49 @@ func (s service) Add(c *gin.Context, link model.Link) (m model.Link, err error) 
 		}
 	}
 
-	err = s.db.Model(&model.Link{}).
-		Where("domain = ? AND keyword = ?", link.Domain, link.Keyword).
-		Take(&m).Error
+	query := "SELECT * FROM links WHERE domain = $1 AND keyword = $2 LIMIT 1"
+	rows, err := s.db.QueryContext(c, query, link.Domain, link.Keyword)
 
-	if errors.Is(err, gorm.ErrRecordNotFound) {
-
-		t := time.Now()
-		m.ID = uuid.New().String()
-		m.CreatedAt = t
-		m.UpdatedAt = t
-		m.Domain = link.Domain
-		m.Keyword = link.Keyword
-		m.URL = link.URL
-		m.Title = link.Title
-		m.Active = "true"
-		m.UserID = link.UserID
-
-		err = s.db.
-			Model(&model.Link{}).
-			Create(&m).Error
-
-		if err == nil {
-			l.Info().Caller().Msg("short link created with successfully")
-		}
-
-		return m, err
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
 	}
 
-	if err == nil {
+	defer rows.Close()
+
+	if rows.Next() {
+		err = rows.Scan(&m)
+
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+
+		log.Info().Caller().Msg(fmt.Sprintf("link ID: %s", m.ID))
+	}
+
+	if m.ID != "" {
 		l.Warn().Caller().Msg("domain with keyword already exists")
 		return m, e.ErrAlreadyExists
 	}
 
-	return m, e.ErrInternalServerError
-}
+	query = `
+		INSERT INTO links(id, created_at, domain, keyword, url, title, active, user_id) 
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
+	`
 
-// FindByID get a shortener link from ID.
-func (s service) FindByID(c *gin.Context, linkID, userID string) (li model.Link, err error) {
-	log := logger.Logger(c)
-
-	err = s.db.Model(&model.Link{}).
-		Where("id = ? AND user_id = ?", linkID, userID).
-		Take(&li).Error
-
-	if err == gorm.ErrRecordNotFound {
-		log.Warn().Caller().Msg("link not found")
-		return li, e.ErrLinkNotFound
-
-	}
+	_, err = s.db.ExecContext(
+		c,
+		query,
+		ulid.Make(),
+		time.Now(),
+		link.Domain,
+		link.Keyword,
+		link.URL,
+		link.Title,
+		true,
+		link.UserID,
+	)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
@@ -122,33 +117,74 @@ func (s service) FindByID(c *gin.Context, linkID, userID string) (li model.Link,
 	return
 }
 
+// FindByID get a shortener link from ID.
+func (s service) FindByID(c *gin.Context, linkID, userID string) (link model.Link, err error) {
+	log := logger.Logger(c)
+
+	query := "SELECT * FROM links WHERE id = $1 AND user_id = $2 LIMIT 1"
+	rows, err := s.db.QueryContext(c, query, linkID, userID)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	defer rows.Close()
+
+	if rows.Next() {
+		err = rows.Scan(&link)
+
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+
+		log.Info().Caller().Msg(fmt.Sprintf("link ID: %s", link.ID))
+		return
+	}
+
+	log.Warn().Caller().Msg("link not found")
+	return link, e.ErrLinkNotFound
+}
+
 // FindAll get a list of links from database.
 func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages int, links []model.Link, err error) {
 	log := logger.Logger(c)
 
-	query := s.db.Model(&model.Link{})
-	query = query.Where("user_id = ?", r.UserID)
+	query := fmt.Sprintf("SELECT count(*) FROM links WHERE user_id = %s", r.UserID)
+	// rows, err := s.db.QueryContext(c, query, r.UserID, r.Offset, r.Limit)
 
 	if len(r.SearchText) >= 3 {
-		st := fmt.Sprintf("%%%s%%", r.SearchText)
-		query = query.Where("domain LIKE ? OR keyword LIKE ?", st, st)
+		query = query + fmt.Sprintf(" AND domain LIKE %%%[1]s%% OR keyword LIKE %%%[1]s%%", r.SearchText)
 	}
 
 	domain, keyword := common.SplitURL(r.ShortenedURL)
 	if domain != "" && keyword != "" {
-		query = query.Where("domain = ? AND keyword = ?", domain, keyword)
+		query = query + fmt.Sprintf(" AND domain = %s AND keyword = %s", domain, keyword)
 	}
 
-	err = query.
-		Count(&total).
-		Offset(r.Offset).
-		Limit(r.Limit).
-		Order(r.Sort).
-		Find(&links).Error
+	// TODO: add order by another field.
+	query = query + fmt.Sprintf(" ORDER BY created_at LIMIT %d OFFSET %d", r.Limit, r.Offset)
 
-	if err == gorm.ErrRecordNotFound {
-		log.Info().Caller().Msg(err.Error())
-		return total, pages, links, e.ErrLinkNotFound
+	rows, err := s.db.QueryContext(c, query)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	defer rows.Close()
+	var link model.Link
+
+	if rows.Next() {
+		err = rows.Scan(&link)
+
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+
+		links = append(links, link)
+		log.Info().Caller().Msg(fmt.Sprintf("link ID: %s", link.ID))
 	}
 
 	if err != nil {

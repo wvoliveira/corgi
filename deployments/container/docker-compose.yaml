@@ -1,81 +1,29 @@
 version: '3.5'
 services:
 
-  proxy:
-    image: "traefik:v2.6"
-    container_name: "proxy"
-    command:
-      - "--log.level=DEBUG"
-      - "--api.insecure=true"
-      - "--providers.docker=true"
-      - "--providers.docker.exposedbydefault=false"
-      - "--entrypoints.web.address=:80"
-    ports:
-      - "80:80"
-      - "8080:8080"
-    volumes:
-      - "/var/run/docker.sock:/var/run/docker.sock:ro"
-
-  backend:
-    build:
-      context: .
-      dockerfile: cmd/corgi/Dockerfile
-    deploy:
-      replicas: 2
-    #ports:
-    #  - "8081:8081"
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.backend.rule=Host(`localhost`)"
-    environment:
-      - CORGI_BROKER_HOST=broker
-      - CORGI_DATABASE_HOST=db
-    depends_on:
-      - db
-      - broker
-      - queue
-
-#  frontend:
-#    ports:
-#      - "8082:8081"
-
-  app:
-    build:
-      context: .
-    ports:
-      - "8083:8081"
-    environment:
-      - APP_ENV=local
-      - APP_DSN=postgres://db/corgi?sslmode=disable&user=postgres&password=postgres
-    depends_on:
-      - db
-      - broker
-      - queue
-
   db:
-    image: "cockroachdb/cockroach:v21.2.3"
-    command: start-single-node --insecure
+    image: postgres:15.1
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: corgi
     ports:
-      - "26257:26257"
-      - "8084:8080"
+      - "5432:5432"
 
-  db-init:
-    image: "cockroachdb/cockroach:v21.2.3"
-    command: sql --insecure --host="db:26257" --execute="CREATE DATABASE IF NOT EXISTS corgi"
+  db-admin:
+    image: adminer:4.8.1
+    restart: always
+    ports:
+      - 8080:8080
     depends_on:
       - db
 
-  broker:
-    image: "nats:2.7.1"
-    command: "-js"
-    ports:
-      - "4222:4222"
-      - "8222:8222"
-
-  queue:
-    image: roribio16/alpine-sqs:1.2.0
-    ports:
-      - "9324:9324"
-      - "9325:9325"
+  migrate:
+    image: migrate/migrate:v4.15.2
     volumes:
-      - "./configs/docker-elasticmq.conf:/opt/config/elasticmq.conf:ro"
+      - ../../migrations:/migrations:ro
+    command: >
+      -path=/migrations/ -database postgres://user:password@localhost:5432/corgi?sslmode=disable up
+    depends_on:
+      - db

@@ -3,6 +3,7 @@
 package database
 
 import (
+	"database/sql"
 	"os"
 	"path/filepath"
 	"time"
@@ -10,38 +11,17 @@ import (
 	"github.com/dgraph-io/badger"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"gorm.io/gorm/logger"
-
-	"github.com/glebarez/sqlite"
+	"gorm.io/gorm"
 
 	"github.com/google/uuid"
+	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 // NewSQL create a gorm database object.
-func NewSQL() (db *gorm.DB) {
-	newLogger := logger.New(
-		&log.Logger,
-		logger.Config{
-			SlowThreshold:             time.Second,
-			LogLevel:                  logger.Silent,
-			IgnoreRecordNotFoundError: true,
-			Colorful:                  false,
-		},
-	)
-
-	cfg := gorm.Config{Logger: newLogger}
-
-	appFolder, err := common.GetOrCreateDataFolder()
-	if err != nil {
-		log.Fatal().Caller().Msg(err.Error())
-	}
-
-	dbFile := filepath.Join(appFolder, "base")
-
-	db, err = gorm.Open(sqlite.Open(dbFile), &cfg)
+func NewSQL(datasource string) (db *sql.DB) {
+	db, err := sql.Open("postgres", datasource)
 	if err != nil {
 		panic("failed to connect in sqlite database")
 	}

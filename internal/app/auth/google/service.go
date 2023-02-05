@@ -1,22 +1,21 @@
 package google
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/spf13/viper"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"gorm.io/gorm"
 )
 
 // Service encapsulates the authentication logic.
@@ -30,11 +29,11 @@ type Service interface {
 }
 
 type service struct {
-	db *gorm.DB
+	db *sql.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB) Service {
+func NewService(db *sql.DB) Service {
 	return service{db}
 }
 
@@ -60,7 +59,7 @@ func (s service) Login(c *gin.Context, accessToken, callbackURL string) (user mo
 		return
 	}
 
-	_, user, err = getOrCreateUser(s.db, userGoogle)
+	_, user, err = getOrCreateUser(c, s.db, userGoogle)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
@@ -89,7 +88,7 @@ func (s service) Callback(c *gin.Context, callbackURL string, r callbackRequest)
 		return
 	}
 
-	_, user, err = getOrCreateUser(s.db, userGoogle)
+	_, user, err = getOrCreateUser(c, s.db, userGoogle)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
@@ -148,57 +147,79 @@ func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle model.Use
 	return
 }
 
-func getOrCreateUser(db *gorm.DB, userGoogle model.UserGoogle) (identity model.Identity, user model.User, err error) {
+func getOrCreateUser(c *gin.Context, db *sql.DB, userGoogle model.UserGoogle) (identity model.Identity, user model.User, err error) {
+	log := logger.Logger(c)
 
-	err = db.
-		Model(model.Identity{}).
-		Where("provider = ? AND UID = ?", "google", userGoogle.ID).
-		First(&identity).Error
-
-	if err == gorm.ErrRecordNotFound {
-
-		identity.ID = uuid.New().String()
-		identity.CreatedAt = time.Now()
-		identity.LastLogin = identity.CreatedAt
-		identity.Provider = "google"
-		identity.UID = userGoogle.ID
-		identity.Verified = &userGoogle.VerifiedEmail
-
-		active := true
-		user.ID = uuid.New().String()
-		user.CreatedAt = time.Now()
-		user.Name = userGoogle.Name
-		user.Role = "user"
-		user.Active = &active
-		user.Identities = append(user.Identities, identity)
-
-		err = db.
-			Model(&model.User{}).
-			Create(&user).Error
-
-		return
-
-	}
+	query := "SELECT * FROM identities WHERE provider = google AND UID = $1"
+	rows, err := db.QueryContext(c, query, userGoogle.ID)
 
 	if err != nil {
+		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	if identity.UserID == "" {
-		err = db.
-			Model(&model.Identity{}).
-			Where("provider = ? AND uid = ?", "google", userGoogle.ID).
-			First(&identity).Error
+	defer rows.Close()
+
+	if rows.Next() {
+		err = rows.Scan(&identity)
 
 		if err != nil {
+			log.Error().Caller().Msg(err.Error())
 			return
 		}
+
+		log.Info().Caller().Msg(fmt.Sprintf("identity ID: %s", identity.ID))
 	}
 
-	err = db.
-		Model(&model.User{}).
-		Where("id = ?", identity.UserID).
-		First(&user).Error
+	// err = db.
+	// 	Model(model.Identity{}).
+	// 	Where("provider = ? AND UID = ?", "google", userGoogle.ID).
+	// 	First(&identity).Error
+
+	// if err == gorm.ErrRecordNotFound {
+
+	// 	identity.ID = uuid.New().String()
+	// 	identity.CreatedAt = time.Now()
+	// 	identity.LastLogin = identity.CreatedAt
+	// 	identity.Provider = "google"
+	// 	identity.UID = userGoogle.ID
+	// 	identity.Verified = &userGoogle.VerifiedEmail
+
+	// 	active := true
+	// 	user.ID = uuid.New().String()
+	// 	user.CreatedAt = time.Now()
+	// 	user.Name = userGoogle.Name
+	// 	user.Role = "user"
+	// 	user.Active = &active
+	// 	user.Identities = append(user.Identities, identity)
+
+	// 	err = db.
+	// 		Model(&model.User{}).
+	// 		Create(&user).Error
+
+	// 	return
+
+	// }
+
+	// if err != nil {
+	// 	return
+	// }
+
+	// if identity.UserID == "" {
+	// 	err = db.
+	// 		Model(&model.Identity{}).
+	// 		Where("provider = ? AND uid = ?", "google", userGoogle.ID).
+	// 		First(&identity).Error
+
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// }
+
+	// err = db.
+	// 	Model(&model.User{}).
+	// 	Where("id = ?", identity.UserID).
+	// 	First(&user).Error
 
 	return
 }

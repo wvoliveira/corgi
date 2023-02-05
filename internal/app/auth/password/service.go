@@ -1,6 +1,7 @@
 package password
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -11,7 +12,6 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 // Service encapsulates the authentication logic.
@@ -26,12 +26,12 @@ type Service interface {
 
 type service struct {
 	// TODO: still use cache or remove?
-	db *gorm.DB
+	db *sql.DB
 	kv *badger.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB, kv *badger.DB) Service {
+func NewService(db *sql.DB, kv *badger.DB) Service {
 	return service{db, kv}
 }
 

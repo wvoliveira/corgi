@@ -1,10 +1,11 @@
 package auth
 
 import (
+	"database/sql"
+
 	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"gorm.io/gorm"
 )
 
 // Service encapsulates the authentication logic.
@@ -16,11 +17,11 @@ type Service interface {
 }
 
 type service struct {
-	db *gorm.DB
+	db *sql.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB) Service {
+func NewService(db *sql.DB) Service {
 	return service{db}
 }
 
