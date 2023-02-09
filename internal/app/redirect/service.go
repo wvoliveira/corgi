@@ -1,6 +1,7 @@
 package redirect
 
 import (
+	"database/sql"
 	"fmt"
 	"time"
 
@@ -21,12 +22,12 @@ type Service interface {
 }
 
 type service struct {
-	db *gorm.DB
+	db *sql.DB
 	kv *badger.DB
 }
 
 // NewService creates a new public service.
-func NewService(db *gorm.DB, kv *badger.DB) Service {
+func NewService(db *sql.DB, kv *badger.DB) Service {
 	return service{db, kv}
 }
 

@@ -4,9 +4,9 @@ import (
 	"context"
 	"os"
 
-	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
@@ -24,12 +24,26 @@ func Logger(ctx context.Context) (l zerolog.Logger) {
 	return logContext.Logger()
 }
 
-func Default(debug bool) {
+func Default() {
 	log.Logger = log.Output(zerolog.ConsoleWriter{Out: os.Stdout})
 
-	if debug {
-		zerolog.SetGlobalLevel(zerolog.DebugLevel)
-	} else {
-		gin.SetMode(gin.ReleaseMode)
+	level := GetLogLevel()
+	zerolog.SetGlobalLevel(level)
+	// gin.SetMode(gin.ReleaseMode)
+}
+
+func GetLogLevel() zerolog.Level {
+	levels := map[string]zerolog.Level{
+		"trace": zerolog.TraceLevel,
+		"debug": zerolog.DebugLevel,
+		"info":  zerolog.InfoLevel,
 	}
+
+	configLogLevel := viper.GetString("app.log_level")
+	level, exists := levels[configLogLevel]
+	if exists {
+		return level
+	}
+
+	return zerolog.InfoLevel
 }

@@ -9,9 +9,9 @@ import (
 	"time"
 
 	"github.com/dgraph-io/badger"
+	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"gorm.io/gorm"
 
 	"github.com/google/uuid"
 	_ "github.com/lib/pq"
@@ -20,7 +20,8 @@ import (
 )
 
 // NewSQL create a gorm database object.
-func NewSQL(datasource string) (db *sql.DB) {
+func NewSQL() (db *sql.DB) {
+	datasource := viper.GetString("datasource")
 	db, err := sql.Open("postgres", datasource)
 	if err != nil {
 		panic("failed to connect in sqlite database")
@@ -45,7 +46,7 @@ func NewKV() (db *badger.DB) {
 }
 
 // SeedUsers create the first users for system.
-func SeedUsers(db *gorm.DB) {
+func SeedUsers(db *sql.DB) {
 	t := true
 	users := []model.User{
 		{

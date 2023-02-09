@@ -1,11 +1,10 @@
 package main
 
 import (
-	"encoding/gob"
 	"net/http"
 	"strings"
 
-	flag "github.com/spf13/pflag"
+	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 
 	"github.com/gin-gonic/gin"
@@ -19,31 +18,11 @@ import (
 	appLog "github.com/wvoliveira/corgi/internal/app/log"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
-	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
-	"github.com/wvoliveira/corgi/internal/pkg/logger"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/server"
 	"github.com/wvoliveira/corgi/web"
 )
-
-var (
-	flagDebug  bool
-	flagConfig string
-)
-
-func init() {
-	flag.BoolVarP(&flagDebug, "debug", "d", false, "Enable DEBUG mode")
-	flag.StringVarP(&flagConfig, "config", "c", "~/.corgi/corgi.yaml", "Path of config file")
-	flag.Parse()
-
-	config.New(flagConfig)
-
-	logger.Default(flagDebug)
-
-	gob.Register(model.User{})
-}
 
 func main() {
 	db := database.NewSQL()
@@ -88,7 +67,7 @@ func main() {
 	rootRouter := router.Group("")
 	apiRouter := rootRouter.Group("/api")
 
-	if flagDebug {
+	if zerolog.GlobalLevel() == zerolog.DebugLevel {
 		server.AddPProf(router, rootRouter)
 	}
 

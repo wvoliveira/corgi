@@ -1,13 +1,13 @@
 package clicks
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
-	"gorm.io/gorm"
 )
 
 type Service interface {
@@ -18,12 +18,12 @@ type Service interface {
 }
 
 type service struct {
-	db *gorm.DB
+	db *sql.DB
 	kv *badger.DB
 }
 
 // NewService creates a new public service.
-func NewService(db *gorm.DB, kv *badger.DB) Service {
+func NewService(db *sql.DB, kv *badger.DB) Service {
 	return service{db, kv}
 }
 
