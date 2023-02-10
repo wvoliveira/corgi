@@ -4,11 +4,11 @@ package database
 
 import (
 	"database/sql"
+	"os"
 	"path/filepath"
 
 	"github.com/dgraph-io/badger"
 	"github.com/oklog/ulid/v2"
-	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 
@@ -18,8 +18,7 @@ import (
 )
 
 // NewSQL create a gorm database object.
-func NewSQL() (db *sql.DB) {
-	datasource := viper.GetString("datasource")
+func NewSQL(datasource string) (db *sql.DB) {
 	db, err := sql.Open("postgres", datasource)
 	if err != nil {
 		panic("failed to connect in sqlite database")
@@ -84,7 +83,7 @@ func SeedUsers(db *sql.DB) {
 
 		// Check if provider and UID exists.
 		var id string
-		_ = db.QueryRow("SELECT id FROM identities WHERE provider = ? AND uid = ?").Scan(&id)
+		_ = db.QueryRow("SELECT id FROM identities WHERE provider = $1 AND uid = $2", iden.Provider, iden.UID).Scan(&id)
 		if id != "" {
 			continue
 		}
@@ -96,11 +95,11 @@ func SeedUsers(db *sql.DB) {
 		tx, err := db.Begin()
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
-			return
+			os.Exit(2)
 		}
 
-		_, err = tx.Exec(`INSERT INTO users(id, created_at, name, role) 
-		VALUES(?, ?, ?, ?)`, u.ID, u.CreatedAt, u.Name, u.Role)
+		_, err = tx.Exec(`INSERT INTO users(id, name, role) VALUES($1, $2, $3)`,
+			u.ID, u.Name, u.Role)
 
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
@@ -112,11 +111,10 @@ func SeedUsers(db *sql.DB) {
 			continue
 		}
 
-		_, err = tx.Exec(`INSERT INTO identities(id, user_id, created_at, provider, uid, password) 
-		VALUES(?, ?, ?, ?, ?, ?)`,
+		_, err = tx.Exec(`INSERT INTO identities(id, user_id, provider, uid, password) 
+		VALUES($1, $2, $3, $4, $5)`,
 			iden.ID,
 			iden.UserID,
-			iden.CreatedAt,
 			iden.Provider,
 			iden.UID,
 			iden.Password,
@@ -129,7 +127,6 @@ func SeedUsers(db *sql.DB) {
 			if err != nil {
 				log.Error().Caller().Msg(err.Error())
 			}
-
 			continue
 		}
 

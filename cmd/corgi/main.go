@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-	db := database.NewSQL()
+	db := database.NewSQL(flagDatasource)
 	kv := database.NewKV()
 
 	// Seed first users. Most admins.
@@ -64,11 +64,10 @@ func main() {
 		}
 	})
 
-	rootRouter := router.Group("")
-	apiRouter := rootRouter.Group("/api")
+	apiRouter := router.Group("/api")
 
 	if zerolog.GlobalLevel() == zerolog.DebugLevel {
-		server.AddPProf(router, rootRouter)
+		server.AddPProf(router, apiRouter)
 	}
 
 	{
@@ -116,14 +115,14 @@ func main() {
 	{
 		// Healthcheck endpoints.
 		service := health.NewService(db, constants.VERSION)
-		service.NewHTTP(rootRouter)
+		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Central business service: redirect short link.
 		// Note: this service is on root router.
 		service := redirect.NewService(db, kv)
-		service.NewHTTP(rootRouter)
+		service.NewHTTP(apiRouter)
 	}
 
 	{
