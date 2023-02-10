@@ -10,7 +10,6 @@ import (
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"gorm.io/gorm"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
@@ -35,23 +34,17 @@ func NewService(db *sql.DB, kv *badger.DB) Service {
 
 // Find get a shortener link from ID.
 func (s service) Find(c *gin.Context, userID string) (user model.User, err error) {
-	var (
-		log = logger.Logger(c.Request.Context())
-	)
+	log := logger.Logger(c.Request.Context())
 
 	if userID == "anonymous" {
 		user.Name = "Anonymous"
 		return
 	}
 
-	user.ID = userID
+	query := "SELECT * FROM users WHERE id = ?"
+	err = s.db.QueryRowContext(c, query, userID).Scan(user)
 
-	err = s.db.
-		Model(&user).
-		Preload("Identities").
-		Find(&user).Error
-
-	if err == gorm.ErrRecordNotFound {
+	if err != nil {
 		log.Info().Caller().Msg(fmt.Sprintf("the user with user_id \"%s\" was not found", userID))
 		return user, e.ErrUserNotFound
 	}
@@ -65,30 +58,21 @@ func (s service) Find(c *gin.Context, userID string) (user model.User, err error
 }
 
 // Update change specific link by ID.
-func (s service) Update(c *gin.Context, reqUser model.User) (user model.User, err error) {
-	var (
-		log = logger.Logger(c.Request.Context())
-	)
+func (s service) Update(c *gin.Context, req model.User) (user model.User, err error) {
+	log := logger.Logger(c.Request.Context())
 
-	if reqUser.ID == "anonymous" {
+	if req.ID == "anonymous" {
 		return user, e.ErrUnauthorized
 	}
 
-	reqUser.UpdatedAt = time.Now()
-	err = s.db.Model(&model.User{}).
-		Where("id = ?", reqUser.ID).
-		Updates(&reqUser).Error
-
-	if err == gorm.ErrRecordNotFound {
-		log.Info().Caller().Msg(fmt.Sprintf("the user with id '%s' not found", reqUser.ID))
-		return user, e.ErrUserNotFound
-	}
+	// TODO: update all values
+	query := "UPDATE users SET updated_at = ?, name = ? WHERE id = ?"
+	_, err = s.db.ExecContext(c, query, time.Now(), req.Name, req.ID)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	user = reqUser
 	return
 }
