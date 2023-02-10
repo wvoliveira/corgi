@@ -3,11 +3,9 @@ package password
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/oklog/ulid/v2"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
@@ -88,11 +86,9 @@ func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
 	}
 
 	identity.ID = ulid.Make().String()
-	identity.CreatedAt = time.Now()
 	identity.Password = string(hashedPassword)
 
-	user.ID = uuid.New().String()
-	user.CreatedAt = time.Now()
+	user.ID = ulid.Make().String()
 	user.Role = "user"
 
 	tx, err := s.db.BeginTx(c, &sql.TxOptions{})
@@ -101,14 +97,8 @@ func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
 		return e.ErrAuthPasswordInternalError
 	}
 
-	_, err = tx.Exec(`INSERT INTO identities(id, user_id, created_at, provider, uid, password) 
-		VALUES(?, ?, ?, ?, ?, ?)`,
-		identity.ID,
-		user.ID,
-		identity.CreatedAt,
-		identity.Provider,
-		identity.UID,
-		identity.Password)
+	_, err = tx.Exec(`INSERT INTO users(id, name, role) 
+	VALUES($1, $2, $3)`, user.ID, user.Name, user.Role)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
@@ -121,8 +111,13 @@ func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
 		return e.ErrAuthPasswordInternalError
 	}
 
-	_, err = tx.Exec(`INSERT INTO users(id, created_at, name, role) 
-	VALUES(?, ?, ?, ?)`, user.ID, user.CreatedAt, user.Name, user.Role)
+	_, err = tx.Exec(`INSERT INTO identities(id, user_id, provider, uid, password) 
+		VALUES($1, $2, $3, $4, $5)`,
+		identity.ID,
+		user.ID,
+		identity.Provider,
+		identity.UID,
+		identity.Password)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
