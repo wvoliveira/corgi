@@ -28,10 +28,11 @@ func (s service) HTTPAdd(c *gin.Context) {
 		return
 	}
 
+	// TODO: fix this.
 	resp := updateResponse{
-		UpdatedAt: user.UpdatedAt,
-		Name:      user.Name,
-		Err:       err,
+		// UpdatedAt: user.UpdatedAt,
+		Name: user.Name,
+		Err:  err,
 	}
 
 	response.Default(c, resp, "", http.StatusOK)

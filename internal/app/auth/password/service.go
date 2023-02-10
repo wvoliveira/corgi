@@ -39,23 +39,24 @@ func NewService(db *sql.DB, kv *badger.DB) Service {
 // Login authenticates a user and generates a JWT token if authentication succeeds.
 func (s service) Login(c *gin.Context, identity model.Identity) (user model.User, err error) {
 	log := logger.Logger(c.Request.Context())
-	identityDB := model.Identity{}
+	idenDB := model.Identity{}
 
-	query := "SELECT * FROM identities WHERE provider = $1 AND uid = $2"
-	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&identityDB)
+	query := "SELECT user_id, password FROM identities WHERE provider = $1 AND uid = $2"
+	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&idenDB.UserID, &idenDB.Password)
 
 	if err != nil {
 		log.Warn().Caller().Msg(err.Error())
 		return user, e.ErrUnauthorized
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(identityDB.Password), []byte(identity.Password)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(idenDB.Password), []byte(identity.Password)); err != nil {
 		log.Info().Caller().Msg("authentication failed")
 		return user, e.ErrUnauthorized
 	}
 
 	query = "SELECT * FROM users WHERE id = $1"
-	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&user)
+	err = s.db.QueryRowContext(c, query, idenDB.UserID).
+		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Name, &user.Role, &user.Active)
 
 	if err != nil {
 		log.Warn().Caller().Msg(err.Error())

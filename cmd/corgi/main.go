@@ -132,5 +132,5 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	server.Graceful(router, viper.GetString("server.http_port"))
+	server.Graceful(router, flagServerHTTPPort)
 }

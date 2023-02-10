@@ -17,9 +17,9 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/debug"
 )
 
-func Graceful(router *gin.Engine, httpPort string) {
+func Graceful(router *gin.Engine, httpPort int) {
 	srv := &http.Server{
-		Addr:         ":" + httpPort,
+		Addr:         ":" + fmt.Sprintf("%d", httpPort),
 		Handler:      router,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 5 * time.Second,
@@ -32,7 +32,7 @@ func Graceful(router *gin.Engine, httpPort string) {
 	// Initializing the server in a goroutine so that
 	// it won't block the graceful shutdown handling below
 	go func() {
-		log.Info().Caller().Msg(fmt.Sprintf("server listening http://127.0.0.1:%s", httpPort))
+		log.Info().Caller().Msg(fmt.Sprintf("server listening http://127.0.0.1:%d", httpPort))
 
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Error().Caller().Msg(err.Error())

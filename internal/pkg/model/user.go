@@ -1,12 +1,15 @@
 package model
 
-import "time"
+import (
+	"database/sql"
+	"time"
+)
 
 // User represents a user info.
 type User struct {
-	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        string       `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
 
 	Name   string `json:"name"`
 	Role   string `json:"role"`
