@@ -150,7 +150,7 @@ func getUserFromGoogle(c *gin.Context, accessToken string) (userGoogle model.Use
 func getOrCreateUser(c *gin.Context, db *sql.DB, userGoogle model.UserGoogle) (identity model.Identity, user model.User, err error) {
 	log := logger.Logger(c)
 
-	query := "SELECT * FROM identities WHERE provider = google AND UID = $1"
+	query := "SELECT * FROM identities WHERE provider = google AND UID = $1 LIMIT 1;"
 	rows, err := db.QueryContext(c, query, userGoogle.ID)
 
 	if err != nil {

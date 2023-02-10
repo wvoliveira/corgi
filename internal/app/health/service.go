@@ -105,7 +105,7 @@ func (s service) healthDatabase(c *gin.Context) (h model.Health) {
 
 	// You can mock a error with below one or create one yourself.
 	// err := errors.New("database is locked. Call your admin hero")
-	err := s.db.Exec("PRAGMA integrity_check").Error
+	_, err := s.db.Exec("SELECT 1")
 
 	if err != nil {
 		h.Status = "error"

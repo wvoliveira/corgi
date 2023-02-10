@@ -4,16 +4,14 @@ package database
 
 import (
 	"database/sql"
-	"os"
 	"path/filepath"
-	"time"
 
 	"github.com/dgraph-io/badger"
+	"github.com/oklog/ulid/v2"
 	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 
-	"github.com/google/uuid"
 	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
 	"golang.org/x/crypto/bcrypt"
@@ -47,65 +45,98 @@ func NewKV() (db *badger.DB) {
 
 // SeedUsers create the first users for system.
 func SeedUsers(db *sql.DB) {
-	t := true
-	users := []model.User{
-		{
-			ID:        uuid.New().String(),
-			CreatedAt: time.Now(),
-			Name:      "Administrator",
-			Role:      "admin",
-			Active:    &t,
-			Identities: []model.Identity{
-				{
-					ID:        uuid.New().String(),
-					CreatedAt: time.Now(),
-					Provider:  "email",
-					UID:       "admin@corgi",
-					Password:  "password",
-				},
-			},
-		},
-		{
-			ID:        uuid.New().String(),
-			CreatedAt: time.Now(),
-			Name:      "User",
-			Role:      "user",
-			Active:    &t,
-			Identities: []model.Identity{
-				{
-					ID:        uuid.New().String(),
-					CreatedAt: time.Now(),
-					Provider:  "email",
-					UID:       "user@corgi",
-					Password:  "password",
-				},
-			},
-		},
+	users := []model.User{}
+
+	admin := model.User{
+		ID:   ulid.Make().String(),
+		Name: "Administrator",
+		Role: "admin",
 	}
 
-	for _, user := range users {
-		var count int64
+	identityAdmin := model.Identity{
+		ID:       ulid.Make().String(),
+		UserID:   admin.ID,
+		Provider: "email",
+		UID:      "admin@corgi",
+		Password: "password",
+	}
 
-		provider := user.Identities[0].Provider
-		uid := user.Identities[0].UID
+	user := model.User{
+		ID:   ulid.Make().String(),
+		Name: "User",
+		Role: "user",
+	}
 
-		db.Model(&model.Identity{}).
-			Where("provider = ? AND uid = ?", provider, uid).
-			Count(&count)
+	identityUser := model.Identity{
+		ID:       ulid.Make().String(),
+		UserID:   user.ID,
+		Provider: "email",
+		UID:      "user@corgi",
+		Password: "password",
+	}
 
-		if count > 0 {
+	admin.Identities = append(admin.Identities, identityAdmin)
+	user.Identities = append(user.Identities, identityUser)
+	users = append(users, user, admin)
+
+	for _, u := range users {
+		iden := u.Identities[0]
+
+		// Check if provider and UID exists.
+		var id string
+		_ = db.QueryRow("SELECT id FROM identities WHERE provider = ? AND uid = ?").Scan(&id)
+		if id != "" {
 			continue
 		}
 
-		plainTextPassword := user.Identities[0].Password
+		plainTextPassword := iden.Password
 		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainTextPassword), 8)
+		iden.Password = string(hashedPassword)
 
+		tx, err := db.Begin()
 		if err != nil {
-			log.Info().Caller().Msg(err.Error())
-			os.Exit(1)
+			log.Error().Caller().Msg(err.Error())
+			return
 		}
 
-		user.Identities[0].Password = string(hashedPassword)
-		db.Model(&model.User{}).Create(&user)
+		_, err = tx.Exec(`INSERT INTO users(id, created_at, name, role) 
+		VALUES(?, ?, ?, ?)`, u.ID, u.CreatedAt, u.Name, u.Role)
+
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+
+			err = tx.Rollback()
+			if err != nil {
+				log.Error().Caller().Msg(err.Error())
+			}
+			continue
+		}
+
+		_, err = tx.Exec(`INSERT INTO identities(id, user_id, created_at, provider, uid, password) 
+		VALUES(?, ?, ?, ?, ?, ?)`,
+			iden.ID,
+			iden.UserID,
+			iden.CreatedAt,
+			iden.Provider,
+			iden.UID,
+			iden.Password,
+		)
+
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+
+			err = tx.Rollback()
+			if err != nil {
+				log.Error().Caller().Msg(err.Error())
+			}
+
+			continue
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+			continue
+		}
 	}
 }

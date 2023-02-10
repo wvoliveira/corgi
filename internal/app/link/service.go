@@ -14,8 +14,6 @@ import (
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
@@ -203,15 +201,8 @@ func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err erro
 
 	link.UpdatedAt = time.Now()
 
-	err = s.db.Model(&model.Link{}).
-		Where("id = ? AND user_id = ?", link.ID, link.UserID).
-		Updates(&link).
-		First(&m).Error
-
-	if err == gorm.ErrRecordNotFound {
-		log.Info().Caller().Msg(err.Error())
-		return m, e.ErrLinkNotFound
-	}
+	query := "UPDATE links SET title = ? WHERE id = ? AND user_id = ?"
+	err = s.db.QueryRowContext(c, query, link.Title, link.ID, link.UserID).Scan(&m)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
@@ -225,16 +216,9 @@ func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err erro
 func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 	log := logger.Logger(c)
 
-	err = s.db.
-		Model(&model.Link{}).
-		Clauses(clause.Returning{}).
-		Where("id = ? AND user_id = ?", linkID, userID).
-		Delete(&model.Link{ID: linkID, UserID: userID}).Error
+	query := "UPDATE links SET active = false WHERE id = ? AND user_id = ?"
 
-	if err == gorm.ErrRecordNotFound {
-		log.Info().Caller().Msg(err.Error())
-		return e.ErrLinkNotFound
-	}
+	err = s.db.QueryRowContext(c, query, linkID, userID).Scan()
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
