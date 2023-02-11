@@ -1,21 +1,20 @@
 package facebook
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"fmt"
+	"io"
 	"net/http"
 	"net/url"
-	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/facebook"
-	"gorm.io/gorm"
 )
 
 // Service encapsulates the authentication logic.
@@ -29,11 +28,11 @@ type Service interface {
 }
 
 type service struct {
-	db *gorm.DB
+	db *sql.DB
 }
 
 // NewService creates a new authentication service.
-func NewService(db *gorm.DB) Service {
+func NewService(db *sql.DB) Service {
 	return service{db}
 }
 
@@ -124,7 +123,7 @@ func getUserFromFacebook(c *gin.Context, accessToken string) (userFacebook model
 		return userFacebook, errors.New("error to get info from Facebook")
 	}
 
-	response, err := ioutil.ReadAll(resp.Body)
+	response, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		return
@@ -134,59 +133,79 @@ func getUserFromFacebook(c *gin.Context, accessToken string) (userFacebook model
 	return
 }
 
-func getOrCreateUser(c *gin.Context, db *gorm.DB, userFacebook model.UserFacebook) (identity model.Identity, user model.User, err error) {
+func getOrCreateUser(c *gin.Context, db *sql.DB, userFacebook model.UserFacebook) (identity model.Identity, user model.User, err error) {
 	log := logger.Logger(c)
 
-	err = db.
-		Model(model.Identity{}).
-		Where("provider = ? AND UID = ?", "facebook", userFacebook.ID).
-		First(&identity).Error
-
-	if err == gorm.ErrRecordNotFound {
-
-		identity.ID = uuid.New().String()
-		identity.CreatedAt = time.Now()
-		identity.LastLogin = identity.CreatedAt
-		identity.Provider = "facebook"
-		identity.UID = userFacebook.ID
-
-		active := true
-		user.ID = uuid.New().String()
-		user.CreatedAt = time.Now()
-		user.Name = userFacebook.Name
-		user.Role = "user"
-		user.Active = &active
-		user.Identities = append(user.Identities, identity)
-
-		err = db.
-			Model(&model.User{}).
-			Create(&user).Error
-
-		return
-
-	}
+	query := "SELECT * FROM identities WHERE provider = facebook AND UID = $1"
+	rows, err := db.QueryContext(c, query, userFacebook.ID)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-
 		return
 	}
 
-	if identity.UserID == "" {
-		err = db.
-			Model(&model.Identity{}).
-			Where("provider = ? AND uid = ?", "facebook", userFacebook.ID).
-			First(&identity).Error
+	defer rows.Close()
+
+	if rows.Next() {
+		err = rows.Scan(&identity)
 
 		if err != nil {
+			log.Error().Caller().Msg(err.Error())
 			return
 		}
-	}
 
-	err = db.
-		Model(&model.User{}).
-		Where("id = ?", identity.UserID).
-		First(&user).Error
+		log.Info().Caller().Msg(fmt.Sprintf("identity ID: %s", identity.ID))
+	}
+	// err = db.
+	// 	Model(model.Identity{}).
+	// 	Where("provider = ? AND UID = ?", "facebook", userFacebook.ID).
+	// 	First(&identity).Error
+
+	// if err == gorm.ErrRecordNotFound {
+
+	// 	identity.ID = uuid.New().String()
+	// 	identity.CreatedAt = time.Now()
+	// 	identity.LastLogin = identity.CreatedAt
+	// 	identity.Provider = "facebook"
+	// 	identity.UID = userFacebook.ID
+
+	// 	active := true
+	// 	user.ID = uuid.New().String()
+	// 	user.CreatedAt = time.Now()
+	// 	user.Name = userFacebook.Name
+	// 	user.Role = "user"
+	// 	user.Active = &active
+	// 	user.Identities = append(user.Identities, identity)
+
+	// 	err = db.
+	// 		Model(&model.User{}).
+	// 		Create(&user).Error
+
+	// 	return
+
+	// }
+
+	// if err != nil {
+	// 	log.Error().Caller().Msg(err.Error())
+
+	// 	return
+	// }
+
+	// if identity.UserID == "" {
+	// 	err = db.
+	// 		Model(&model.Identity{}).
+	// 		Where("provider = ? AND uid = ?", "facebook", userFacebook.ID).
+	// 		First(&identity).Error
+
+	// 	if err != nil {
+	// 		return
+	// 	}
+	// }
+
+	// err = db.
+	// 	Model(&model.User{}).
+	// 	Where("id = ?", identity.UserID).
+	// 	First(&user).Error
 
 	return
 }

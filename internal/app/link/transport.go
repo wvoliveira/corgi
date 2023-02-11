@@ -77,7 +77,7 @@ func (s service) HTTPFindAll(c *gin.Context) {
 		return
 	}
 
-	total, pages, links, err := s.FindAll(c, dr.Offset, dr.Limit, dr.Sort, dr.UserID, dr.ShortenedURL)
+	total, pages, links, err := s.FindAll(c, dr)
 
 	if err != nil {
 		e.EncodeError(c, err)
@@ -106,7 +106,7 @@ func (s service) HTTPUpdate(c *gin.Context) {
 		return
 	}
 
-	link, err := s.Update(c, model.Link{
+	err = s.Update(c, model.Link{
 		ID:     dr.ID,
 		Title:  dr.Title,
 		UserID: userID,
@@ -117,7 +117,7 @@ func (s service) HTTPUpdate(c *gin.Context) {
 		return
 	}
 
-	response.Default(c, link, "", http.StatusOK)
+	response.Default(c, nil, "", http.StatusOK)
 }
 
 func (s service) HTTPDelete(c *gin.Context) {

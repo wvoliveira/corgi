@@ -1,4 +1,4 @@
-package util
+package common
 
 import (
 	"context"
@@ -23,15 +23,13 @@ func GetOrCreateDataFolder() (folder string, err error) {
 		return
 	}
 
-	folder = filepath.Join(home, ".corgi")
-	if _, err = os.Stat(folder); os.IsNotExist(err) {
+	folder = filepath.Join(home, ".corgi", "data")
+
+	_, err = os.Stat(folder)
+	if os.IsNotExist(err) {
 		err = os.Mkdir(folder, os.ModePerm)
-		if err != nil {
-			return
-		}
-	} else if err != nil {
-		return
 	}
+
 	return
 }
 
@@ -39,6 +37,7 @@ func GetOrCreateDataFolder() (folder string, err error) {
 func PrintRoutes(rs []*mux.Router) {
 	for _, r := range rs {
 		_ = r.Walk(func(route *mux.Route, router *mux.Router, ancestors []*mux.Route) error {
+
 			uri, err := route.GetPathTemplate()
 			if err != nil {
 				log.Error().Msg(fmt.Sprintf("with get path template: %s", err.Error()))
@@ -55,6 +54,7 @@ func PrintRoutes(rs []*mux.Router) {
 			if uri != "" && len(method) != 0 {
 				log.Debug().Caller().Msg(fmt.Sprintf("%s %s", uri, method))
 			}
+
 			return nil
 		})
 	}
@@ -84,6 +84,7 @@ func SplitURL(url string) (domain, keyword string) {
 			domain = splited[0]
 			keyword = splited[1]
 		}
+
 	}
 	return
 }

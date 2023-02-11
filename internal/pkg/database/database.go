@@ -3,44 +3,21 @@
 package database
 
 import (
-	"os"
+	"database/sql"
 	"path/filepath"
-	"time"
 
 	"github.com/dgraph-io/badger"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"github.com/wvoliveira/corgi/internal/pkg/util"
-	"gorm.io/gorm/logger"
+	"github.com/spf13/viper"
+	"github.com/wvoliveira/corgi/internal/pkg/common"
 
-	"github.com/glebarez/sqlite"
-
-	"github.com/google/uuid"
+	_ "github.com/lib/pq"
 	"github.com/rs/zerolog/log"
-	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
 )
 
 // NewSQL create a gorm database object.
-func NewSQL() (db *gorm.DB) {
-	newLogger := logger.New(
-		&log.Logger,
-		logger.Config{
-			SlowThreshold:             time.Second,
-			LogLevel:                  logger.Silent,
-			IgnoreRecordNotFoundError: true,
-			Colorful:                  false,
-		},
-	)
-	cfg := gorm.Config{Logger: newLogger}
-
-	appFolder, err := util.GetOrCreateDataFolder()
-	if err != nil {
-		log.Fatal().Caller().Msg(err.Error())
-	}
-
-	dbFile := filepath.Join(appFolder, "data")
-
-	db, err = gorm.Open(sqlite.Open(dbFile), &cfg)
+func NewSQL() (db *sql.DB) {
+	datasource := viper.GetString("datasource")
+	db, err := sql.Open("postgres", datasource)
 	if err != nil {
 		panic("failed to connect in sqlite database")
 	}
@@ -49,74 +26,16 @@ func NewSQL() (db *gorm.DB) {
 
 // NewKV create a badger database object.
 func NewKV() (db *badger.DB) {
-	appFolder, err := util.GetOrCreateDataFolder()
+	appFolder, err := common.GetOrCreateDataFolder()
 	if err != nil {
 		log.Fatal().Caller().Msg(err.Error())
 	}
 
-	dbFile := filepath.Join(appFolder, "kv")
+	dbFile := filepath.Join(appFolder, "cache")
 
 	db, err = badger.Open(badger.DefaultOptions(dbFile))
 	if err != nil {
 		panic("failed to connect in sqlite database")
 	}
 	return
-}
-
-// SeedUsers create the first users for system.
-func SeedUsers(db *gorm.DB) {
-	t := true
-	users := []model.User{
-		{
-			ID:        uuid.New().String(),
-			CreatedAt: time.Now(),
-			Name:      "Administrator",
-			Role:      "admin",
-			Active:    &t,
-			Identities: []model.Identity{
-				{
-					ID:        uuid.New().String(),
-					CreatedAt: time.Now(),
-					Provider:  "email",
-					UID:       "admin@local",
-					Password:  "12345",
-				},
-			},
-		},
-		{
-			ID:        uuid.New().String(),
-			CreatedAt: time.Now(),
-			Name:      "User",
-			Role:      "user",
-			Active:    &t,
-			Identities: []model.Identity{
-				{
-					ID:        uuid.New().String(),
-					CreatedAt: time.Now(),
-					Provider:  "email",
-					UID:       "user@local",
-					Password:  "12345",
-				},
-			},
-		},
-	}
-
-	for _, user := range users {
-		var count int64
-		db.Model(&model.Identity{}).Where("provider = ? AND uid = ?", user.Identities[0].Provider, user.Identities[0].UID).Count(&count)
-
-		if count > 0 {
-			continue
-		}
-
-		hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Identities[0].Password), 8)
-
-		if err != nil {
-			log.Info().Caller().Msg(err.Error())
-			os.Exit(1)
-		}
-
-		user.Identities[0].Password = string(hashedPassword)
-		db.Model(&model.User{}).Create(&user)
-	}
 }

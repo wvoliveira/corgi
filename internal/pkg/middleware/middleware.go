@@ -36,7 +36,7 @@ func Auth() gin.HandlerFunc {
 		v := session.Get("user")
 
 		if v == nil {
-			user.ID = "anonymous"
+			user.ID = "0"
 			user.Name = "Anonymous"
 
 			session.Set("user", user)

@@ -1,69 +1,101 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useRouter } from "next/router";
+
 import LinkAPI from "../../lib/api/link";
 import LinkList from "./LinkList";
 
 export default function LinkSearchForm() {
-  const [isLoading, setLoading] = React.useState(false);
+  const router = useRouter();
+
+  const [isLoading, setLoading] = React.useState(true);
   const [error, setError] = React.useState("");
-  const [urlShort, setURLShort] = React.useState("");
+  const [searchText, setSearchText] = React.useState("");
   const [links, setLinks] = React.useState([]);
 
-  const handleURLFullChange = React.useCallback(
-    (e: any) => setURLShort(e.target.value),
+  const handleSearchTextChange = React.useCallback(
+    (e: any) => setSearchText(e.target.value),
     []
   );
 
-  const handleSubmit = async (e: any) => {
-    e.preventDefault();
+  const getLinks = async (text="") => {
     setLoading(true);
 
+    text = text ?? searchText
+
     try {
-      const { data, status } = await LinkAPI.list(urlShort);
-      if (status !== 200) {
+      const { data, status, statusText } = await LinkAPI.FindAll(text);
+
+      if (status == 500) {
+        console.log("Error 500");
+        console.log("Data: ", data);
+        console.log("statusText: ", statusText);
+        setError(statusText);
+      }
+
+      if (status !== 200 && status !== 500) {
         setError(data.message);
       }
 
       if (data?.data) {
-        console.log(data.data);
         setLinks(data.data);
       }
 
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      setError(error);
+      console.log("Error data: ", error.data);
+      console.log("Error status: ", error.status);
+      console.log("Error headers: ", error.headers);
+
     } finally {
       setLoading(false);
     }
+  }
+
+  const handleSubmit = async (e: any) => {
+    e.preventDefault();
+
+    router.replace({
+      query: { ...router.query, q: searchText },
+    });
   };
+
+  useEffect(() => {
+    if (!router.isReady || !router.query) {
+      return
+    }
+    const { q } = router.query;
+
+    let text = q?.toString()
+    setSearchText(text);
+    getLinks(text);
+  }, [router])
+
+  if (isLoading) {
+    return <>Loading...</>
+  }
 
   return (
     <>
-      <form onSubmit={handleSubmit}>
-          <input 
-            type="text" placeholder="domain/keyword"
-            value={urlShort}
-            onChange={handleURLFullChange}
+      <form onSubmit={handleSubmit} method="get">
+          <input
+            type="text" placeholder="Type a text to search."
+            value={searchText}
+            onChange={handleSearchTextChange}
             required={false}
           />
 
           { ' ' }
 
-          <button 
-            type="submit"
-            disabled={isLoading}
-          >
-            Search
-          </button>
-
+          <button type="submit">Search</button>
       </form>
 
-      {error ? 
+      {error ?
         <>
           Error: {error}
         </>
       : null}
 
       <LinkList links={links} />
-
     </>
   )
 }

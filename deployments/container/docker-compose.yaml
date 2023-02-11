@@ -1,0 +1,35 @@
+version: '3.5'
+services:
+
+  db:
+    image: postgres:15.1
+    restart: always
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: corgi
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready", "-d", "corgi"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 5s  
+
+  db-admin:
+    image: adminer:4.8.1
+    restart: always
+    ports:
+      - 8080:8080
+    depends_on:
+      - db
+
+  migrate:
+    image: migrate/migrate:v4.15.2
+    volumes:
+      - ../../migrations:/migrations:ro
+    command: >
+      -path=/migrations/ -database postgres://user:password@db:5432/corgi?sslmode=disable up
+    depends_on:
+      - db

@@ -7,6 +7,7 @@ import (
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
@@ -24,12 +25,13 @@ type findByIDRequest struct {
 }
 
 type findAllRequest struct {
-	Page         int    `json:"page"`
-	Sort         string `json:"sort"`
-	Offset       int    `json:"offset"`
-	Limit        int    `json:"limit"`
-	UserID       string `json:"user_id"`
+	Page         int
+	Sort         string
+	Offset       int
+	Limit        int
+	UserID       string
 	ShortenedURL string
+	SearchText   string
 }
 
 type updateRequest struct {
@@ -51,15 +53,13 @@ func decodeAdd(c *gin.Context) (r addRequest, err error) {
 	v := session.Get("user")
 
 	if v == nil {
-		return r, errors.New("impossible to get user from session")
+		return r, e.ErrUserFromSession
 	}
 
 	if err = c.ShouldBindJSON(&r); err != nil {
 		return r, err
 	}
 
-	// TODO: insert this logic in config env/file.
-	// with default domain if not send in payload.
 	if r.Domain == "" {
 		r.Domain = c.Request.Host
 	}
@@ -99,11 +99,11 @@ func decodeFindAll(c *gin.Context) (r findAllRequest, err error) {
 	page, _ := strconv.Atoi(c.Query("page"))
 	limit, _ := strconv.Atoi(c.Query("limit"))
 	sort := c.Query("sort")
-	shortenedURL := c.Query("u")
 
 	if page == 0 {
 		page = 1
 	}
+
 	if sort == "" {
 		sort = "ID desc"
 	}
@@ -122,7 +122,8 @@ func decodeFindAll(c *gin.Context) (r findAllRequest, err error) {
 	r.Limit = limit
 	r.Offset = offset
 	r.UserID = v.(model.User).ID
-	r.ShortenedURL = shortenedURL
+	r.ShortenedURL = c.Query("u")
+	r.SearchText = c.Query("q")
 
 	return r, nil
 }

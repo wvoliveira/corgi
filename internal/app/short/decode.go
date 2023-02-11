@@ -1,4 +1,4 @@
-package redirect
+package short
 
 import (
 	"errors"
@@ -13,17 +13,14 @@ type findByKeywordRequest struct {
 }
 
 func decodeFindByKeyword(c *gin.Context) (r findByKeywordRequest, err error) {
-
-	domain := c.Request.Host
-
 	keyword := c.Param("keyword")
 
 	if keyword == "" {
 		return r, errors.New("impossible to get redirect keyword from path")
 	}
 
-	r.Domain = domain
 	r.Keyword = keyword
+	r.Domain = c.Request.Host
 
 	return r, nil
 }

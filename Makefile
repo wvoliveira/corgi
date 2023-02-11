@@ -4,7 +4,7 @@ export NEXT_TELEMETRY_DISABLED := 1
 
 .PHONY: build
 build: build-web
-	go build -o corgi ./cmd/corgi/*.go
+	go build -ldflags "-s -w" -o corgi ./cmd/corgi/*.go
 
 
 .PHONY: build-web
@@ -36,3 +36,6 @@ load-test-2m:
 pprof-graph:
 	pprof -web "http://:8081/debug/pprof/profile?seconds=5"
 
+
+local-dep:
+	docker-compose -f deployments/container/docker-compose.yaml up

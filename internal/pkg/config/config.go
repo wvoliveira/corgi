@@ -1,9 +1,9 @@
 package config
 
 import (
+	"fmt"
 	"strings"
 
-	"github.com/mitchellh/go-homedir"
 	flag "github.com/spf13/pflag"
 
 	"github.com/rs/zerolog/log"
@@ -12,36 +12,24 @@ import (
 )
 
 // New load the configuration app.
-func New(configFile string) {
-	viper.SetDefault("app.log_level", "info")
-	viper.SetDefault("app.secret_key", "CHANGE_FOR_SOMETHING_MORE_SECURITY")
-	viper.SetDefault("app.redirect_url", "http://127.0.0.1:8081")
+func New() {
+	viper.SetDefault("log_level", "info")
+	viper.SetDefault("secret_key", "CHANGE_FOR_SOMETHING_MORE_SECURITY")
+	viper.SetDefault("redirect_url", "http://127.0.0.1:8081")
+	viper.SetDefault("datasource", "postgres://user:password@localhost:5432/corgi?sslmode=disable")
 
 	viper.SetDefault("server.http_port", 8081)
 	viper.SetDefault("server.read_timeout", 10)
 	viper.SetDefault("server.write_timeout", 10)
 
+	viper.SetDefault("domain_default", fmt.Sprintf("localhost:%d", viper.GetInt("server.http_port")))
+	viper.SetDefault("domain_alternatives", []string{})
+
 	viper.AutomaticEnv()
 	viper.SetEnvPrefix("CORGI")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	viper.SetConfigName("corgi")
-	viper.SetConfigType("yaml")
-
-	file, err := homedir.Expand(configFile)
-
-	if err != nil {
-		log.Error().Caller().Msg("error to expand config file: " + err.Error())
-	} else {
-		viper.SetConfigFile(file)
-	}
-
-	err = viper.ReadInConfig()
-	if err != nil {
-		log.Warn().Caller().Msg(err.Error())
-	}
-
-	err = viper.BindPFlags(flag.CommandLine)
+	err := viper.BindPFlags(flag.CommandLine)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 	}

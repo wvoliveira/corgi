@@ -29,24 +29,26 @@ const LinkAPI = {
       return error.response;
     }
   },
-  list: async (url = "") => {
-    var uri = `/api/links`;
-    if (url != "") {
-      uri = `${uri}?u=${url}`
+  FindAll: async (searchText = "") => {
+    var url = `/api/links`;
+
+    if (searchText != "") {
+      url = `${url}?q=${searchText}`
     }
 
     try {
-      const response = await axios.get(uri, {
+      const response = await axios.get(url, {
         headers: {
           "Content-Type": "application/json",
         },
       });
       return response;
+
     } catch (error: any) {
       return error.response;
     }
   },
-  find: async (id: string) => {
+  findByID: async (id: string) => {
     try {
       const response = await axios.get(`/api/links/${id}`, {
         headers: {
