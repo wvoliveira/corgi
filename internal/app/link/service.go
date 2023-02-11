@@ -146,8 +146,8 @@ func (s service) FindByID(c *gin.Context, linkID, userID string) (link model.Lin
 func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages int, links []model.Link, err error) {
 	log := logger.Logger(c)
 
-	queryCount := fmt.Sprintf("SELECT COUNT(0) FROM links ")
-	queryData := fmt.Sprintf("SELECT * FROM links ")
+	queryCount := "SELECT COUNT(0) FROM links "
+	queryData := "SELECT * FROM links "
 
 	queryFilter := fmt.Sprintf(" WHERE user_id = '%s'", r.UserID)
 

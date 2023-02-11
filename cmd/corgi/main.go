@@ -16,7 +16,6 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/clicks"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
-	appLog "github.com/wvoliveira/corgi/internal/app/log"
 	"github.com/wvoliveira/corgi/internal/app/short"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
@@ -37,9 +36,6 @@ func init() {
 func main() {
 	db := database.NewSQL()
 	kv := database.NewKV()
-
-	// Seed first users. Most admins.
-	database.SeedUsers(db)
 
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
@@ -131,13 +127,6 @@ func main() {
 		// Central business service: redirect short link.
 		// Note: this service is on root router.
 		service := short.NewService(db, kv)
-		service.NewHTTP(apiRouter)
-	}
-
-	{
-		// Central business service: redirect short link.
-		// Note: this service is on root router.
-		service := appLog.NewService()
 		service.NewHTTP(apiRouter)
 	}
 

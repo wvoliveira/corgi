@@ -39,7 +39,6 @@ func checkLink(link model.Link) (err error) {
 
 	if link.Domain == domain_default {
 		domain_allowed = true
-		return
 	}
 
 	for _, domain := range domain_alternatives {

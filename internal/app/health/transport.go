@@ -1,7 +1,6 @@
 package health
 
 import (
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -29,9 +28,8 @@ func (s service) HTTPHealth(c *gin.Context) {
 
 	for _, item := range healths {
 		if item.Required && strings.ToLower(item.Status) != "ok" {
-			fmt.Println(item)
 			httpStatusCode = http.StatusServiceUnavailable
-			return
+			break
 		}
 	}
 

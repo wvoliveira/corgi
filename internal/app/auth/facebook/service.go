@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 
@@ -123,7 +123,7 @@ func getUserFromFacebook(c *gin.Context, accessToken string) (userFacebook model
 		return userFacebook, errors.New("error to get info from Facebook")
 	}
 
-	response, err := ioutil.ReadAll(resp.Body)
+	response, err := io.ReadAll(resp.Body)
 
 	if err != nil {
 		return
