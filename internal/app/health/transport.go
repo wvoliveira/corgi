@@ -1,7 +1,9 @@
 package health
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
@@ -16,7 +18,6 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 }
 
 func (s service) HTTPHealth(c *gin.Context) {
-
 	healths, err := s.Health(c)
 
 	if err != nil {
@@ -27,8 +28,10 @@ func (s service) HTTPHealth(c *gin.Context) {
 	httpStatusCode := http.StatusOK
 
 	for _, item := range healths {
-		if item.Required && item.Status != "OK" {
+		if item.Required && strings.ToLower(item.Status) != "ok" {
+			fmt.Println(item)
 			httpStatusCode = http.StatusServiceUnavailable
+			return
 		}
 	}
 
