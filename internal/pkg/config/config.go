@@ -1,36 +1,29 @@
 package config
 
 import (
-	"fmt"
-	"strings"
-
-	flag "github.com/spf13/pflag"
-
-	"github.com/rs/zerolog/log"
-
 	"github.com/spf13/viper"
 )
 
 // New load the configuration app.
 func New() {
-	viper.SetDefault("log_level", "info")
-	viper.SetDefault("secret_key", "CHANGE_FOR_SOMETHING_MORE_SECURITY")
-	viper.SetDefault("redirect_url", "http://127.0.0.1:8081")
-	viper.SetDefault("datasource", "postgres://user:password@localhost:5432/corgi?sslmode=disable")
+	viper.SetDefault("LOG_LEVEL", "info")
+	viper.SetDefault("SECRET_KEY", "CHANGE_FOR_SOMETHING_MORE_SECURITY")
+	viper.SetDefault("REDIRECT_URL", "http://127.0.0.1:8081")
 
-	viper.SetDefault("server.http_port", 8081)
-	viper.SetDefault("server.read_timeout", 10)
-	viper.SetDefault("server.write_timeout", 10)
+	viper.SetDefault("DB_URL", "postgres://user:password@localhost:5432/corgi?sslmode=disable")
+	viper.SetDefault("CACHE_URL", "redis://password@localhost:6379/0")
 
-	viper.SetDefault("domain_default", fmt.Sprintf("localhost:%d", viper.GetInt("server.http_port")))
-	viper.SetDefault("domain_alternatives", []string{})
+	viper.SetDefault("SERVER_HTTP_PORT", 8081)
+	viper.SetDefault("SERVER_READ_TIMEOUT", 10)
+	viper.SetDefault("SERVER_WRITE_TIMEOUT", 10)
 
-	viper.AutomaticEnv()
+	viper.SetDefault("DOMAIN_DEFAULT", "localhost:8081")
+	viper.SetDefault("DOMAIN_ALTERNATIVES", []string{})
+
+	// We can define config variables with prefix CORGI
+	// Ex.:
+	// 	- CORGI_LOG_LEVEL=debug
+	//  - CORGI_SERVER_HTTP_PORT=3000
 	viper.SetEnvPrefix("CORGI")
-	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
-	err := viper.BindPFlags(flag.CommandLine)
-	if err != nil {
-		log.Error().Caller().Msg(err.Error())
-	}
+	viper.AutomaticEnv()
 }

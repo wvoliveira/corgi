@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	"github.com/redis/go-redis/v9"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -25,13 +25,13 @@ type Service interface {
 
 type service struct {
 	// TODO: still use cache or remove?
-	db *sql.DB
-	kv *badger.DB
+	db    *sql.DB
+	cache *redis.Client
 }
 
 // NewService creates a new authentication service.
-func NewService(db *sql.DB, kv *badger.DB) Service {
-	return service{db, kv}
+func NewService(db *sql.DB, cache *redis.Client) Service {
+	return service{db, cache}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
@@ -39,8 +39,8 @@ func (s service) Login(c *gin.Context, identity model.Identity) (user model.User
 	log := logger.Logger(c.Request.Context())
 	idenDB := model.Identity{}
 
-	query := "SELECT user_id, password FROM identities WHERE provider = $1 AND uid = $2"
-	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&idenDB.UserID, &idenDB.Password)
+	query := "SELECT user_id, password FROM identities WHERE provider IN ('username', 'email') AND uid = $1"
+	err = s.db.QueryRowContext(c, query, identity.UID).Scan(&idenDB.UserID, &idenDB.Password)
 
 	if err != nil {
 		log.Warn().Caller().Msg(err.Error())

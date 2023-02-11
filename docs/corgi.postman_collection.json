@@ -1,25 +1,25 @@
 {
 	"info": {
-		"_postman_id": "e3a72ce3-26bc-416e-8a4f-26cbf19b4b65",
-		"name": "Corgi",
+		"_postman_id": "af226f11-7b8a-4c40-a937-36f35aca4109",
+		"name": "corgi",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "2226970"
 	},
 	"item": [
 		{
-			"name": "Auth",
+			"name": "auth",
 			"item": [
 				{
-					"name": "Password",
+					"name": "password",
 					"item": [
 						{
-							"name": "POST /auth/password/login",
+							"name": "Login",
 							"request": {
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"email\":\"admin@local\",\"password\":\"12345\"}",
+									"raw": "{\"email\":\"{{admin_username}}\",\"password\":\"{{admin_password}}\"}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -27,14 +27,12 @@
 									}
 								},
 								"url": {
-									"raw": "localhost:8081/api/v1/auth/password/login",
+									"raw": "{{endpoint}}/api/auth/password/login",
 									"host": [
-										"localhost"
+										"{{endpoint}}"
 									],
-									"port": "8081",
 									"path": [
 										"api",
-										"v1",
 										"auth",
 										"password",
 										"login"
@@ -44,13 +42,13 @@
 							"response": []
 						},
 						{
-							"name": "POST /api/auth/password/register",
+							"name": "Register",
 							"request": {
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"email\":\"oliveira@live.it\",\"password\":\"12345\"}",
+									"raw": "{\"name\": \"Wellington\", \"email\":\"oliveira@live.it\",\"password\":\"password\"}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -58,11 +56,10 @@
 									}
 								},
 								"url": {
-									"raw": "localhost:8000/api/auth/password/register",
+									"raw": "{{endpoint}}/api/auth/password/register",
 									"host": [
-										"localhost"
+										"{{endpoint}}"
 									],
-									"port": "8000",
 									"path": [
 										"api",
 										"auth",
@@ -71,24 +68,136 @@
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "POST /api/auth/password/register",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"name\": \"Wellington\", \"email\":\"oliveira@live.it\",\"password\":\"12345\"}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/api/auth/password/register",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"api",
+												"auth",
+												"password",
+												"register"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Sun, 08 Jan 2023 20:23:14 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "23"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"status\": \"successful\"\n}"
+								}
+							]
 						}
 					]
 				},
 				{
-					"name": "Google",
+					"name": "google",
 					"item": [
 						{
-							"name": "GET /api/auth/google/login",
+							"name": "Login",
 							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "client_authentication",
+											"value": "body",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "queryParams",
+											"type": "string"
+										},
+										{
+											"key": "useBrowser",
+											"value": false,
+											"type": "boolean"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "https://accounts.google.com/o/oauth2/token",
+											"type": "string"
+										},
+										{
+											"key": "tokenType",
+											"value": "Bearer",
+											"type": "string"
+										},
+										{
+											"key": "accessToken",
+											"value": "ya29.a0AeTM1icyHwaGhk7pgz4zI_boKYJd2lUwTuuw2337fJ0JU95CpIO0A9A0VzFPziO0zDP_XUS3Xdj4dJhlJJtRRYKuyI0qcwpKbLv36_GaTVGayYxZEvKNM6ZgfzkndnYkl1NROBw6BzBe9Yi-SZ1OIf-GFA3taCgYKAdsSARMSFQHWtWOmXWQ5E-YjMUwG8U4lnHJXtA0163",
+											"type": "string"
+										},
+										{
+											"key": "redirect_uri",
+											"value": "{{endpoint}}/api/auth/google/callback",
+											"type": "string"
+										},
+										{
+											"key": "authUrl",
+											"value": "https://accounts.google.com/o/oauth2/auth",
+											"type": "string"
+										},
+										{
+											"key": "scope",
+											"value": "https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile openid",
+											"type": "string"
+										},
+										{
+											"key": "clientSecret",
+											"value": "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",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "180551609644-qf392m12gr5p68eor6m2jamvjup42ul7.apps.googleusercontent.com",
+											"type": "string"
+										},
+										{
+											"key": "tokenName",
+											"value": "Google",
+											"type": "string"
+										}
+									]
+								},
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8081/api/auth/google/login",
+									"raw": "{{endpoint}}/api/auth/google/login",
 									"host": [
-										"localhost"
+										"{{endpoint}}"
 									],
-									"port": "8081",
 									"path": [
 										"api",
 										"auth",
@@ -98,23 +207,112 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Callback",
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "addTokenTo",
+											"value": "header",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{endpoint}}/api/auth/google/callback",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"google",
+										"callback"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
 				{
-					"name": "Facebook",
+					"name": "facebook",
 					"item": [
 						{
-							"name": "GET /api/auth/facebook/login",
+							"name": "Login",
 							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "scope",
+											"value": "public_profile email",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "https://graph.facebook.com/v3.2/oauth/access_token",
+											"type": "string"
+										},
+										{
+											"key": "authUrl",
+											"value": "https://www.facebook.com/v3.2/dialog/oauth",
+											"type": "string"
+										},
+										{
+											"key": "clientSecret",
+											"value": "6a7fc30fafabdc4247bf3797a63d8bd8",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "1558055581305469",
+											"type": "string"
+										},
+										{
+											"key": "redirect_uri",
+											"value": "{{endpoint}}/api/auth/facebook/callback",
+											"type": "string"
+										},
+										{
+											"key": "tokenName",
+											"value": "Facebook",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "body",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "queryParams",
+											"type": "string"
+										},
+										{
+											"key": "useBrowser",
+											"value": false,
+											"type": "boolean"
+										},
+										{
+											"key": "tokenType",
+											"value": "Bearer",
+											"type": "string"
+										}
+									]
+								},
 								"method": "GET",
 								"header": [],
 								"url": {
-									"raw": "localhost:8081/api/auth/facebook/login",
+									"raw": "{{endpoint}}/api/auth/facebook/login",
 									"host": [
-										"localhost"
+										"{{endpoint}}"
 									],
-									"port": "8081",
 									"path": [
 										"api",
 										"auth",
@@ -124,32 +322,104 @@
 								}
 							},
 							"response": []
+						},
+						{
+							"name": "Callback",
+							"request": {
+								"auth": {
+									"type": "oauth2",
+									"oauth2": [
+										{
+											"key": "scope",
+											"value": "public_profile email",
+											"type": "string"
+										},
+										{
+											"key": "accessTokenUrl",
+											"value": "https://graph.facebook.com/v3.2/oauth/access_token",
+											"type": "string"
+										},
+										{
+											"key": "authUrl",
+											"value": "https://www.facebook.com/v3.2/dialog/oauth",
+											"type": "string"
+										},
+										{
+											"key": "clientSecret",
+											"value": "6a7fc30fafabdc4247bf3797a63d8bd8",
+											"type": "string"
+										},
+										{
+											"key": "clientId",
+											"value": "1558055581305469",
+											"type": "string"
+										},
+										{
+											"key": "redirect_uri",
+											"value": "{{endpoint}}/api/auth/facebook/callback",
+											"type": "string"
+										},
+										{
+											"key": "tokenName",
+											"value": "Facebook",
+											"type": "string"
+										},
+										{
+											"key": "client_authentication",
+											"value": "body",
+											"type": "string"
+										},
+										{
+											"key": "addTokenTo",
+											"value": "queryParams",
+											"type": "string"
+										},
+										{
+											"key": "useBrowser",
+											"value": false,
+											"type": "boolean"
+										},
+										{
+											"key": "tokenType",
+											"value": "Bearer",
+											"type": "string"
+										}
+									]
+								},
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{endpoint}}/api/auth/facebook/callback",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"facebook",
+										"callback"
+									]
+								}
+							},
+							"response": []
 						}
 					]
 				},
 				{
-					"name": "GET /api/auth/logout",
+					"name": "Logout",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/api/v1/auth/logout",
+							"raw": "localhost:8081/api/auth/logout",
 							"host": [
 								"localhost"
 							],
 							"port": "8081",
 							"path": [
 								"api",
-								"v1",
 								"auth",
 								"logout"
-							],
-							"query": [
-								{
-									"key": "access_token",
-									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhdXRob3JpemVkIjp0cnVlLCJleHAiOjE2Mzg5ODU2MDksImlkZW50aXR5X2lkIjoiZTZmZjJkNjktYjVmZi00N2IwLTg0NjAtZWY3OWY3M2U2YzA4IiwiaWRlbnRpdHlfcHJvdmlkZXIiOiJmYWNlYm9vayIsImlkZW50aXR5X3VpZCI6IjI3MDQ2MDM5ODMxODI2NDkiLCJ1c2VyX2lkIjoiNjg5MWQyM2YtNTE4Ny00N2Y4LWIwNjktZWI1YzQ4NDgzNWRiIiwidXNlcl9yb2xlIjoidXNlciJ9.8nQCiKbWIyJJxAuuCgl1rY_XoznXODz7yY4tlnjNOsI",
-									"disabled": true
-								}
 							]
 						}
 					},
@@ -158,18 +428,25 @@
 			]
 		},
 		{
-			"name": "Links",
+			"name": "links",
 			"item": [
 				{
-					"name": "GET /api/v1/links",
+					"name": "List links",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
 									"var jsonData = JSON.parse(responseBody);",
-									"postman.setEnvironmentVariable(\"param_link_id\", jsonData.data.data?.[0].id);",
-									"postman.setEnvironmentVariable(\"header_host\", jsonData.data.data?.[0].domain);"
+									"",
+									"var id = jsonData.data.data?.[0]?.id;",
+									"var domain = jsonData.data.data?.[0]?.domain;",
+									"var keyword = jsonData.data.data?.[0]?.keyword;",
+									"",
+									"postman.setEnvironmentVariable(\"param_link_id\", id);",
+									"postman.setEnvironmentVariable(\"header_host\", domain);",
+									"postman.setEnvironmentVariable(\"param_shortened_url\", domain + \"/\" + keyword);",
+									""
 								],
 								"type": "text/javascript"
 							}
@@ -182,20 +459,18 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/api/v1/links",
+							"raw": "{{endpoint}}/api/links",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
-								"v1",
 								"links"
 							],
 							"query": [
 								{
 									"key": "page",
-									"value": "1",
+									"value": "3",
 									"disabled": true
 								},
 								{
@@ -258,13 +533,219 @@
 					]
 				},
 				{
-					"name": "POST /api/v1/links",
+					"name": "List links with filter",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"param_link_id\", jsonData.data.data?.[0]?.id);",
+									"postman.setEnvironmentVariable(\"header_host\", jsonData.data.data?.[0]?.domain);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/api/links?u={{param_shortened_url}}",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"links"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								},
+								{
+									"key": "u",
+									"value": "{{param_shortened_url}}"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET /api/v1/links",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "localhost:8081/api/v1/links?page=1&limit=10",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"api",
+										"v1",
+										"links"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1"
+										},
+										{
+											"key": "limit",
+											"value": "10"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json"
+								},
+								{
+									"key": "Date",
+									"value": "Wed, 14 Sep 2022 03:10:45 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "333"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"data\": [\n            {\n                \"id\": \"ae821428-748d-4369-9595-f7a6059bc776\",\n                \"created_at\": \"2022-09-14T00:10:31.762929-03:00\",\n                \"updated_at\": \"2022-09-14T00:10:31.762938-03:00\",\n                \"domain\": \"elga.io\",\n                \"keyword\": \"l_PQeCDaM\",\n                \"url\": \"https://elga.io\",\n                \"title\": \"\",\n                \"active\": \"true\"\n            }\n        ],\n        \"limit\": 10,\n        \"page\": 1,\n        \"sort\": \"ID desc\",\n        \"total\": 1,\n        \"pages\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "FindAll with search",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = JSON.parse(responseBody);",
+									"postman.setEnvironmentVariable(\"param_link_id\", jsonData.data.data?.[0]?.id);",
+									"postman.setEnvironmentVariable(\"header_host\", jsonData.data.data?.[0]?.domain);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/api/links?q=KYiBoH2ap",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"links"
+							],
+							"query": [
+								{
+									"key": "page",
+									"value": "1",
+									"disabled": true
+								},
+								{
+									"key": "limit",
+									"value": "10",
+									"disabled": true
+								},
+								{
+									"key": "q",
+									"value": "KYiBoH2ap"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "FindAll with search",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{endpoint}}/api/links?q=Vra",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"links"
+									],
+									"query": [
+										{
+											"key": "page",
+											"value": "1",
+											"disabled": true
+										},
+										{
+											"key": "limit",
+											"value": "10",
+											"disabled": true
+										},
+										{
+											"key": "q",
+											"value": "Vra"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3MzgyMjM0NnxEdi1CQkFFQ180SUFBUkFCRUFBQUxQLUNBQUlHYzNSeWFXNW5EQW9BQ0d0bGVYZHZjbVJ6Q0Z0ZGMzUnlhVzVuXzRNQ0FRTF9oQUFCREFBQV85UF9oQWdBQVFWbmJHOWlid1p6ZEhKcGJtY01CZ0FFZFhObGNqTm5hWFJvZFdJdVkyOXRMM2QyYjJ4cGRtVnBjbUV2WTI5eVoya3ZhVzUwWlhKdVlXd3ZjR3RuTDIxdlpHVnNMbFZ6WlhMX2hRTUJBUVJWYzJWeUFmLUdBQUVLQVFKSlJBRU1BQUVKUTNKbFlYUmxaRUYwQWYtSUFBRUpWWEJrWVhSbFpFRjBBZi1JQUFFRVRtRnRaUUVNQUFFRVVtOXNaUUVNQUFFR1FXTjBhWFpsQVFJQUFRcEpaR1Z1ZEdsMGFXVnpBZi1NQUFFR1ZHOXJaVzV6QWYtUUFBRUZUR2x1YTNNQl81UUFBUVJVWVdkekFmLWFBQUFBRVAtSEJRRUJCRlJwYldVQl80Z0FBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRnQUFRbFZjR1JoZEdWa1FYUUJfNGdBQVFsTVlYTjBURzluYVc0Ql80Z0FBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9pQUFBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUlBQUVKVlhCa1lYUmxaRUYwQWYtSUFBRUhUR0Z6ZEZWelpRSF9pQUFCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80Z0FBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2lBQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80Z0FBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hnQUFaUC1HWVFFa016QTRNV1psWkdNdE9HUTJOQzAwWkRsakxUbGtOamN0T0RFME16ZzVNRFF4TURFMEFROEJBQUFBRHR0TVVKd2hRaFY0XzB3QkR3RUFBQUFPMjB4UW5DS0htWURfVEFFTlFXUnRhVzVwYzNSeVlYUnZjZ0VGWVdSdGFXNEJBUUE9fOXUxhV5H-fVvIl76gynA8YM7f-UsFuI9F00QwNoz_q9; Path=/; Expires=Tue, 14 Feb 2023 22:39:06 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 15 Jan 2023 22:39:06 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "338"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"data\": [\n            {\n                \"id\": \"b09e8aa5-44ab-4487-9b65-305de35501b9\",\n                \"created_at\": \"2023-01-08T02:50:47.579009-03:00\",\n                \"updated_at\": \"2023-01-08T02:50:47.579009-03:00\",\n                \"domain\": \"localhost\",\n                \"keyword\": \"Vra4eZFtp\",\n                \"url\": \"https://youtube.com\",\n                \"title\": \"\",\n                \"active\": \"true\"\n            }\n        ],\n        \"limit\": 10,\n        \"page\": 1,\n        \"sort\": \"ID desc\",\n        \"total\": 1,\n        \"pages\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Create a link",
 					"request": {
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"domain\": \"localhost\",\r\n    \"keyword\": \"globo\",\r\n    \"url\": \"https://globo.com\",\r\n    \"title\": \"Globo homepage\"\r\n}",
+							"raw": "{\r\n    \"keyword\": \"google\",\r\n    \"url\": \"https://google.com\",\r\n    \"title\": \"Google homepage\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -272,22 +753,147 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8081/api/v1/links",
+							"raw": "{{endpoint}}/api/links",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
-								"v1",
 								"links"
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "POST /api/links",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"keyword\": \"terra\",\r\n    \"url\": \"https://terra.com\",\r\n    \"title\": \"Terra homepage\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/links",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"links"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3MjQ1NTI4M3xEdi1CQkFFQ180SUFBUkFCRUFBQUxQLUNBQUlHYzNSeWFXNW5EQW9BQ0d0bGVYZHZjbVJ6Q0Z0ZGMzUnlhVzVuXzRNQ0FRTF9oQUFCREFBQV85UF9oQWdBQVFWbmJHOWlid1p6ZEhKcGJtY01CZ0FFZFhObGNqTm5hWFJvZFdJdVkyOXRMM2QyYjJ4cGRtVnBjbUV2WTI5eVoya3ZhVzUwWlhKdVlXd3ZjR3RuTDIxdlpHVnNMbFZ6WlhMX2hRTUJBUVJWYzJWeUFmLUdBQUVLQVFKSlJBRU1BQUVKUTNKbFlYUmxaRUYwQWYtSUFBRUpWWEJrWVhSbFpFRjBBZi1JQUFFRVRtRnRaUUVNQUFFRVVtOXNaUUVNQUFFR1FXTjBhWFpsQVFJQUFRcEpaR1Z1ZEdsMGFXVnpBZi1NQUFFR1ZHOXJaVzV6QWYtUUFBRUZUR2x1YTNNQl81UUFBUVJVWVdkekFmLWFBQUFBRVAtSEJRRUJCRlJwYldVQl80Z0FBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRnQUFRbFZjR1JoZEdWa1FYUUJfNGdBQVFsTVlYTjBURzluYVc0Ql80Z0FBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9pQUFBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUlBQUVKVlhCa1lYUmxaRUYwQWYtSUFBRUhUR0Z6ZEZWelpRSF9pQUFCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80Z0FBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2lBQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80Z0FBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hnQUFadi1HWXdFa1pHTXpNbUptTnpBdFpETTJPUzAwWVdWa0xXRXlaRGd0TVRobVl6aGhOR0kyTVRWbEFROEJBQUFBRHRxcC1SMHMxMjVnXzB3QkR3RUFBQUFPMnIzTWxoZ2doMmpfVEFFUFFXUnRhVzVwYm1semRISmhkRzl5QVFWaFpHMXBiZ0VCQUE9PXyg_4Wbu5lJhY49xG3x-12PjpBvT--eWfTfVYcp1nXzXg==; Path=/; Expires=Mon, 30 Jan 2023 02:54:43 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 31 Dec 2022 02:54:43 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "283"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"id\": \"37e1d4ca-8d45-41f3-96c1-5d5b1be6e375\",\n        \"created_at\": \"2022-12-30T23:54:43.377495-03:00\",\n        \"updated_at\": \"2022-12-30T23:54:43.377511-03:00\",\n        \"domain\": \"localhost:8081\",\n        \"keyword\": \"terra\",\n        \"url\": \"https://terra.com\",\n        \"title\": \"Terra homepage\",\n        \"active\": \"true\"\n    }\n}"
+						}
+					]
 				},
 				{
-					"name": "GET /api/v1/links/:id",
+					"name": "Create a link w/ keyword",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"url\": \"https://youtube.com\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/links",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"links"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "POST /api/links",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"keyword\": \"terra\",\r\n    \"url\": \"https://terra.com\",\r\n    \"title\": \"Terra homepage\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/links",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"links"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3MjQ1NTI4M3xEdi1CQkFFQ180SUFBUkFCRUFBQUxQLUNBQUlHYzNSeWFXNW5EQW9BQ0d0bGVYZHZjbVJ6Q0Z0ZGMzUnlhVzVuXzRNQ0FRTF9oQUFCREFBQV85UF9oQWdBQVFWbmJHOWlid1p6ZEhKcGJtY01CZ0FFZFhObGNqTm5hWFJvZFdJdVkyOXRMM2QyYjJ4cGRtVnBjbUV2WTI5eVoya3ZhVzUwWlhKdVlXd3ZjR3RuTDIxdlpHVnNMbFZ6WlhMX2hRTUJBUVJWYzJWeUFmLUdBQUVLQVFKSlJBRU1BQUVKUTNKbFlYUmxaRUYwQWYtSUFBRUpWWEJrWVhSbFpFRjBBZi1JQUFFRVRtRnRaUUVNQUFFRVVtOXNaUUVNQUFFR1FXTjBhWFpsQVFJQUFRcEpaR1Z1ZEdsMGFXVnpBZi1NQUFFR1ZHOXJaVzV6QWYtUUFBRUZUR2x1YTNNQl81UUFBUVJVWVdkekFmLWFBQUFBRVAtSEJRRUJCRlJwYldVQl80Z0FBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRnQUFRbFZjR1JoZEdWa1FYUUJfNGdBQVFsTVlYTjBURzluYVc0Ql80Z0FBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9pQUFBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUlBQUVKVlhCa1lYUmxaRUYwQWYtSUFBRUhUR0Z6ZEZWelpRSF9pQUFCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80Z0FBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2lBQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80Z0FBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hnQUFadi1HWXdFa1pHTXpNbUptTnpBdFpETTJPUzAwWVdWa0xXRXlaRGd0TVRobVl6aGhOR0kyTVRWbEFROEJBQUFBRHRxcC1SMHMxMjVnXzB3QkR3RUFBQUFPMnIzTWxoZ2doMmpfVEFFUFFXUnRhVzVwYm1semRISmhkRzl5QVFWaFpHMXBiZ0VCQUE9PXyg_4Wbu5lJhY49xG3x-12PjpBvT--eWfTfVYcp1nXzXg==; Path=/; Expires=Mon, 30 Jan 2023 02:54:43 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 31 Dec 2022 02:54:43 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "283"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"id\": \"37e1d4ca-8d45-41f3-96c1-5d5b1be6e375\",\n        \"created_at\": \"2022-12-30T23:54:43.377495-03:00\",\n        \"updated_at\": \"2022-12-30T23:54:43.377511-03:00\",\n        \"domain\": \"localhost:8081\",\n        \"keyword\": \"terra\",\n        \"url\": \"https://terra.com\",\n        \"title\": \"Terra homepage\",\n        \"active\": \"true\"\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Find link by ID",
 					"request": {
 						"method": "GET",
 						"header": [
@@ -298,29 +904,76 @@
 							}
 						],
 						"url": {
-							"raw": "localhost:8081/api/v1/links/{{param_link_id}}",
+							"raw": "{{endpoint}}/api/links/{{param_link_id}}",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
-								"v1",
 								"links",
 								"{{param_link_id}}"
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Find link by ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Host",
+										"value": "{{header_host}}",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "localhost:8081/api/links/{{param_link_id}}",
+									"host": [
+										"localhost"
+									],
+									"port": "8081",
+									"path": [
+										"api",
+										"links",
+										"{{param_link_id}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3NjA4Njc5M3xEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzR3QUFRWlViMnRsYm5NQl81QUFBUVZNYVc1cmN3SF9sQUFCQkZSaFozTUJfNW9BQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUNyX2h3TUJBUWhPZFd4c1ZHbHRaUUhfaUFBQkFnRUVWR2x0WlFIX2hnQUJCVlpoYkdsa0FRSUFBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRZQUFRbFZjR1JoZEdWa1FYUUJfNFlBQVFsTVlYTjBURzluYVc0Ql80WUFBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9oZ0FBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUhUR0Z6ZEZWelpRSF9oZ0FCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80WUFBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hBQUFGUC1FRVFFQk1BSUFBUWxCYm05dWVXMXZkWE1BfIb3R_ziBmBCi6EStbtJO4naMxocGU3-rDk5JEXGu-W3; Path=/; Expires=Mon, 13 Mar 2023 03:39:53 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 11 Feb 2023 03:39:53 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "285"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"id\": \"01GRZ7R44PK5DEVZSXH97KR6V8\",\n        \"created_at\": \"2023-02-11T03:19:23.542848Z\",\n        \"updated_at\": {\n            \"Time\": \"0001-01-01T00:00:00Z\",\n            \"Valid\": false\n        },\n        \"domain\": \"localhost:8081\",\n        \"keyword\": \"KYiBoH2ap\",\n        \"url\": \"https://google.com\",\n        \"title\": \"Google homepage\",\n        \"active\": \"true\"\n    }\n}"
+						}
+					]
 				},
 				{
-					"name": "PATCH /api/v1/links/:id",
+					"name": "Update link by ID",
 					"request": {
 						"method": "PATCH",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"url_short\": \"elga.io/teste\",\r\n    \"url_full\": \"https://elga.io\",\r\n    \"title\": \"elga home page\",\r\n    \"active\": \"true\"\r\n}\r\n",
+							"raw": "{\r\n    \"title\": \"Globo\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -328,85 +981,148 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8081/api/v1/links/03f6133a-73ce-42fd-b4b1-695150216b26",
+							"raw": "{{endpoint}}/api/links/{{param_link_id}}",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
-								"v1",
 								"links",
-								"03f6133a-73ce-42fd-b4b1-695150216b26"
+								"{{param_link_id}}"
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Update link by ID",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"title\": \"Globo\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/links/{{param_link_id}}",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"links",
+										"{{param_link_id}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3NjA4NzM4NHxEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzR3QUFRWlViMnRsYm5NQl81QUFBUVZNYVc1cmN3SF9sQUFCQkZSaFozTUJfNW9BQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUNyX2h3TUJBUWhPZFd4c1ZHbHRaUUhfaUFBQkFnRUVWR2x0WlFIX2hnQUJCVlpoYkdsa0FRSUFBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRZQUFRbFZjR1JoZEdWa1FYUUJfNFlBQVFsTVlYTjBURzluYVc0Ql80WUFBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9oZ0FBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUhUR0Z6ZEZWelpRSF9oZ0FCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80WUFBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hBQUFGUC1FRVFFQk1BSUFBUWxCYm05dWVXMXZkWE1BfGm6M6VGk0z13tWcxTh29AD7n73JgK_kDMZg7jm_Wi5o; Path=/; Expires=Mon, 13 Mar 2023 03:49:44 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 11 Feb 2023 03:49:44 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "23"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\"\n}"
+						}
+					]
 				},
 				{
-					"name": "DELETE /api/v1/links/:id",
+					"name": "Delete a link",
 					"request": {
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/api/v1/links/03f6133a-73ce-42fd-b4b1-695150216b26",
+							"raw": "{{endpoint}}/api/links/{{param_link_id}}",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
-								"v1",
 								"links",
-								"03f6133a-73ce-42fd-b4b1-695150216b26"
+								"{{param_link_id}}"
 							]
 						}
 					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "Token",
-			"item": [
-				{
-					"name": "POST /api/v1/token/refresh",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "localhost:8081/api/auth/token/refresh",
-							"host": [
-								"localhost"
+					"response": [
+						{
+							"name": "Delete a link",
+							"originalRequest": {
+								"method": "DELETE",
+								"header": [],
+								"url": {
+									"raw": "{{endpoint}}/api/links/{{param_link_id}}",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"links",
+										"{{param_link_id}}"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3NjA4NzUxN3xEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzR3QUFRWlViMnRsYm5NQl81QUFBUVZNYVc1cmN3SF9sQUFCQkZSaFozTUJfNW9BQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUNyX2h3TUJBUWhPZFd4c1ZHbHRaUUhfaUFBQkFnRUVWR2x0WlFIX2hnQUJCVlpoYkdsa0FRSUFBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRZQUFRbFZjR1JoZEdWa1FYUUJfNFlBQVFsTVlYTjBURzluYVc0Ql80WUFBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9oZ0FBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUhUR0Z6ZEZWelpRSF9oZ0FCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80WUFBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hBQUFGUC1FRVFFQk1BSUFBUWxCYm05dWVXMXZkWE1BfPUnf4mfG-MuDr91zrhPEHtBHqcTUVTpsc0z-YCi4YHp; Path=/; Expires=Mon, 13 Mar 2023 03:51:57 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 11 Feb 2023 03:51:57 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "23"
+								}
 							],
-							"port": "8081",
-							"path": [
-								"api",
-								"auth",
-								"token",
-								"refresh"
-							]
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\"\n}"
 						}
-					},
-					"response": []
+					]
 				}
 			]
 		},
 		{
-			"name": "Health",
+			"name": "health",
 			"item": [
 				{
-					"name": "GET /health",
+					"name": "Health",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/health",
+							"raw": "{{endpoint}}/api/health",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
+								"api",
 								"health"
 							]
 						}
@@ -451,17 +1167,17 @@
 					]
 				},
 				{
-					"name": "GET /health/live",
+					"name": "Health live",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/health/live",
+							"raw": "{{endpoint}}/api/health/live",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
+								"api",
 								"health",
 								"live"
 							]
@@ -508,17 +1224,17 @@
 					]
 				},
 				{
-					"name": "GET /health/ready",
+					"name": "Health ready",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/health/ready",
+							"raw": "{{endpoint}}/api/health/ready",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
+								"api",
 								"health",
 								"ready"
 							]
@@ -563,214 +1279,81 @@
 							"body": "{\n    \"status\": \"successful\",\n    \"data\": [\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Facebook Auth\",\n            \"description\": \"Facebook Auth config is not proper configured\"\n        },\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Google Auth\",\n            \"description\": \"Google Auth config is not proper configured\"\n        },\n        {\n            \"required\": true,\n            \"status\": \"OK\",\n            \"component\": \"Database\",\n            \"description\": \"Integrity check is OK\"\n        }\n    ]\n}"
 						}
 					]
-				},
-				{
-					"name": "GET /health/database",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "localhost:8081/health/database",
-							"host": [
-								"localhost"
-							],
-							"port": "8081",
-							"path": [
-								"health",
-								"database"
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "GET /health/database",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8081/health/database",
-									"host": [
-										"localhost"
-									],
-									"port": "8081",
-									"path": [
-										"health",
-										"database"
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								},
-								{
-									"key": "Date",
-									"value": "Sat, 24 Sep 2022 04:44:04 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "124"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"required\": true,\n        \"status\": \"OK\",\n        \"component\": \"Database\",\n        \"description\": \"Integrity check is OK\"\n    }\n}"
-						}
-					]
-				},
-				{
-					"name": "GET /health/auth",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "localhost:8081/health/auth",
-							"host": [
-								"localhost"
-							],
-							"port": "8081",
-							"path": [
-								"health",
-								"auth"
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "GET /health/auth",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8081/health/auth",
-									"host": [
-										"localhost"
-									],
-									"port": "8081",
-									"path": [
-										"health",
-										"auth"
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								},
-								{
-									"key": "Date",
-									"value": "Sat, 24 Sep 2022 04:44:45 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "287"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"status\": \"successful\",\n    \"data\": [\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Facebook Auth\",\n            \"description\": \"Facebook Auth config is not proper configured\"\n        },\n        {\n            \"required\": false,\n            \"status\": \"Disabled\",\n            \"component\": \"Google Auth\",\n            \"description\": \"Google Auth config is not proper configured\"\n        }\n    ]\n}"
-						}
-					]
-				},
-				{
-					"name": "GET /health/auth/:provider",
-					"request": {
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "localhost:8081/health/auth/{{provider}}",
-							"host": [
-								"localhost"
-							],
-							"port": "8081",
-							"path": [
-								"health",
-								"auth",
-								"{{provider}}"
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "GET /health/auth/:provider",
-							"originalRequest": {
-								"method": "GET",
-								"header": [],
-								"url": {
-									"raw": "localhost:8081/health/auth/{{provider}}",
-									"host": [
-										"localhost"
-									],
-									"port": "8081",
-									"path": [
-										"health",
-										"auth",
-										"{{provider}}"
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json"
-								},
-								{
-									"key": "Date",
-									"value": "Sat, 24 Sep 2022 04:45:50 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "156"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"required\": false,\n        \"status\": \"Disabled\",\n        \"component\": \"Google Auth\",\n        \"description\": \"Google Auth config is not proper configured\"\n    }\n}"
-						}
-					]
 				}
 			]
 		},
 		{
-			"name": "User",
+			"name": "user",
 			"item": [
 				{
-					"name": "GET /api/v1/user/me",
+					"name": "Show user",
 					"request": {
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "localhost:8081/api/v1/user/me",
+							"raw": "{{endpoint}}/api/user/me",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
-								"v1",
 								"user",
 								"me"
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "GET /api/user/me",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{endpoint}}/api/user/me",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"user",
+										"me"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3MDM3MDIwM3xEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzRvQUFRWlViMnRsYm5NQl80NEFBUVZNYVc1cmN3SF9rZ0FCQkZSaFozTUJfNWdBQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUJfX2lRSUJBUkJiWFcxdlpHVnNMa2xrWlc1MGFYUjVBZi1LQUFIX2lBQUFfNVRfaHdNQkFRaEpaR1Z1ZEdsMGVRSF9pQUFCQ2dFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaGdBQkNVeGhjM1JNYjJkcGJnSF9oZ0FCQ0ZCeWIzWnBaR1Z5QVF3QUFRTlZTVVFCREFBQkNGQmhjM04zYjNKa0FRd0FBUVpWYzJWeVNVUUJEQUFCQ0ZabGNtbG1hV1ZrQVFJQUFRcFdaWEpwWm1sbFpFRjBBZi1HQUFBQUhQLU5BZ0VCRFZ0ZGJXOWtaV3d1Vkc5clpXNEJfNDRBQWYtTUFBQnBfNHNEQVFFRlZHOXJaVzRCXzR3QUFRY0JBa2xFQVF3QUFRbERjbVZoZEdWa1FYUUJfNFlBQVFsVmNHUmhkR1ZrUVhRQl80WUFBUWRNWVhOMFZYTmxBZi1HQUFFRlZHOXJaVzRCREFBQkNVVjRjR2x5WlhOSmJnSF9oZ0FCQmxWelpYSkpSQUVNQUFBQUdfLVJBZ0VCREZ0ZGJXOWtaV3d1VEdsdWF3SF9rZ0FCXzVBQUFIYl9qd01CQVFSTWFXNXJBZi1RQUFFSkFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUdSRzl0WVdsdUFRd0FBUWRMWlhsM2IzSmtBUXdBQVFOVlVrd0JEQUFCQlZScGRHeGxBUXdBQVFaQlkzUnBkbVVCREFBQkJsVnpaWEpKUkFFTUFBQUFHdi1YQWdFQkMxdGRiVzlrWld3dVZHRm5BZi1ZQUFIX2xBQUFXdi1UQXdFQkExUmhad0hfbEFBQkJnRUNTVVFCREFBQkNVTnlaV0YwWldSQmRBSF9oZ0FCQ1ZWd1pHRjBaV1JCZEFIX2hnQUJCRTVoYldVQkRBQUJDMFJsYzJOeWFYQjBhVzl1QVF3QUFRVlZjMlZ5Y3dIX2xnQUFBQnZfbFFJQkFReGJYVzF2WkdWc0xsVnpaWElCXzVZQUFmLUVBQUJtXzRSakFTUmtZek15WW1ZM01DMWtNelk1TFRSaFpXUXRZVEprT0MweE9HWmpPR0UwWWpZeE5XVUJEd0VBQUFBTzJxbjVIU3pYYm1EX1RBRVBBUUFBQUE3YXZjeVdHQ0NIYVA5TUFROUJaRzFwYm1sdWFYTjBjbUYwYjNJQkJXRmtiV2x1QVFFQXyjnLkD0l0Kufx0qmWcn-xelj40VqGnPPFRmtQSKM9h3g==; Path=/; Expires=Thu, 05 Jan 2023 23:43:23 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 06 Dec 2022 23:43:23 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "128"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"name\": \"Admininistrator\",\n        \"role\": \"admin\",\n        \"identities\": [\n            {\n                \"provider\": \"email\",\n                \"uid\": \"admin@local\"\n            }\n        ]\n    }\n}"
+						}
+					]
 				},
 				{
-					"name": "POST /api/v1/user/me",
+					"name": "Update user",
 					"request": {
 						"method": "PATCH",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"name\": \"Admininistrator\"\r\n}",
+							"raw": "{\r\n    \"name\": \"Root\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -778,16 +1361,106 @@
 							}
 						},
 						"url": {
-							"raw": "localhost:8081/api/v1/user/me",
+							"raw": "{{endpoint}}/api/user/me",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
 								"api",
-								"v1",
 								"user",
 								"me"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Update user",
+							"originalRequest": {
+								"method": "PATCH",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"name\": \"Admin\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/user/me",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"user",
+										"me"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3NjEzMzc2MnxEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzR3QUFRWlViMnRsYm5NQl81QUFBUVZNYVc1cmN3SF9sQUFCQkZSaFozTUJfNW9BQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUNyX2h3TUJBUWhPZFd4c1ZHbHRaUUhfaUFBQkFnRUVWR2x0WlFIX2hnQUJCVlpoYkdsa0FRSUFBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRZQUFRbFZjR1JoZEdWa1FYUUJfNFlBQVFsTVlYTjBURzluYVc0Ql80WUFBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9oZ0FBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUhUR0Z6ZEZWelpRSF9oZ0FCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80WUFBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hBQUFTXy1FU0FFYU1ERkhVekJPUlZBNFNGTTVVRmxYUmpORE5rVk9OVlpRU2xZQkR3RUFBQUFPMjNtN2NEZUx4YmdBQUFFQUFRMUJaRzFwYm1semRISmhkRzl5QVFWaFpHMXBiZ0VCQUE9PXwznwjX4eiZRMgpV7ETh3LsfgHnsdoUjBgv0_EEaP9pAg==; Path=/; Expires=Mon, 13 Mar 2023 16:42:42 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 11 Feb 2023 16:42:42 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "23"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\"\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "debug",
+			"item": [
+				{
+					"name": "GET /debug/config",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/debug/config",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"debug",
+								"config"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GET /debug/env",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/debug/env",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"debug",
+								"env"
 							]
 						}
 					},
@@ -796,10 +1469,10 @@
 			]
 		},
 		{
-			"name": "Public",
+			"name": "clicks",
 			"item": [
 				{
-					"name": "GET /:keyword",
+					"name": "GET /api/clicks/:link",
 					"protocolProfileBehavior": {
 						"followRedirects": false
 					},
@@ -809,7 +1482,8 @@
 							{
 								"key": "Host",
 								"value": "elga.io",
-								"type": "text"
+								"type": "text",
+								"disabled": true
 							},
 							{
 								"key": "User-Agent",
@@ -818,13 +1492,320 @@
 							}
 						],
 						"url": {
-							"raw": "localhost:8081/abecedo122312",
+							"raw": "{{endpoint}}/api/clicks/localhost:8081_globo",
 							"host": [
-								"localhost"
+								"{{endpoint}}"
 							],
-							"port": "8081",
 							"path": [
-								"abecedo122312"
+								"api",
+								"clicks",
+								"localhost:8081_globo"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "log",
+			"item": [
+				{
+					"name": "POST /api/log",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"level\": 30,\r\n    \"time\": 1674013295974,\r\n    \"pid\": 12368,\r\n    \"hostname\": \"chappie.local\",\r\n    \"msg\": \"Profile/Setting page\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/log",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"log"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "POST /api/links",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\r\n    \"keyword\": \"terra\",\r\n    \"url\": \"https://terra.com\",\r\n    \"title\": \"Terra homepage\"\r\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/links",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"links"
+									]
+								}
+							},
+							"status": "Created",
+							"code": 201,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3MjQ1NTI4M3xEdi1CQkFFQ180SUFBUkFCRUFBQUxQLUNBQUlHYzNSeWFXNW5EQW9BQ0d0bGVYZHZjbVJ6Q0Z0ZGMzUnlhVzVuXzRNQ0FRTF9oQUFCREFBQV85UF9oQWdBQVFWbmJHOWlid1p6ZEhKcGJtY01CZ0FFZFhObGNqTm5hWFJvZFdJdVkyOXRMM2QyYjJ4cGRtVnBjbUV2WTI5eVoya3ZhVzUwWlhKdVlXd3ZjR3RuTDIxdlpHVnNMbFZ6WlhMX2hRTUJBUVJWYzJWeUFmLUdBQUVLQVFKSlJBRU1BQUVKUTNKbFlYUmxaRUYwQWYtSUFBRUpWWEJrWVhSbFpFRjBBZi1JQUFFRVRtRnRaUUVNQUFFRVVtOXNaUUVNQUFFR1FXTjBhWFpsQVFJQUFRcEpaR1Z1ZEdsMGFXVnpBZi1NQUFFR1ZHOXJaVzV6QWYtUUFBRUZUR2x1YTNNQl81UUFBUVJVWVdkekFmLWFBQUFBRVAtSEJRRUJCRlJwYldVQl80Z0FBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRnQUFRbFZjR1JoZEdWa1FYUUJfNGdBQVFsTVlYTjBURzluYVc0Ql80Z0FBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9pQUFBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUlBQUVKVlhCa1lYUmxaRUYwQWYtSUFBRUhUR0Z6ZEZWelpRSF9pQUFCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80Z0FBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2lBQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80Z0FBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hnQUFadi1HWXdFa1pHTXpNbUptTnpBdFpETTJPUzAwWVdWa0xXRXlaRGd0TVRobVl6aGhOR0kyTVRWbEFROEJBQUFBRHRxcC1SMHMxMjVnXzB3QkR3RUFBQUFPMnIzTWxoZ2doMmpfVEFFUFFXUnRhVzVwYm1semRISmhkRzl5QVFWaFpHMXBiZ0VCQUE9PXyg_4Wbu5lJhY49xG3x-12PjpBvT--eWfTfVYcp1nXzXg==; Path=/; Expires=Mon, 30 Jan 2023 02:54:43 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 31 Dec 2022 02:54:43 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "283"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"id\": \"37e1d4ca-8d45-41f3-96c1-5d5b1be6e375\",\n        \"created_at\": \"2022-12-30T23:54:43.377495-03:00\",\n        \"updated_at\": \"2022-12-30T23:54:43.377511-03:00\",\n        \"domain\": \"localhost:8081\",\n        \"keyword\": \"terra\",\n        \"url\": \"https://terra.com\",\n        \"title\": \"Terra homepage\",\n        \"active\": \"true\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "short",
+			"item": [
+				{
+					"name": "Get full URL",
+					"protocolProfileBehavior": {
+						"followRedirects": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Host",
+								"value": "elga.io",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{endpoint}}/api/short/terra",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"short",
+								"terra"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get full URL",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Host",
+										"value": "elga.io",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{endpoint}}/api/short/terra",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"short",
+										"terra"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sat, 11 Feb 2023 04:29:18 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "58"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"url\": \"https://terra.com\"\n    }\n}"
+						}
+					]
+				}
+			]
+		},
+		{
+			"name": "groups",
+			"item": [
+				{
+					"name": "Create a group",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Group 2\",\n    \"display_name\": \"Group two\",\n    \"description\": \"O segundo melhor!!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/groups",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"groups"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "GET /api/user/me",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{endpoint}}/api/user/me",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"user",
+										"me"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3MDM3MDIwM3xEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzRvQUFRWlViMnRsYm5NQl80NEFBUVZNYVc1cmN3SF9rZ0FCQkZSaFozTUJfNWdBQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUJfX2lRSUJBUkJiWFcxdlpHVnNMa2xrWlc1MGFYUjVBZi1LQUFIX2lBQUFfNVRfaHdNQkFRaEpaR1Z1ZEdsMGVRSF9pQUFCQ2dFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaGdBQkNVeGhjM1JNYjJkcGJnSF9oZ0FCQ0ZCeWIzWnBaR1Z5QVF3QUFRTlZTVVFCREFBQkNGQmhjM04zYjNKa0FRd0FBUVpWYzJWeVNVUUJEQUFCQ0ZabGNtbG1hV1ZrQVFJQUFRcFdaWEpwWm1sbFpFRjBBZi1HQUFBQUhQLU5BZ0VCRFZ0ZGJXOWtaV3d1Vkc5clpXNEJfNDRBQWYtTUFBQnBfNHNEQVFFRlZHOXJaVzRCXzR3QUFRY0JBa2xFQVF3QUFRbERjbVZoZEdWa1FYUUJfNFlBQVFsVmNHUmhkR1ZrUVhRQl80WUFBUWRNWVhOMFZYTmxBZi1HQUFFRlZHOXJaVzRCREFBQkNVVjRjR2x5WlhOSmJnSF9oZ0FCQmxWelpYSkpSQUVNQUFBQUdfLVJBZ0VCREZ0ZGJXOWtaV3d1VEdsdWF3SF9rZ0FCXzVBQUFIYl9qd01CQVFSTWFXNXJBZi1RQUFFSkFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUdSRzl0WVdsdUFRd0FBUWRMWlhsM2IzSmtBUXdBQVFOVlVrd0JEQUFCQlZScGRHeGxBUXdBQVFaQlkzUnBkbVVCREFBQkJsVnpaWEpKUkFFTUFBQUFHdi1YQWdFQkMxdGRiVzlrWld3dVZHRm5BZi1ZQUFIX2xBQUFXdi1UQXdFQkExUmhad0hfbEFBQkJnRUNTVVFCREFBQkNVTnlaV0YwWldSQmRBSF9oZ0FCQ1ZWd1pHRjBaV1JCZEFIX2hnQUJCRTVoYldVQkRBQUJDMFJsYzJOeWFYQjBhVzl1QVF3QUFRVlZjMlZ5Y3dIX2xnQUFBQnZfbFFJQkFReGJYVzF2WkdWc0xsVnpaWElCXzVZQUFmLUVBQUJtXzRSakFTUmtZek15WW1ZM01DMWtNelk1TFRSaFpXUXRZVEprT0MweE9HWmpPR0UwWWpZeE5XVUJEd0VBQUFBTzJxbjVIU3pYYm1EX1RBRVBBUUFBQUE3YXZjeVdHQ0NIYVA5TUFROUJaRzFwYm1sdWFYTjBjbUYwYjNJQkJXRmtiV2x1QVFFQXyjnLkD0l0Kufx0qmWcn-xelj40VqGnPPFRmtQSKM9h3g==; Path=/; Expires=Thu, 05 Jan 2023 23:43:23 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Tue, 06 Dec 2022 23:43:23 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "128"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"name\": \"Admininistrator\",\n        \"role\": \"admin\",\n        \"identities\": [\n            {\n                \"provider\": \"email\",\n                \"uid\": \"admin@local\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "List groups",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/groups",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"groups"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by ID",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/groups/01GS0P3GBWVXSKPWJGMQW3PV0M",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"groups",
+								"01GS0P3GBWVXSKPWJGMQW3PV0M"
 							]
 						}
 					},

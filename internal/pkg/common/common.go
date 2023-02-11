@@ -4,9 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"math/rand"
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -100,4 +102,29 @@ func GetUserFromSession(c *gin.Context) (userID string, err error) {
 
 	userID = v.(model.User).ID
 	return
+}
+
+func CreateRandomPassword() (password string) {
+	rand.New(rand.NewSource(time.Now().UnixNano()))
+
+	letters := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	digits := "0123456789"
+	specials := "=+*!@#?|"
+	all := letters + digits + specials
+
+	length := 14
+
+	buf := make([]byte, length)
+	buf[0] = digits[rand.Intn(len(digits))]
+	buf[1] = specials[rand.Intn(len(specials))]
+
+	for i := 2; i < length; i++ {
+		buf[i] = all[rand.Intn(len(all))]
+	}
+
+	rand.Shuffle(len(buf), func(i, j int) {
+		buf[i], buf[j] = buf[j], buf[i]
+	})
+
+	return string(buf)
 }

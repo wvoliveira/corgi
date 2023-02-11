@@ -34,16 +34,10 @@ func (s service) HTTPAdd(c *gin.Context) {
 		return
 	}
 
-	var userIDs []string
-	for _, user := range group.Users {
-		userIDs = append(userIDs, user.ID)
-	}
-
 	resp := addResponse{
 		Name:        group.Name,
 		DisplayName: group.DisplayName,
 		Description: group.Description,
-		UserIDs:     userIDs,
 	}
 
 	response.Default(c, resp, "", http.StatusOK)
@@ -82,11 +76,17 @@ func (s service) HTTPFindByID(c *gin.Context) {
 		return
 	}
 
-	group, err := s.FindByID(c, payload.ID, userID)
+	group, users, err := s.FindByID(c, payload.ID, userID)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	response.Default(c, group, "", http.StatusOK)
+	resp := encodeFindByID(c, group, users)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	response.Default(c, resp, "", http.StatusOK)
 }

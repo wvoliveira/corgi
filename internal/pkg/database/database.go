@@ -4,38 +4,126 @@ package database
 
 import (
 	"database/sql"
-	"path/filepath"
+	"fmt"
+	"os"
 
-	"github.com/dgraph-io/badger"
+	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/lib/pq"
-	"github.com/rs/zerolog/log"
+	"github.com/redis/go-redis/v9"
 )
 
-// NewSQL create a gorm database object.
+// NewSQL create a sql database object.
 func NewSQL() (db *sql.DB) {
-	datasource := viper.GetString("datasource")
+	datasource := viper.GetString("DB_URL")
 	db, err := sql.Open("postgres", datasource)
+
 	if err != nil {
 		panic("failed to connect in sqlite database")
 	}
+
 	return
 }
 
-// NewKV create a badger database object.
-func NewKV() (db *badger.DB) {
-	appFolder, err := common.GetOrCreateDataFolder()
+// NewKV create a cache/redis database object.
+func NewCache() (db *redis.Client) {
+	datasource := viper.GetString("CACHE_URL")
+	opt, err := redis.ParseURL(datasource)
+
 	if err != nil {
-		log.Fatal().Caller().Msg(err.Error())
+		panic(err)
 	}
 
-	dbFile := filepath.Join(appFolder, "cache")
+	return redis.NewClient(opt)
+}
 
-	db, err = badger.Open(badger.DefaultOptions(dbFile))
-	if err != nil {
-		panic("failed to connect in sqlite database")
+func CreateUserAdmin(db *sql.DB) {
+	user := model.User{
+		ID:   ulid.Make().String(),
+		Name: "Administrator",
+		Role: "admin",
 	}
-	return
+
+	identity := model.Identity{
+		ID:       ulid.Make().String(),
+		UserID:   user.ID,
+		Provider: "username",
+		UID:      "admin",
+	}
+
+	// Check if provider and UID exists.
+	var id string
+	_ = db.QueryRow("SELECT id FROM identities WHERE provider = $1 AND uid = $2", identity.Provider, identity.UID).Scan(&id)
+	if id != "" {
+		return
+	}
+
+	plainTextPassword := common.CreateRandomPassword()
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainTextPassword), 8)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		os.Exit(2)
+	}
+
+	identity.Password = string(hashedPassword)
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		os.Exit(2)
+	}
+
+	_, err = tx.Exec(`INSERT INTO users(id, name, role) VALUES($1, $2, $3)`,
+		user.ID, user.Name, user.Role)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+
+		err = tx.Rollback()
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+		}
+		return
+	}
+
+	_, err = tx.Exec(`INSERT INTO identities(id, user_id, provider, uid, password) 
+	VALUES($1, $2, $3, $4, $5)`,
+		identity.ID,
+		identity.UserID,
+		identity.Provider,
+		identity.UID,
+		identity.Password,
+	)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+
+		err = tx.Rollback()
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+		}
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	message := fmt.Sprintf(`
+======================================
+User "admin" created with successfull!
+Username: admin
+Password: %s
+======================================
+	`, plainTextPassword)
+
+	log.Info().Caller().Msg(message)
 }

@@ -14,6 +14,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/clicks"
+	"github.com/wvoliveira/corgi/internal/app/group"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/short"
@@ -35,7 +36,11 @@ func init() {
 
 func main() {
 	db := database.NewSQL()
-	kv := database.NewKV()
+	kv := database.NewCache()
+
+	// Create user Admin if not exists.
+	// You can desactive this user after installation!
+	database.CreateUserAdmin(db)
 
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
@@ -106,6 +111,12 @@ func main() {
 	}
 
 	{
+		// Group management service. Like create group, add users, etc.
+		service := group.NewService(db)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
 		// Central business service: manage link shortener.
 		service := link.NewService(db)
 		service.NewHTTP(apiRouter)
@@ -130,5 +141,5 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	server.Graceful(router, viper.GetInt("server.http_port"))
+	server.Graceful(router, viper.GetInt("SERVER_HTTP_PORT"))
 }

@@ -2,11 +2,9 @@ package clicks
 
 import (
 	"database/sql"
-	"fmt"
-	"strings"
 
-	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 )
 
@@ -18,13 +16,13 @@ type Service interface {
 }
 
 type service struct {
-	db *sql.DB
-	kv *badger.DB
+	db    *sql.DB
+	cache *redis.Client
 }
 
 // NewService creates a new public service.
-func NewService(db *sql.DB, kv *badger.DB) Service {
-	return service{db, kv}
+func NewService(db *sql.DB, cache *redis.Client) Service {
+	return service{db, cache}
 }
 
 // FindAll get a list of links from database.
@@ -32,37 +30,37 @@ func (s service) Find(c *gin.Context, link string) (clicks []string, err error) 
 
 	log := logger.Logger(c)
 
-	key := fmt.Sprintf("link_%s_click_", link)
+	// key := fmt.Sprintf("link_%s_click_", link)
 
-	err = s.kv.View(func(txn *badger.Txn) error {
+	// err = s.cache.View(func(txn *badger.Txn) error {
 
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
-		prefix := []byte(key)
+	// 	it := txn.NewIterator(badger.DefaultIteratorOptions)
+	// 	prefix := []byte(key)
 
-		defer it.Close()
+	// 	defer it.Close()
 
-		for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
+	// 	for it.Seek(prefix); it.ValidForPrefix(prefix); it.Next() {
 
-			item := it.Item()
-			k := item.Key()
+	// 		item := it.Item()
+	// 		k := item.Key()
 
-			err := item.Value(func(v []byte) error {
+	// 		err := item.Value(func(v []byte) error {
 
-				ts := strings.Split(string(k), key)[1]
+	// 			ts := strings.Split(string(k), key)[1]
 
-				clicks = append(clicks, ts)
+	// 			clicks = append(clicks, ts)
 
-				return nil
-			})
+	// 			return nil
+	// 		})
 
-			if err != nil {
-				return err
-			}
+	// 		if err != nil {
+	// 			return err
+	// 		}
 
-		}
+	// 	}
 
-		return nil
-	})
+	// 	return nil
+	// })
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())

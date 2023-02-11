@@ -3,7 +3,7 @@ export NEXT_TELEMETRY_DISABLED := 1
 
 
 .PHONY: build
-build: build-web
+build:
 	go build -ldflags "-s -w" -o corgi ./cmd/corgi/*.go
 
 
@@ -39,3 +39,8 @@ pprof-graph:
 
 local-dep:
 	docker-compose -f deployments/container/docker-compose.yaml up
+
+
+local-env:
+	cp -f .env.example .env
+	export eval $(cat .env)
