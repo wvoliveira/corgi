@@ -20,7 +20,7 @@ Use sua própria infraestrutura para instalar esse encurtador de links. Com vár
 
 ## Instalar
 
-Requesitos:
+Requisitos:
 
 * Go 1.20
 * Node 8+
