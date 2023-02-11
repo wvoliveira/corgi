@@ -22,11 +22,11 @@ export CGO_ENABLED=0
 export GO111MODULE=on
 
 cd tools >/dev/null
-test -x "$(which golangci-lint)" || wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.51.1
+test -x "$(which golangci-lint)" || wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.51.1 -b ./
 cd - >/dev/null
 
 echo -n "Running golangci-lint: "
-ERRS=$(./bin/golangci-lint run "$@" 2>&1 || true)
+ERRS=$(./golangci-lint run "$@" 2>&1 || true)
 if [ -n "${ERRS}" ]; then
     echo "FAIL"
     echo "${ERRS}"
