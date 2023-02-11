@@ -7,6 +7,8 @@ CREATE TABLE IF NOT EXISTS users(
 	active BOOLEAN DEFAULT true
 );
 
+INSERT INTO users(id, name, role, active) VALUES('0', 'Anonymous', 'anonymous', false);
+
 CREATE TABLE IF NOT EXISTS identities(
 	id VARCHAR (30) PRIMARY KEY,
 	user_id VARCHAR (30) NOT NULL,
@@ -36,5 +38,5 @@ CREATE TABLE IF NOT EXISTS links(
 	CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
-CREATE UNIQUE INDEX idx_links_domain ON links (domain);
+CREATE INDEX idx_links_domain ON links (domain);
 CREATE UNIQUE INDEX idx_links_keyword ON links (keyword);

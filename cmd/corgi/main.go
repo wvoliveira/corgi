@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"net/http"
 	"strings"
 
@@ -18,14 +19,23 @@ import (
 	appLog "github.com/wvoliveira/corgi/internal/app/log"
 	"github.com/wvoliveira/corgi/internal/app/redirect"
 	"github.com/wvoliveira/corgi/internal/app/user"
+	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
+	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/server"
 	"github.com/wvoliveira/corgi/web"
 )
 
+func init() {
+	config.New()
+	logger.Default()
+	gob.Register(model.User{})
+}
+
 func main() {
-	db := database.NewSQL(flagDatasource)
+	db := database.NewSQL()
 	kv := database.NewKV()
 
 	// Seed first users. Most admins.
@@ -34,8 +44,7 @@ func main() {
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
 	router := gin.Default()
-
-	server.AddStoreSession(router, viper.GetString("secret_key"))
+	server.AddStoreSession(router)
 
 	// First, check if request path is inside web app.
 	// If yes, just answer the request and finish the request.
@@ -132,5 +141,5 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	server.Graceful(router, flagServerHTTPPort)
+	server.Graceful(router, viper.GetInt("server.http_port"))
 }

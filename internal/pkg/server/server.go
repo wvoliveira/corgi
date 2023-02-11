@@ -14,6 +14,7 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/app/debug"
 )
 
@@ -61,7 +62,9 @@ func Graceful(router *gin.Engine, httpPort int) {
 	log.Info().Caller().Msg("server exited")
 }
 
-func AddStoreSession(router *gin.Engine, secretKey string) {
+func AddStoreSession(router *gin.Engine) {
+	secretKey := viper.GetString("secret_key")
+
 	store := cookie.NewStore([]byte(secretKey))
 	store.Options(sessions.Options{
 		Path:     "/",

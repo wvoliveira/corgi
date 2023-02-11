@@ -8,3 +8,5 @@ corgi
 # Frontend
 web/package-lock.json
 configs/corgi.yaml
+
+.env

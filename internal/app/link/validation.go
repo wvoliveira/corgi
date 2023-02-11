@@ -32,8 +32,8 @@ func checkLink(link model.Link) (err error) {
 	}
 
 	domain_allowed := false
-	domain_default := viper.Get("app.domain_default").(string)
-	domain_alternatives := viper.Get("app.domain_alternatives").([]string)
+	domain_default := viper.GetString("domain_default")
+	domain_alternatives := viper.GetStringSlice("domain_alternatives")
 
 	log.Debug().Caller().Msg(fmt.Sprintf("Default domain: %s", domain_default))
 

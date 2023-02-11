@@ -9,6 +9,7 @@ import (
 
 	"github.com/dgraph-io/badger"
 	"github.com/oklog/ulid/v2"
+	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 
@@ -18,7 +19,8 @@ import (
 )
 
 // NewSQL create a gorm database object.
-func NewSQL(datasource string) (db *sql.DB) {
+func NewSQL() (db *sql.DB) {
+	datasource := viper.GetString("datasource")
 	db, err := sql.Open("postgres", datasource)
 	if err != nil {
 		panic("failed to connect in sqlite database")

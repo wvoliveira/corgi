@@ -29,9 +29,6 @@ func New() {
 	viper.SetEnvPrefix("CORGI")
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 
-	viper.SetConfigName("corgi")
-	viper.SetConfigType("yaml")
-
 	err := viper.BindPFlags(flag.CommandLine)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())

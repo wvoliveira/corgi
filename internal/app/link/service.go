@@ -2,9 +2,9 @@ package link
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"math"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -42,70 +42,69 @@ func NewService(db *sql.DB) Service {
 }
 
 // Add create a new shortener link.
-func (s service) Add(c *gin.Context, link model.Link) (m model.Link, err error) {
+func (s service) Add(c *gin.Context, payload model.Link) (m model.Link, err error) {
 	l := logger.Logger(c)
 
-	if err = checkLink(link); err != nil {
+	fmt.Println(payload)
+
+	if err = checkLink(payload); err != nil {
 		l.Error().Caller().Msg(err.Error())
 		return
 	}
 
 	// If user is anonymous, create a random ID and blank another fields.
-	if link.UserID == "anonymous" {
+	if payload.UserID == "0" {
 		sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
-		link.Keyword, _ = sid.Generate()
+		payload.Keyword, _ = sid.Generate()
 	}
 
-	if link.UserID != "anonymous" {
-		if link.Keyword == "" {
+	if payload.UserID != "0" {
+		if payload.Keyword == "" {
 			sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
-			link.Keyword, _ = sid.Generate()
+			payload.Keyword, _ = sid.Generate()
 		}
 	}
 
-	query := "SELECT * FROM links WHERE domain = $1 AND keyword = $2 LIMIT 1"
-	rows, err := s.db.QueryContext(c, query, link.Domain, link.Keyword)
+	query := "SELECT id FROM links WHERE domain = $1 AND keyword = $2 LIMIT 1"
+	err = s.db.QueryRowContext(c, query, payload.Domain, payload.Keyword).Scan(&m.ID)
+
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+	}
+
+	if m.ID != "" {
+		l.Warn().Caller().Msg("domain with keyword already exists")
+		return m, e.ErrLinkAlreadyExists
+	}
+
+	query = `
+		INSERT INTO links(id, domain, keyword, url, title, user_id) 
+		VALUES($1, $2, $3, $4, $5, $6)
+	`
+
+	payload.ID = ulid.Make().String()
+
+	_, err = s.db.ExecContext(
+		c,
+		query,
+		payload.ID,
+		payload.Domain,
+		payload.Keyword,
+		payload.URL,
+		payload.Title,
+		payload.UserID,
+	)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	defer rows.Close()
-
-	if rows.Next() {
-		err = rows.Scan(&m)
-
-		if err != nil {
-			log.Error().Caller().Msg(err.Error())
-			return
-		}
-
-		log.Info().Caller().Msg(fmt.Sprintf("link ID: %s", m.ID))
-	}
-
-	if m.ID != "" {
-		l.Warn().Caller().Msg("domain with keyword already exists")
-		return m, e.ErrAlreadyExists
-	}
-
-	query = `
-		INSERT INTO links(id, created_at, domain, keyword, url, title, active, user_id) 
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8)
-	`
-
-	_, err = s.db.ExecContext(
-		c,
-		query,
-		ulid.Make(),
-		time.Now(),
-		link.Domain,
-		link.Keyword,
-		link.URL,
-		link.Title,
-		true,
-		link.UserID,
-	)
+	err = s.db.QueryRowContext(c, "SELECT * FROM links WHERE id = $1", payload.ID).Scan(
+		&m.ID, &m.UserID, &m.CreatedAt, &m.UpdatedAt, &m.Domain, &m.Keyword, &m.URL, &m.Title, &m.Active)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
@@ -149,31 +148,31 @@ func (s service) FindByID(c *gin.Context, linkID, userID string) (link model.Lin
 func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages int, links []model.Link, err error) {
 	log := logger.Logger(c)
 
-	query := fmt.Sprintf("SELECT COUNT(0) FROM links")
-	err = s.db.QueryRowContext(c, query).Scan(&total)
+	queryCount := fmt.Sprintf("SELECT COUNT(0) FROM links ")
+	queryData := fmt.Sprintf("SELECT * FROM links ")
+
+	queryFilter := fmt.Sprintf(" WHERE user_id = '%s'", r.UserID)
+
+	if len(r.SearchText) >= 3 {
+		queryFilter = queryFilter + fmt.Sprintf(" AND domain LIKE %%%[1]s%% OR keyword LIKE %%%[1]s%% ", r.SearchText)
+	}
+
+	domain, keyword := common.SplitURL(r.ShortenedURL)
+	if domain != "" && keyword != "" {
+		queryFilter = queryFilter + fmt.Sprintf(" AND domain = '%s' AND keyword = '%s' ", domain, keyword)
+	}
+
+	// TODO: add order by another field.
+	queryCount = queryCount + queryFilter
+	queryData = queryData + queryFilter + fmt.Sprintf(" ORDER BY ID DESC OFFSET %d LIMIT %d ", r.Offset, r.Limit)
+
+	err = s.db.QueryRowContext(c, queryCount).Scan(&total)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
-	query = fmt.Sprintf("SELECT * FROM links WHERE user_id = '%s'", r.UserID)
-	// rows, err := s.db.QueryContext(c, query, r.UserID, r.Offset, r.Limit)
-
-	if len(r.SearchText) >= 3 {
-		query = query + fmt.Sprintf(" AND domain LIKE %%%[1]s%% OR keyword LIKE %%%[1]s%%", r.SearchText)
-	}
-
-	domain, keyword := common.SplitURL(r.ShortenedURL)
-	if domain != "" && keyword != "" {
-		query = query + fmt.Sprintf(" AND domain = '%s' AND keyword = '%s'", domain, keyword)
-	}
-
-	// TODO: add order by another field.
-	query = query + fmt.Sprintf(" ORDER BY ID DESC OFFSET %d LIMIT %d", r.Offset, r.Limit)
-
-	fmt.Println(query)
-
-	rows, err := s.db.QueryContext(c, query)
+	rows, err := s.db.QueryContext(c, queryData)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
@@ -182,8 +181,8 @@ func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages i
 	defer rows.Close()
 	var link model.Link
 
-	if rows.Next() {
-		err = rows.Scan(&link)
+	for rows.Next() {
+		err = rows.Scan(&link.ID, &link.UserID, &link.CreatedAt, &link.UpdatedAt, &link.Domain, &link.Keyword, &link.URL, &link.Title, &link.Active)
 
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
@@ -207,8 +206,6 @@ func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages i
 // Update change specific link by ID.
 func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err error) {
 	log := logger.Logger(c)
-
-	link.UpdatedAt = time.Now()
 
 	query := "UPDATE links SET title = ? WHERE id = ? AND user_id = ?"
 	err = s.db.QueryRowContext(c, query, link.Title, link.ID, link.UserID).Scan(&m)
