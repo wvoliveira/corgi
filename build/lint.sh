@@ -22,7 +22,7 @@ export CGO_ENABLED=0
 export GO111MODULE=on
 
 cd tools >/dev/null
-go install github.com/golangci/golangci-lint/cmd/golangci-lint
+test -x "$(which golangci-lint)" || wget -O- -nv https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.51.1
 cd - >/dev/null
 
 echo -n "Running golangci-lint: "
