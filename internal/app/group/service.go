@@ -16,7 +16,7 @@ import (
 type Service interface {
 	Add(*gin.Context, model.Group, string) (model.Group, error)
 	List(*gin.Context, int, int, string, string) (int64, int, []model.Group, error)
-	FindByID(*gin.Context, string, string) (model.Group, error)
+	FindByID(*gin.Context, string, string) (model.Group, []model.User, error)
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPAdd(*gin.Context)
@@ -110,14 +110,14 @@ func (s service) List(c *gin.Context, offset, limit int, sort, userID string) (t
 	}
 
 	// TODO: fix to use "sort" variable
-	sttqData, _ := s.db.PrepareContext(c, `
+	sttData, _ := s.db.PrepareContext(c, `
 		SELECT g.* FROM groups g
 		JOIN group_user gu ON gu.user_id = $1
 		GROUP BY g.id
 		ORDER BY g.id ASC OFFSET $2 LIMIT $3
 	`)
 
-	rows, err := sttqData.QueryContext(c, userID, offset, limit)
+	rows, err := sttData.QueryContext(c, userID, offset, limit)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
@@ -148,46 +148,65 @@ func (s service) List(c *gin.Context, offset, limit int, sort, userID string) (t
 }
 
 // FindByID get a group details filtering with group ID.
-func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.Group, err error) {
-	// l := logger.Logger(c)
+func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.Group, users []model.User, err error) {
+	log := logger.Logger(c)
 
-	// query := `SELECT groups.*
-	// 	FROM groups
-	// 	JOIN user_groups
-	// 		ON user_groups.group_id = groups.id
-	// 		AND user_groups.user_id = ?
-	// 	WHERE groups.id = ?
-	// `
-	// err = s.db.Raw(query, userID, groupID).Scan(&group).Error
+	// Get group details.
+	sttGroup, _ := s.db.PrepareContext(c, `
+		SELECT g.* FROM groups g
+		JOIN group_user gu ON gu.user_id = $1
+		WHERE g.id = $2
+		GROUP BY g.id;
+	`)
 
-	// if err == gorm.ErrRecordNotFound || group.ID == "" {
-	// 	return group, e.ErrGroupNotFound
-	// }
+	err = sttGroup.QueryRowContext(c, userID, groupID).Scan(
+		&group.ID,
+		&group.CreatedAt,
+		&group.UpdatedAt,
+		&group.Name,
+		&group.DisplayName,
+		&group.Description,
+		&group.CreatedBy,
+		&group.OwnerID,
+	)
 
-	// if err != nil {
-	// 	l.Error().Caller().Msg(err.Error())
-	// }
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
 
-	// users := []model.User{}
-	// queryUsers := `SELECT users.*
-	// 	FROM users
-	// 	JOIN user_groups
-	// 		ON user_groups.user_id = users.id
-	// 	JOIN groups
-	// 		ON groups.id = user_groups.group_id
-	// 	AND groups.id = ?
-	// `
-	// err = s.db.Raw(queryUsers, groupID).Scan(&users).Error
+	// Get all users by group ID.
+	sttUsers, _ := s.db.PrepareContext(c, `
+		SELECT u.id, u.name FROM users u
+		JOIN groups g ON g.id = $1
+		JOIN group_user gu ON gu.user_id = u.id
+		GROUP BY u.id;
+	`)
 
-	// if err == gorm.ErrRecordNotFound {
-	// 	l.Warn().Caller().Msg(err.Error())
-	// 	return group, e.ErrGroupNotFound
-	// }
+	rows, err := sttUsers.QueryContext(c, groupID)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
 
-	// if err != nil {
-	// 	l.Error().Caller().Msg(err.Error())
-	// }
+	defer rows.Close()
+	var user model.User
 
-	// group.Users = users
+	for rows.Next() {
+		err = rows.Scan(&user.ID, &user.Name)
+
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+
+		users = append(users, user)
+	}
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return group, users, e.ErrInternalServerError
+	}
+
 	return
 }

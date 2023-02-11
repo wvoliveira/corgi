@@ -1,6 +1,9 @@
 package group
 
-import "github.com/wvoliveira/corgi/internal/pkg/model"
+import (
+	"github.com/gin-gonic/gin"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
+)
 
 type addResponse struct {
 	Name        string `json:"name"`
@@ -15,4 +18,30 @@ type listResponse struct {
 	Sort   string        `json:"sort"`
 	Total  int64         `json:"total"`
 	Pages  int           `json:"pages"`
+}
+
+type findByIDResponse struct {
+	Group model.Group `json:"group"`
+	// TODO: melhorar isso.. pelo amor
+	// Preciso realizar o encode de somente alguns valores do usuário
+	Users []struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	}
+}
+
+func encodeFindByID(c *gin.Context, group model.Group, users []model.User) (res findByIDResponse) {
+	res.Group = group
+
+	for _, user := range users {
+
+		u := struct {
+			ID   string `json:"id"`
+			Name string `json:"name"`
+		}{user.ID, user.Name}
+
+		res.Users = append(res.Users, u)
+	}
+
+	return res
 }
