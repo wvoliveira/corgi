@@ -1,4 +1,4 @@
-package redirect
+package short
 
 import (
 	"net/http"
@@ -9,14 +9,13 @@ import (
 )
 
 func (s service) NewHTTP(rg *gin.RouterGroup) {
-	r := rg.Group("/redirect")
+	r := rg.Group("/short")
 	// r.Use(middleware.UniqueUserForKeywords())
 
 	r.GET("/:keyword", s.HTTPFind)
 }
 
 func (s service) HTTPFind(c *gin.Context) {
-
 	dr, err := decodeFindByKeyword(c)
 
 	if err != nil {
@@ -31,5 +30,7 @@ func (s service) HTTPFind(c *gin.Context) {
 		return
 	}
 
-	response.Default(c, link, "", http.StatusOK)
+	url := encodeFindByKeyword(link)
+
+	response.Default(c, url, "", http.StatusOK)
 }

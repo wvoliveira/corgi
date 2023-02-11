@@ -1,7 +1,8 @@
-package redirect
+package short
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
@@ -32,16 +33,13 @@ func NewService(db *sql.DB, kv *badger.DB) Service {
 func (s service) Find(c *gin.Context, domain, keyword string) (m model.Link, err error) {
 	log := logger.Logger(c)
 
-	query := "SELECT * FROM links WHERE domain = ? AND keyword = ?"
-	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m)
+	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2"
+	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
 
-	if err != nil {
+	if errors.Is(err, sql.ErrNoRows) {
 		log.Error().Caller().Msg(err.Error())
-		return m, e.ErrInternalServerError
+		return m, e.ErrLinkNotFound
 	}
-
-	// link := fmt.Sprintf("%s/%s", domain, keyword)
-	// go increaseClick(c, s.kv, link, time.Now())
 
 	return
 }
