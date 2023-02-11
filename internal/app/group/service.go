@@ -102,20 +102,20 @@ func (s service) List(c *gin.Context, offset, limit int, sort, userID string) (t
 	log := logger.Logger(c)
 
 	sttCount, _ := s.db.PrepareContext(c, "SELECT COUNT(0) FROM group_user WHERE user_id = $1")
-	sttqData, _ := s.db.PrepareContext(c, `
-		SELECT g.* FROM groups g
-		INNER JOIN group_user gu ON gu.user_id = $1
-		ORDER BY g.id DESC OFFSET $2 LIMIT $3
-	`)
-
-	// TODO: add order by another field.
-	// queryData = queryData + queryFilter + fmt.Sprintf(" ORDER BY ID DESC OFFSET %d LIMIT %d ", r.Offset, r.Limit)
 
 	err = sttCount.QueryRowContext(c, userID).Scan(&total)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
+
+	// TODO: fix to use "sort" variable
+	sttqData, _ := s.db.PrepareContext(c, `
+		SELECT g.* FROM groups g
+		JOIN group_user gu ON gu.user_id = $1
+		GROUP BY g.id
+		ORDER BY g.id ASC OFFSET $2 LIMIT $3
+	`)
 
 	rows, err := sttqData.QueryContext(c, userID, offset, limit)
 	if err != nil {

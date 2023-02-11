@@ -60,8 +60,11 @@ func decodeList(c *gin.Context) (request listRequest, userID string, err error) 
 	if page == 0 {
 		page = 1
 	}
+
+	// TODO: rule for "sort" content
+	// like ASC or DESC
 	if sort == "" {
-		sort = "name ASC"
+		sort = "ASC"
 	}
 
 	switch {
