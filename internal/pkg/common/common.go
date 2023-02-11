@@ -105,7 +105,7 @@ func GetUserFromSession(c *gin.Context) (userID string, err error) {
 }
 
 func CreateRandomPassword() (password string) {
-	rand.Seed(time.Now().UnixNano())
+	rand.New(rand.NewSource(time.Now().UnixNano()))
 
 	letters := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
 	digits := "0123456789"
