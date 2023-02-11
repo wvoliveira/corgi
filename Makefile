@@ -39,3 +39,8 @@ pprof-graph:
 
 local-dep:
 	docker-compose -f deployments/container/docker-compose.yaml up
+
+
+local-env:
+	cp -f .env.example .env
+	export eval $(cat .env)

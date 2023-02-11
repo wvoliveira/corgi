@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -29,7 +30,10 @@ func Default() {
 
 	level := GetLogLevel()
 	zerolog.SetGlobalLevel(level)
-	// gin.SetMode(gin.ReleaseMode)
+
+	if level == zerolog.InfoLevel {
+		gin.SetMode(gin.ReleaseMode)
+	}
 }
 
 func GetLogLevel() zerolog.Level {
@@ -39,7 +43,8 @@ func GetLogLevel() zerolog.Level {
 		"info":  zerolog.InfoLevel,
 	}
 
-	configLogLevel := viper.GetString("app.log_level")
+	configLogLevel := viper.GetString("LOG_LEVEL")
+
 	level, exists := levels[configLogLevel]
 	if exists {
 		return level
