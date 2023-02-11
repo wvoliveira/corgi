@@ -1,7 +1,7 @@
 # Corgi
 
-[![Lint](https://github.com/wvoliveira/corgi/actions/workflows/server.lint.yml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/server.lint.yml)
-[![Test](https://github.com/wvoliveira/corgi/actions/workflows/server.test.yml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/server.test.yml)
+[![Lint](https://github.com/wvoliveira/corgi/actions/workflows/lint.yaml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/lint.yaml)
+[![Test](https://github.com/wvoliveira/corgi/actions/workflows/tests.yaml/badge.svg)](https://github.com/wvoliveira/corgi/actions/workflows/tests.yaml)
 
 Corgi é um sistema encurtador de links.
 
