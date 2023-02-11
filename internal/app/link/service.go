@@ -21,7 +21,7 @@ type Service interface {
 	Add(*gin.Context, model.Link) (model.Link, error)
 	FindByID(*gin.Context, string, string) (model.Link, error)
 	FindAll(*gin.Context, findAllRequest) (int64, int, []model.Link, error)
-	Update(*gin.Context, model.Link) (model.Link, error)
+	Update(*gin.Context, model.Link) error
 	Delete(*gin.Context, string, string) (err error)
 
 	NewHTTP(*gin.RouterGroup)
@@ -44,8 +44,6 @@ func NewService(db *sql.DB) Service {
 // Add create a new shortener link.
 func (s service) Add(c *gin.Context, payload model.Link) (m model.Link, err error) {
 	l := logger.Logger(c)
-
-	fmt.Println(payload)
 
 	if err = checkLink(payload); err != nil {
 		l.Error().Caller().Msg(err.Error())
@@ -129,7 +127,7 @@ func (s service) FindByID(c *gin.Context, linkID, userID string) (link model.Lin
 	defer rows.Close()
 
 	if rows.Next() {
-		err = rows.Scan(&link)
+		err = rows.Scan(&link.ID, &link.UserID, &link.CreatedAt, &link.UpdatedAt, &link.Domain, &link.Keyword, &link.URL, &link.Title, &link.Active)
 
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
@@ -154,7 +152,7 @@ func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages i
 	queryFilter := fmt.Sprintf(" WHERE user_id = '%s'", r.UserID)
 
 	if len(r.SearchText) >= 3 {
-		queryFilter = queryFilter + fmt.Sprintf(" AND domain LIKE %%%[1]s%% OR keyword LIKE %%%[1]s%% ", r.SearchText)
+		queryFilter = queryFilter + fmt.Sprintf(" AND domain LIKE '%%%[1]s%%' OR keyword LIKE '%%%[1]s%%' ", r.SearchText)
 	}
 
 	domain, keyword := common.SplitURL(r.ShortenedURL)
@@ -190,7 +188,6 @@ func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages i
 		}
 
 		links = append(links, link)
-		log.Info().Caller().Msg(fmt.Sprintf("link ID: %s", link.ID))
 	}
 
 	if err != nil {
@@ -204,15 +201,15 @@ func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages i
 }
 
 // Update change specific link by ID.
-func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err error) {
+func (s service) Update(c *gin.Context, payload model.Link) (err error) {
 	log := logger.Logger(c)
 
-	query := "UPDATE links SET title = ? WHERE id = ? AND user_id = ?"
-	err = s.db.QueryRowContext(c, query, link.Title, link.ID, link.UserID).Scan(&m)
+	query := "UPDATE links SET title = $1 WHERE id = $2 AND user_id = $3"
+	_, err = s.db.ExecContext(c, query, payload.Title, payload.ID, payload.UserID)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-		return m, e.ErrInternalServerError
+		return e.ErrInternalServerError
 	}
 
 	return
@@ -222,9 +219,8 @@ func (s service) Update(c *gin.Context, link model.Link) (m model.Link, err erro
 func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 	log := logger.Logger(c)
 
-	query := "UPDATE links SET active = false WHERE id = ? AND user_id = ?"
-
-	err = s.db.QueryRowContext(c, query, linkID, userID).Scan()
+	query := "UPDATE links SET active = false WHERE id = $1 AND user_id = $2"
+	_, err = s.db.ExecContext(c, query, linkID, userID)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
