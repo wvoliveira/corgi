@@ -3,8 +3,8 @@ package user
 import (
 	"database/sql"
 
-	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -21,13 +21,13 @@ type Service interface {
 }
 
 type service struct {
-	db *sql.DB
-	kv *badger.DB
+	db    *sql.DB
+	cache *redis.Client
 }
 
 // NewService creates a new user management service.
-func NewService(db *sql.DB, kv *badger.DB) Service {
-	return service{db, kv}
+func NewService(db *sql.DB, cache *redis.Client) Service {
+	return service{db, cache}
 }
 
 // Find get a shortener link from ID.

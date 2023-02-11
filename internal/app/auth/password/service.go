@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	"github.com/redis/go-redis/v9"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -25,13 +25,13 @@ type Service interface {
 
 type service struct {
 	// TODO: still use cache or remove?
-	db *sql.DB
-	kv *badger.DB
+	db    *sql.DB
+	cache *redis.Client
 }
 
 // NewService creates a new authentication service.
-func NewService(db *sql.DB, kv *badger.DB) Service {
-	return service{db, kv}
+func NewService(db *sql.DB, cache *redis.Client) Service {
+	return service{db, cache}
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.

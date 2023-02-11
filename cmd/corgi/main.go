@@ -35,7 +35,7 @@ func init() {
 
 func main() {
 	db := database.NewSQL()
-	kv := database.NewKV()
+	kv := database.NewCache()
 
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.

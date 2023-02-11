@@ -3,9 +3,11 @@ package short
 import (
 	"database/sql"
 	"errors"
+	"fmt"
+	"time"
 
-	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -20,18 +22,30 @@ type Service interface {
 }
 
 type service struct {
-	db *sql.DB
-	kv *badger.DB
+	db    *sql.DB
+	cache *redis.Client
 }
 
 // NewService creates a new public service.
-func NewService(db *sql.DB, kv *badger.DB) Service {
-	return service{db, kv}
+func NewService(db *sql.DB, cache *redis.Client) Service {
+	return service{db, cache}
 }
 
 // Find get a shortener link from keyword.
 func (s service) Find(c *gin.Context, domain, keyword string) (m model.Link, err error) {
 	log := logger.Logger(c)
+
+	log.Info().Caller().Msg("Trying to collect data from cache")
+	key := fmt.Sprintf("link_%s_%s", domain, keyword)
+	val, err := s.cache.Get(c, key).Result()
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+	} else {
+		log.Info().Caller().Msg("OK, I gotten from cache!")
+		m.URL = val
+		return
+	}
 
 	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2"
 	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
@@ -39,6 +53,13 @@ func (s service) Find(c *gin.Context, domain, keyword string) (m model.Link, err
 	if errors.Is(err, sql.ErrNoRows) {
 		log.Error().Caller().Msg(err.Error())
 		return m, e.ErrLinkNotFound
+	}
+
+	status := s.cache.Set(c, key, m.URL, 10*time.Minute)
+	err = status.Err()
+
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 
 	return
