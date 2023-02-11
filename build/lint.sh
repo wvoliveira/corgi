@@ -26,7 +26,7 @@ test -x "$(which golangci-lint)" || wget -O- -nv https://raw.githubusercontent.c
 cd - >/dev/null
 
 echo -n "Running golangci-lint: "
-ERRS=$(golangci-lint run "$@" 2>&1 || true)
+ERRS=$(./bin/golangci-lint run "$@" 2>&1 || true)
 if [ -n "${ERRS}" ]; then
     echo "FAIL"
     echo "${ERRS}"
