@@ -149,7 +149,14 @@ func (s service) FindByID(c *gin.Context, linkID, userID string) (link model.Lin
 func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages int, links []model.Link, err error) {
 	log := logger.Logger(c)
 
-	query := fmt.Sprintf("SELECT count(*) FROM links WHERE user_id = %s", r.UserID)
+	query := fmt.Sprintf("SELECT COUNT(0) FROM links")
+	err = s.db.QueryRowContext(c, query).Scan(&total)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	query = fmt.Sprintf("SELECT * FROM links WHERE user_id = '%s'", r.UserID)
 	// rows, err := s.db.QueryContext(c, query, r.UserID, r.Offset, r.Limit)
 
 	if len(r.SearchText) >= 3 {
@@ -158,11 +165,13 @@ func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages i
 
 	domain, keyword := common.SplitURL(r.ShortenedURL)
 	if domain != "" && keyword != "" {
-		query = query + fmt.Sprintf(" AND domain = %s AND keyword = %s", domain, keyword)
+		query = query + fmt.Sprintf(" AND domain = '%s' AND keyword = '%s'", domain, keyword)
 	}
 
 	// TODO: add order by another field.
-	query = query + fmt.Sprintf(" ORDER BY created_at LIMIT %d OFFSET %d", r.Limit, r.Offset)
+	query = query + fmt.Sprintf(" ORDER BY ID DESC OFFSET %d LIMIT %d", r.Offset, r.Limit)
+
+	fmt.Println(query)
 
 	rows, err := s.db.QueryContext(c, query)
 	if err != nil {

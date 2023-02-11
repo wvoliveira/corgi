@@ -2,10 +2,6 @@
 .idea
 .vscode
 
-# Frontend export
-cmd/corgi/web/*
-!cmd/corgi/web/.keep
-
 # Binaries
 corgi
 
