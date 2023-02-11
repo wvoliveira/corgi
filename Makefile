@@ -4,7 +4,7 @@ export NEXT_TELEMETRY_DISABLED := 1
 
 .PHONY: build
 build: build-web
-	go build -o corgi ./cmd/corgi/*.go
+	go build -ldflags "-s -w" -o corgi ./cmd/corgi/*.go
 
 
 .PHONY: build-web
