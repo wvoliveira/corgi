@@ -2,8 +2,6 @@ package user
 
 import (
 	"database/sql"
-	"fmt"
-	"time"
 
 	"github.com/dgraph-io/badger"
 	"github.com/gin-gonic/gin"
@@ -15,7 +13,7 @@ import (
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
 	Find(*gin.Context, string) (model.User, error)
-	Update(*gin.Context, model.User) (model.User, error)
+	Update(*gin.Context, model.User) error
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPFind(*gin.Context)
@@ -41,11 +39,12 @@ func (s service) Find(c *gin.Context, userID string) (user model.User, err error
 		return
 	}
 
-	query := "SELECT * FROM users WHERE id = ?"
-	err = s.db.QueryRowContext(c, query, userID).Scan(user)
+	query := "SELECT * FROM users WHERE id = $1"
+	err = s.db.QueryRowContext(c, query, userID).Scan(
+		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Name, &user.Role, &user.Active)
 
 	if err != nil {
-		log.Info().Caller().Msg(fmt.Sprintf("the user with user_id \"%s\" was not found", userID))
+		log.Error().Caller().Msg(err.Error())
 		return user, e.ErrUserNotFound
 	}
 
@@ -58,16 +57,16 @@ func (s service) Find(c *gin.Context, userID string) (user model.User, err error
 }
 
 // Update change specific link by ID.
-func (s service) Update(c *gin.Context, req model.User) (user model.User, err error) {
+func (s service) Update(c *gin.Context, req model.User) (err error) {
 	log := logger.Logger(c.Request.Context())
 
-	if req.ID == "anonymous" {
-		return user, e.ErrUnauthorized
+	if req.ID == "0" {
+		return e.ErrUnauthorized
 	}
 
 	// TODO: update all values
-	query := "UPDATE users SET updated_at = ?, name = ? WHERE id = ?"
-	_, err = s.db.ExecContext(c, query, time.Now(), req.Name, req.ID)
+	query := "UPDATE users SET name = $1 WHERE id = $2"
+	_, err = s.db.ExecContext(c, query, req.Name, req.ID)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())

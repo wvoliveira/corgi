@@ -54,7 +54,6 @@ func (s service) HTTPFind(c *gin.Context) {
 }
 
 func (s service) HTTPUpdate(c *gin.Context) {
-
 	user, err := decodeUpdate(c)
 
 	if err != nil {
@@ -62,19 +61,12 @@ func (s service) HTTPUpdate(c *gin.Context) {
 		return
 	}
 
-	user, err = s.Update(c, model.User{ID: user.ID, Name: user.Name})
+	err = s.Update(c, model.User{ID: user.ID, Name: user.Name})
 
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	// TODO: fix this.
-	resp := updateResponse{
-		// UpdatedAt: user.UpdatedAt,
-		Name: user.Name,
-		Err:  err,
-	}
-
-	response.Default(c, resp, "", http.StatusOK)
+	response.Default(c, nil, "", http.StatusOK)
 }

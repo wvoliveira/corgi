@@ -7,19 +7,19 @@ import (
 
 // User represents a user info.
 type User struct {
-	ID        string       `json:"id" gorm:"primaryKey;autoIncrement:false"`
+	ID        string       `json:"id"`
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt sql.NullTime `json:"updated_at"`
 
 	Name   string `json:"name"`
 	Role   string `json:"role"`
-	Active *bool  `json:"active" gorm:"default:true"`
+	Active bool   `json:"active"`
 
 	Identities []Identity `json:"identities,omitempty"`
 	Tokens     []Token    `json:"tokens,omitempty"`
 	Links      []Link     `json:"links,omitempty"`
 
-	Tags []Tag `gorm:"many2many:user_tags;" json:"tags,omitempty"`
+	Tags []Tag `json:"tags,omitempty"`
 }
 
 type UserGoogle struct {

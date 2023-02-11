@@ -22,13 +22,14 @@ func decodeFind(c *gin.Context) (user model.User, err error) {
 }
 
 func decodeUpdate(c *gin.Context) (user model.User, err error) {
-	data, exists := c.Get("user")
+	session := sessions.Default(c)
+	v := session.Get("user")
 
-	if !exists {
-		return user, errors.New("impossible to get user from context")
+	if v == nil {
+		return user, errors.New("impossible to get user from session")
 	}
 
-	user = data.(model.User)
+	user = v.(model.User)
 
 	if err = json.NewDecoder(c.Request.Body).Decode(&user); err != nil {
 		return user, err
