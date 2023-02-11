@@ -18,7 +18,7 @@ Corgi é um sistema encurtador de links.
 
 Use sua própria infraestrutura para instalar esse encurtador de links. Com vários recursos que te trará mais informações sobre os seus usuários.
 
-## Instalar
+## Desenvolvimento local
 
 Requisitos:
 

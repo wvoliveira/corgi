@@ -10,3 +10,13 @@ web/package-lock.json
 configs/corgi.yaml
 
 .env
+
+/bin
+/.go
+/.push-*
+/.container-*
+/.dockerfile-*
+/.licenses*
+/.buildx-initialized
+/tools/.go
+/tools/bin
