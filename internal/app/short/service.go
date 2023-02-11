@@ -64,17 +64,3 @@ func (s service) Find(c *gin.Context, domain, keyword string) (m model.Link, err
 
 	return
 }
-
-// Log store a log metadata to database.
-func (s service) Log(c *gin.Context, payload model.LinkLog) (err error) {
-	// log := logger.Logger(c)
-
-	// err = s.db.Debug().Model(&model.LinkLog{}).Create(&payload).Error
-
-	// if err != nil {
-	// 	log.Error().Caller().Msg(err.Error())
-	// 	return e.ErrInternalServerError
-	// }
-
-	return
-}

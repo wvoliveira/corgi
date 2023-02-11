@@ -4,7 +4,6 @@ package database
 
 import (
 	"database/sql"
-	"fmt"
 
 	"github.com/spf13/viper"
 
@@ -27,7 +26,6 @@ func NewSQL() (db *sql.DB) {
 // NewKV create a cache/redis database object.
 func NewCache() (db *redis.Client) {
 	datasource := viper.GetString("CACHE_URL")
-	fmt.Println(datasource)
 	opt, err := redis.ParseURL(datasource)
 
 	if err != nil {

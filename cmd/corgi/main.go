@@ -14,6 +14,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
 	"github.com/wvoliveira/corgi/internal/app/clicks"
+	"github.com/wvoliveira/corgi/internal/app/group"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/short"
@@ -102,6 +103,12 @@ func main() {
 	{
 		// User management service. Like profile view and edit.
 		service := user.NewService(db, kv)
+		service.NewHTTP(apiRouter)
+	}
+
+	{
+		// Group management service. Like create group, add users, etc.
+		service := group.NewService(db)
 		service.NewHTTP(apiRouter)
 	}
 
