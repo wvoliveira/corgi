@@ -18,3 +18,5 @@ configs/corgi.yaml
 /.dockerfile-*
 /.licenses*
 /.buildx-initialized
+/tools/.go
+/tools/bin
