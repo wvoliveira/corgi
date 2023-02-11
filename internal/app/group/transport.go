@@ -34,16 +34,10 @@ func (s service) HTTPAdd(c *gin.Context) {
 		return
 	}
 
-	var userIDs []string
-	for _, user := range group.Users {
-		userIDs = append(userIDs, user.ID)
-	}
-
 	resp := addResponse{
 		Name:        group.Name,
 		DisplayName: group.DisplayName,
 		Description: group.Description,
-		UserIDs:     userIDs,
 	}
 
 	response.Default(c, resp, "", http.StatusOK)

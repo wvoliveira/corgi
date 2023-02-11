@@ -3,10 +3,9 @@ package group
 import "github.com/wvoliveira/corgi/internal/pkg/model"
 
 type addResponse struct {
-	Name        string   `json:"name"`
-	DisplayName string   `json:"display_name"`
-	Description string   `json:"description"`
-	UserIDs     []string `json:"user_ids"`
+	Name        string `json:"name"`
+	DisplayName string `json:"display_name"`
+	Description string `json:"description"`
 }
 
 type listResponse struct {

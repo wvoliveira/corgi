@@ -46,7 +46,6 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 	group.ID = ulid.Make().String()
 	group.CreatedBy = userID
 	group.OwnerID = userID
-	group.Users = append(group.Users, model.User{ID: userID})
 
 	tx, err := s.db.BeginTx(c, &sql.TxOptions{})
 	if err != nil {
@@ -54,7 +53,9 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 		return
 	}
 
-	// TODO: create a relation many to many and fix this query.
+	// TODO:
+	// 	- create a relation many to many and fix this query.
+	// 	- check error when rollback
 	stmt, err := tx.PrepareContext(c,
 		"INSERT INTO groups(id, name, display_name, description, created_by, owner_id) VALUES($1, $2, $3, $4, $5, $6)",
 	)
@@ -64,15 +65,10 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 		return
 	}
 
-	_, err = stmt.ExecContext(c, group.ID, group.Name, group.DisplayName, group.Description, group.CreatedAt, group.OwnerID)
+	_, err = stmt.ExecContext(c, group.ID, group.Name, group.DisplayName, group.Description, group.CreatedBy, group.OwnerID)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-
-		err = tx.Rollback()
-		if err != nil {
-			log.Error().Caller().Msg(err.Error())
-		}
-
+		_ = tx.Rollback()
 		return
 	}
 
@@ -85,12 +81,7 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 	_, err = stmt.ExecContext(c, group.ID, userID)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-
-		err = tx.Rollback()
-		if err != nil {
-			log.Error().Caller().Msg(err.Error())
-		}
-
+		_ = tx.Rollback()
 		return
 	}
 
@@ -98,12 +89,7 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-
-		err = tx.Rollback()
-		if err != nil {
-			log.Error().Caller().Msg(err.Error())
-		}
-
+		_ = tx.Rollback()
 		return
 	}
 

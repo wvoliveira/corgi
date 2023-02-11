@@ -4,8 +4,15 @@ package database
 
 import (
 	"database/sql"
+	"fmt"
+	"os"
 
+	"github.com/oklog/ulid/v2"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"github.com/wvoliveira/corgi/internal/pkg/common"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"golang.org/x/crypto/bcrypt"
 
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
@@ -33,4 +40,90 @@ func NewCache() (db *redis.Client) {
 	}
 
 	return redis.NewClient(opt)
+}
+
+func CreateUserAdmin(db *sql.DB) {
+	user := model.User{
+		ID:   ulid.Make().String(),
+		Name: "Administrator",
+		Role: "admin",
+	}
+
+	identity := model.Identity{
+		ID:       ulid.Make().String(),
+		UserID:   user.ID,
+		Provider: "username",
+		UID:      "admin",
+	}
+
+	// Check if provider and UID exists.
+	var id string
+	_ = db.QueryRow("SELECT id FROM identities WHERE provider = $1 AND uid = $2", identity.Provider, identity.UID).Scan(&id)
+	if id != "" {
+		return
+	}
+
+	plainTextPassword := common.CreateRandomPassword()
+
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(plainTextPassword), 8)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		os.Exit(2)
+	}
+
+	identity.Password = string(hashedPassword)
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		os.Exit(2)
+	}
+
+	_, err = tx.Exec(`INSERT INTO users(id, name, role) VALUES($1, $2, $3)`,
+		user.ID, user.Name, user.Role)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+
+		err = tx.Rollback()
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+		}
+		return
+	}
+
+	_, err = tx.Exec(`INSERT INTO identities(id, user_id, provider, uid, password) 
+	VALUES($1, $2, $3, $4, $5)`,
+		identity.ID,
+		identity.UserID,
+		identity.Provider,
+		identity.UID,
+		identity.Password,
+	)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+
+		err = tx.Rollback()
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+		}
+		return
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	message := fmt.Sprintf(`
+======================================
+User "admin" created with successfull!
+Username: admin
+Password: %s
+======================================
+	`, plainTextPassword)
+
+	log.Info().Caller().Msg(message)
 }

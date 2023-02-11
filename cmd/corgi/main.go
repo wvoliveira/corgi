@@ -38,6 +38,10 @@ func main() {
 	db := database.NewSQL()
 	kv := database.NewCache()
 
+	// Create user Admin if not exists.
+	// You can desactive this user after installation!
+	database.CreateUserAdmin(db)
+
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
 	router := gin.Default()
@@ -137,5 +141,5 @@ func main() {
 		service.NewHTTP(apiRouter)
 	}
 
-	server.Graceful(router, viper.GetInt("server_http_port"))
+	server.Graceful(router, viper.GetInt("SERVER_HTTP_PORT"))
 }

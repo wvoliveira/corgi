@@ -9,7 +9,7 @@ type Identity struct {
 	LastLogin time.Time `json:"last_login"`
 
 	Provider string `json:"provider"` // phone, email, wechat, github...
-	UID      string `json:"uid"`      // e-mail, google id, facebook id, etc
+	UID      string `json:"uid"`      // username, e-mail, google id, facebook id, etc
 	Password string `json:"password"`
 	UserID   string `json:"user_id"`
 

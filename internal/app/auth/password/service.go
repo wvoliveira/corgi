@@ -39,8 +39,8 @@ func (s service) Login(c *gin.Context, identity model.Identity) (user model.User
 	log := logger.Logger(c.Request.Context())
 	idenDB := model.Identity{}
 
-	query := "SELECT user_id, password FROM identities WHERE provider = $1 AND uid = $2"
-	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&idenDB.UserID, &idenDB.Password)
+	query := "SELECT user_id, password FROM identities WHERE provider IN ('username', 'email') AND uid = $1"
+	err = s.db.QueryRowContext(c, query, identity.UID).Scan(&idenDB.UserID, &idenDB.Password)
 
 	if err != nil {
 		log.Warn().Caller().Msg(err.Error())

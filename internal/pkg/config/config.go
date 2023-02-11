@@ -20,6 +20,10 @@ func New() {
 	viper.SetDefault("DOMAIN_DEFAULT", "localhost:8081")
 	viper.SetDefault("DOMAIN_ALTERNATIVES", []string{})
 
+	// We can define config variables with prefix CORGI
+	// Ex.:
+	// 	- CORGI_LOG_LEVEL=debug
+	//  - CORGI_SERVER_HTTP_PORT=3000
 	viper.SetEnvPrefix("CORGI")
 	viper.AutomaticEnv()
 }
