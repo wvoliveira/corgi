@@ -3,9 +3,11 @@ package group
 import (
 	"database/sql"
 	"errors"
+	"math"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
@@ -97,47 +99,51 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 }
 
 func (s service) List(c *gin.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []model.Group, err error) {
-	// l := logger.Logger(c)
-	// pages = 1
+	log := logger.Logger(c)
 
-	// // TODO: make a single transaction to get total and list of items.
-	// // For some reason it's a bit complex to make join with gorm
-	// // or my brain is not ready for this.
-	// queryTotal := `SELECT COUNT()
-	// 	FROM groups
-	// 	JOIN user_groups
-	// 		ON user_groups.group_id = groups.id
-	// 		AND user_groups.user_id = ?
-	// `
-	// err = s.db.Raw(queryTotal, userID).Scan(&total).Error
-	// if err == gorm.ErrRecordNotFound {
-	// 	return
-	// }
+	sttCount, _ := s.db.PrepareContext(c, "SELECT COUNT(0) FROM group_user WHERE user_id = $1")
+	sttqData, _ := s.db.PrepareContext(c, `
+		SELECT g.* FROM groups g
+		INNER JOIN group_user gu ON gu.user_id = $1
+		ORDER BY g.id DESC OFFSET $2 LIMIT $3
+	`)
 
-	// if err != nil {
-	// 	l.Error().Caller().Msg(err.Error())
-	// 	return
-	// }
+	// TODO: add order by another field.
+	// queryData = queryData + queryFilter + fmt.Sprintf(" ORDER BY ID DESC OFFSET %d LIMIT %d ", r.Offset, r.Limit)
 
-	// queryItems := fmt.Sprintf(`SELECT groups.*
-	// 	FROM groups
-	// 	JOIN user_groups
-	// 		ON user_groups.group_id = groups.id
-	// 		AND user_groups.user_id = ?
-	// 	ORDER BY %s
-	// 	LIMIT ? OFFSET ?
-	// `, sort)
-	// err = s.db.Raw(queryItems, userID, limit, offset).Scan(&groups).Error
-	// if err == gorm.ErrRecordNotFound {
-	// 	return
-	// }
+	err = sttCount.QueryRowContext(c, userID).Scan(&total)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
 
-	// if err != nil {
-	// 	l.Error().Caller().Msg(err.Error())
-	// 	return
-	// }
+	rows, err := sttqData.QueryContext(c, userID, offset, limit)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
 
-	// pages = int(math.Ceil(float64(total) / float64(limit)))
+	defer rows.Close()
+	var group model.Group
+
+	for rows.Next() {
+		err = rows.Scan(&group.ID, &group.CreatedAt, &group.UpdatedAt, &group.Name, &group.DisplayName, &group.Description, &group.CreatedBy, &group.OwnerID)
+
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+
+		groups = append(groups, group)
+	}
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return total, pages, groups, e.ErrInternalServerError
+	}
+
+	pages = int(math.Ceil(float64(total) / float64(limit)))
+
 	return
 }
 
