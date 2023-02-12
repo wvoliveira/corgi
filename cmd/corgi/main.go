@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"net/http"
 	"strings"
 
@@ -12,7 +13,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
-	"github.com/wvoliveira/corgi/internal/app/clicks"
+	"github.com/wvoliveira/corgi/internal/app/click"
 	"github.com/wvoliveira/corgi/internal/app/group"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
@@ -22,6 +23,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	ratelimit "github.com/wvoliveira/corgi/internal/pkg/rate-limit"
 	"github.com/wvoliveira/corgi/internal/pkg/server"
 	"github.com/wvoliveira/corgi/web"
@@ -30,6 +32,9 @@ import (
 func init() {
 	config.New()
 	logger.Default()
+
+	// Used as type for security session.
+	gob.Register(model.User{})
 }
 
 func main() {
@@ -112,13 +117,13 @@ func main() {
 
 	{
 		// Clicks service. Metrics for each link.
-		service := clicks.NewService(db, cache)
+		service := click.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Healthcheck endpoints.
-		service := health.NewService(db, constants.VERSION)
+		service := health.NewService(db, cache, constants.VERSION)
 		service.NewHTTP(apiRouter)
 	}
 

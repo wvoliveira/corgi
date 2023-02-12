@@ -2,40 +2,42 @@ CREATE TABLE IF NOT EXISTS users(
 	id VARCHAR (30) PRIMARY KEY,
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP,
+
 	name VARCHAR (100) NOT NULL,
 	role VARCHAR (50) NOT NULL,
 	active BOOLEAN DEFAULT true
 );
 
-INSERT INTO users(id, name, role, active)
-VALUES('0', 'Anonymous', 'anonymous', false);
+INSERT INTO users(id, name, role, active) VALUES('0', 'Anonymous', 'anonymous', false);
 
 CREATE TABLE IF NOT EXISTS identities(
-	id VARCHAR (30) PRIMARY KEY,
-	user_id VARCHAR (30) NOT NULL,
+	id         VARCHAR (30) PRIMARY KEY,
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP,
+
 	last_login TIMESTAMP,
-	provider VARCHAR (30),
-	-- phone, email, wechat, github...
-	uid VARCHAR (30),
-	-- e-mail, google id, facebook id, etc
+	provider VARCHAR (30), -- phone, email, wechat, github...
+	uid VARCHAR (30), 		 -- e-mail, google id, facebook id, etc
 	password VARCHAR (300),
 	verified BOOLEAN DEFAULT false,
 	confirmed_at TIMESTAMP,
+
+	user_id VARCHAR (30) NOT NULL,
 	CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
 CREATE TABLE IF NOT EXISTS links(
 	id VARCHAR (30) PRIMARY KEY,
-	user_id VARCHAR (30) NOT NULL,
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP,
+
 	domain VARCHAR (100) NOT NULL,
 	keyword VARCHAR (100) NOT NULL,
 	url VARCHAR (300) NOT NULL,
 	title VARCHAR (100),
 	active BOOLEAN DEFAULT true,
+
+	user_id VARCHAR (30) NOT NULL,
 	CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
@@ -46,11 +48,13 @@ CREATE TABLE IF NOT EXISTS groups(
 	id VARCHAR (30) PRIMARY KEY,
 	created_at TIMESTAMP DEFAULT NOW(),
 	updated_at TIMESTAMP,
+
 	name VARCHAR (100) NOT NULL,
 	display_name VARCHAR (100),
 	description VARCHAR (300),
 	created_by VARCHAR (30) NOT NULL,
 	owner_id VARCHAR (30) NOT NULL,
+
 	CONSTRAINT fk_created_by FOREIGN KEY(created_by) REFERENCES users(id),
 	CONSTRAINT fk_owner_id FOREIGN KEY(owner_id) REFERENCES users(id)
 );
@@ -65,3 +69,17 @@ CREATE TABLE group_user(
 
 CREATE INDEX idx_group_user_group_id ON group_user(group_id);
 CREATE INDEX idx_group_user_user_id ON group_user(user_id);
+
+CREATE TABLE IF NOT EXISTS groups_invites(
+	id VARCHAR (30) PRIMARY KEY,
+	created_at TIMESTAMP DEFAULT NOW(),
+	updated_at TIMESTAMP,
+
+	group_id VARCHAR (30) NOT NULL,
+	user_id VARCHAR (30) NOT NULL,
+	invited_by VARCHAR (30) NOT NULL, -- invited by user_id
+
+	CONSTRAINT fk_group_id FOREIGN KEY(group_id) REFERENCES groups(id),
+	CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id),
+	CONSTRAINT fk_invited_by FOREIGN KEY(invited_by) REFERENCES users(id)
+);

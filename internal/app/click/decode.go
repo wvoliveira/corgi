@@ -1,4 +1,4 @@
-package clicks
+package click
 
 import (
 	"strings"
