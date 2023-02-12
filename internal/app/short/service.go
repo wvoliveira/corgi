@@ -47,7 +47,7 @@ func (s service) Find(c *gin.Context, domain, keyword string) (m model.Link, err
 		return
 	}
 
-	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2"
+	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2 AND active = true"
 	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
 
 	if errors.Is(err, sql.ErrNoRows) {

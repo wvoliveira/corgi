@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
@@ -219,8 +220,8 @@ func (s service) Update(c *gin.Context, payload model.Link) (err error) {
 func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 	log := logger.Logger(c)
 
-	query := "UPDATE links SET active = false WHERE id = $1 AND user_id = $2"
-	_, err = s.db.ExecContext(c, query, linkID, userID)
+	query := "UPDATE links SET active = false, updated_at = $1 WHERE id = $2 AND user_id = $3"
+	_, err = s.db.ExecContext(c, query, time.Now(), linkID, userID)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
