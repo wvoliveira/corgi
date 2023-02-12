@@ -36,7 +36,7 @@ func init() {
 
 func main() {
 	db := database.NewSQL()
-	kv := database.NewCache()
+	cache := database.NewCache()
 
 	// Create user Admin if not exists.
 	// You can desactive this user after installation!
@@ -88,7 +88,7 @@ func main() {
 
 	{
 		// Auth password service.
-		service := password.NewService(db, kv)
+		service := password.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -106,7 +106,7 @@ func main() {
 
 	{
 		// User management service. Like profile view and edit.
-		service := user.NewService(db, kv)
+		service := user.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -118,13 +118,13 @@ func main() {
 
 	{
 		// Central business service: manage link shortener.
-		service := link.NewService(db)
+		service := link.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Clicks service. Metrics for each link.
-		service := clicks.NewService(db, kv)
+		service := clicks.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -137,7 +137,7 @@ func main() {
 	{
 		// Central business service: redirect short link.
 		// Note: this service is on root router.
-		service := short.NewService(db, kv)
+		service := short.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
