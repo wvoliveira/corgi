@@ -444,7 +444,6 @@ dev-dep:
 
 dev-env:
 	cp -f .env.example .env
-	export eval $(cat .env)
 
 dev-run:
 	go run cmd/corgi/*

@@ -16,7 +16,7 @@ import (
 // Service encapsulates the authentication logic.
 type Service interface {
 	Login(*gin.Context, model.Identity) (model.User, error)
-	Register(*gin.Context, model.Identity) error
+	Register(*gin.Context, model.Identity, model.User) error
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPLogin(c *gin.Context)
@@ -65,13 +65,13 @@ func (s service) Login(c *gin.Context, identity model.Identity) (user model.User
 }
 
 // Register a new user to our database.
-func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
-	log := logger.Logger(c.Request.Context())
-	user := model.User{}
-	identityDB := model.Identity{}
+func (s service) Register(c *gin.Context, identity model.Identity, user model.User) (err error) {
+	log := logger.Logger(c)
 
-	query := "SELECT * FROM identities WHERE provider = $1 AND uid = $1"
-	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&identityDB)
+	idenDB := model.Identity{}
+
+	query := "SELECT * FROM identities WHERE provider = $1 AND uid = $2"
+	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&idenDB)
 
 	if err == nil {
 		log.Warn().Caller().Msg(fmt.Sprintf("provider '%s' and uid '%s' already exists", identity.Provider, identity.UID))

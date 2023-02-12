@@ -25,8 +25,6 @@ func decodeLogin(c *gin.Context) (req loginRequest, err error) {
 }
 
 func decodeRegister(c *gin.Context) (req registerRequest, err error) {
-	if err = json.NewDecoder(c.Request.Body).Decode(&req); err != nil {
-		return req, err
-	}
-	return req, nil
+	err = json.NewDecoder(c.Request.Body).Decode(&req)
+	return req, err
 }
