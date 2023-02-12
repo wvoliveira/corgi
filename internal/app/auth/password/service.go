@@ -70,11 +70,19 @@ func (s service) Register(c *gin.Context, identity model.Identity, user model.Us
 
 	idenDB := model.Identity{}
 
-	query := "SELECT * FROM identities WHERE provider = $1 AND uid = $2"
-	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&idenDB)
+	query := "SELECT id FROM identities WHERE provider = $1 AND uid = $2"
+	err = s.db.QueryRowContext(c, query, identity.Provider, identity.UID).Scan(&idenDB.ID)
 
-	if err == nil {
-		log.Warn().Caller().Msg(fmt.Sprintf("provider '%s' and uid '%s' already exists", identity.Provider, identity.UID))
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Warn().Caller().Msg(err.Error())
+			return
+		}
+	}
+
+	if idenDB.ID != "" {
+		message := fmt.Sprintf("provider '%s' and uid '%s' already exists", identity.Provider, identity.UID)
+		log.Warn().Caller().Msg(message)
 		return e.ErrAuthPasswordUserAlreadyExists
 	}
 
