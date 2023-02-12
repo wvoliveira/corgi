@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	"github.com/redis/go-redis/v9"
 	"github.com/rs/zerolog/log"
 	"github.com/teris-io/shortid"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
@@ -33,12 +35,13 @@ type Service interface {
 }
 
 type service struct {
-	db *sql.DB
+	db    *sql.DB
+	cache *redis.Client
 }
 
 // NewService creates a new authentication service.
-func NewService(db *sql.DB) Service {
-	return service{db}
+func NewService(db *sql.DB, cache *redis.Client) Service {
+	return service{db, cache}
 }
 
 // Add create a new shortener link.
@@ -219,8 +222,34 @@ func (s service) Update(c *gin.Context, payload model.Link) (err error) {
 func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 	log := logger.Logger(c)
 
-	query := "UPDATE links SET active = false WHERE id = $1 AND user_id = $2"
-	_, err = s.db.ExecContext(c, query, linkID, userID)
+	link := model.Link{}
+
+	query := "SELECT id, domain, keyword FROM links WHERE id = $1 AND user_id = $2 AND active = true"
+	err = s.db.QueryRowContext(c, query, linkID, userID).Scan(&link.ID, &link.Domain, &link.Keyword)
+
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Error().Caller().Msg(err.Error())
+			return e.ErrInternalServerError
+		}
+	}
+
+	if link.ID == "" {
+		message := fmt.Sprintf("Link enable with ID = '%s' not found", linkID)
+		log.Info().Caller().Msg(message)
+		return e.ErrLinkNotFound
+	}
+
+	key := fmt.Sprintf("link_%s_%s", link.Domain, link.Keyword)
+	_, err = s.cache.Del(c, key).Result()
+
+	// Keep going on error from cache.
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+	}
+
+	query = "UPDATE links SET active = false, updated_at = $1 WHERE id = $2 AND user_id = $3"
+	_, err = s.db.ExecContext(c, query, time.Now(), linkID, userID)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())

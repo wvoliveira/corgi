@@ -29,25 +29,20 @@ Requisitos:
 Suba as dependências com o Docker (PostgreSQL e Redis):
 
 ```bash
-make local-dep
+make dev-dep
 ```
 
 Copie as variáveis de ambiente e carregue no terminal:
 
 ```bash
-make local-env
+make dev-env
+export $(cat .env)
 ```
 
-Compile você mesmo:
+Inicie a API:
 
 ```bash
-make
-```
-
-E execute:
-
-```bash
-./corgi
+make dev-run
 ```
 
 Há uma collection do Postman na pasta docs\/

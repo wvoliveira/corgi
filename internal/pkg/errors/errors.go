@@ -121,10 +121,12 @@ func codeFrom(err error) int {
 	case ErrNotFound, ErrLinkNotFound, ErrGroupNotFound:
 		return http.StatusNotFound
 
-	case ErrRequestNeedBody, ErrInconsistentIDs, ErrLinkAlreadyExists, ErrAlreadyExists,
-		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkKeywordNotPermitted, ErrLinkInvalidURL,
-		ErrAnonymousURLAlreadyExists:
+	case ErrRequestNeedBody, ErrInconsistentIDs,
+		ErrLinkInvalidDomain, ErrLinkInvalidKeyword, ErrLinkKeywordNotPermitted, ErrLinkInvalidURL:
 		return http.StatusBadRequest
+
+	case ErrAlreadyExists, ErrLinkAlreadyExists, ErrAnonymousURLAlreadyExists, ErrAuthPasswordUserAlreadyExists:
+		return http.StatusConflict
 
 	case ErrUnauthorized, ErrNoTokenFound, ErrParseToken, ErrTokenExpired:
 		return http.StatusUnauthorized

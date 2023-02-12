@@ -35,23 +35,29 @@ func NewService(db *sql.DB, cache *redis.Client) Service {
 func (s service) Find(c *gin.Context, domain, keyword string) (m model.Link, err error) {
 	log := logger.Logger(c)
 
-	log.Info().Caller().Msg("Trying to collect data from cache")
 	key := fmt.Sprintf("link_%s_%s", domain, keyword)
+
+	log.Info().Caller().Msg("Trying to collect data from cache")
 	val, err := s.cache.Get(c, key).Result()
 
 	if err != nil {
-		log.Error().Caller().Msg(err.Error())
-	} else {
+		if !errors.Is(err, redis.Nil) {
+			log.Error().Caller().Msg(err.Error())
+		}
+	}
+
+	if val != "" {
 		log.Info().Caller().Msg("OK, I gotten from cache!")
 		m.URL = val
 		return
 	}
 
-	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2"
+	log.Info().Caller().Msg("No, link is not cached!")
+
+	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2 AND active = true"
 	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
 
 	if errors.Is(err, sql.ErrNoRows) {
-		log.Error().Caller().Msg(err.Error())
 		return m, e.ErrLinkNotFound
 	}
 

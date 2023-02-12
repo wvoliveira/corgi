@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/gob"
 	"net/http"
 	"strings"
 
@@ -23,7 +22,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
+	ratelimit "github.com/wvoliveira/corgi/internal/pkg/rate-limit"
 	"github.com/wvoliveira/corgi/internal/pkg/server"
 	"github.com/wvoliveira/corgi/web"
 )
@@ -31,12 +30,11 @@ import (
 func init() {
 	config.New()
 	logger.Default()
-	gob.Register(model.User{})
 }
 
 func main() {
 	db := database.NewSQL()
-	kv := database.NewCache()
+	cache := database.NewCache()
 
 	// Create user Admin if not exists.
 	// You can desactive this user after installation!
@@ -52,32 +50,22 @@ func main() {
 	router.Use(func(c *gin.Context) {
 		reqPath := c.Request.URL.Path
 
-		if reqPath == "/" {
+		if !strings.HasPrefix(reqPath, "/api") {
 			c.FileFromFS(reqPath, http.FS(web.DistFS))
-			c.Abort()
-		}
-
-		webPrefixPaths := []string{
-			"/_next", "/favicon.ico", "/search", "/login", "/register", "/settings", "/profile",
-		}
-
-		for _, path := range webPrefixPaths {
-
-			if strings.HasPrefix(reqPath, path) {
-				router.RedirectTrailingSlash = false
-
-				c.FileFromFS(reqPath, http.FS(web.DistFS))
-				c.Abort()
-				return
-			}
-
+			// c.Abort()
+			return
 		}
 	})
 
 	apiRouter := router.Group("/api")
 
 	if zerolog.GlobalLevel() == zerolog.DebugLevel {
-		server.AddPProf(router, apiRouter)
+		server.AddPProf(apiRouter)
+	} else {
+		// Dont enable some things with debug level.
+		// Middleware for rate limit.
+		ratelimit.NewMiddleware(router, cache)
+
 	}
 
 	{
@@ -88,7 +76,7 @@ func main() {
 
 	{
 		// Auth password service.
-		service := password.NewService(db, kv)
+		service := password.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -106,7 +94,7 @@ func main() {
 
 	{
 		// User management service. Like profile view and edit.
-		service := user.NewService(db, kv)
+		service := user.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -118,13 +106,13 @@ func main() {
 
 	{
 		// Central business service: manage link shortener.
-		service := link.NewService(db)
+		service := link.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Clicks service. Metrics for each link.
-		service := clicks.NewService(db, kv)
+		service := clicks.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -137,7 +125,7 @@ func main() {
 	{
 		// Central business service: redirect short link.
 		// Note: this service is on root router.
-		service := short.NewService(db, kv)
+		service := short.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 

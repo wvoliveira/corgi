@@ -75,8 +75,8 @@ func AddStoreSession(router *gin.Engine) {
 	router.Use(sessions.Sessions("session", store))
 }
 
-func AddPProf(r *gin.Engine, rg *gin.RouterGroup) {
-	pprof.Register(r)
+func AddPProf(rg *gin.RouterGroup) {
+	pprof.RouteRegister(rg)
 
 	// Debug service like env vars, pprof route, etc.
 	service := debug.NewService()

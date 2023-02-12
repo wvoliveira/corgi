@@ -60,7 +60,6 @@ func (s service) HTTPLogin(c *gin.Context) {
 }
 
 func (s service) HTTPRegister(c *gin.Context) {
-
 	dr, err := decodeRegister(c)
 
 	if err != nil {
@@ -68,11 +67,15 @@ func (s service) HTTPRegister(c *gin.Context) {
 		return
 	}
 
-	err = s.Register(c, model.Identity{
-		Provider: "email",
-		UID:      dr.Email,
-		Password: dr.Password,
-	})
+	err = s.Register(c,
+		model.Identity{
+			Provider: "email",
+			UID:      dr.Email,
+			Password: dr.Password,
+		},
+		model.User{
+			Name: dr.Name,
+		})
 
 	if err != nil {
 		e.EncodeError(c, err)
