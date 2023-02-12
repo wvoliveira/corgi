@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/gob"
 	"net/http"
 	"strings"
 
@@ -23,7 +22,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
+	ratelimit "github.com/wvoliveira/corgi/internal/pkg/rate-limit"
 	"github.com/wvoliveira/corgi/internal/pkg/server"
 	"github.com/wvoliveira/corgi/web"
 )
@@ -31,7 +30,6 @@ import (
 func init() {
 	config.New()
 	logger.Default()
-	gob.Register(model.User{})
 }
 
 func main() {
@@ -52,32 +50,22 @@ func main() {
 	router.Use(func(c *gin.Context) {
 		reqPath := c.Request.URL.Path
 
-		if reqPath == "/" {
+		if !strings.HasPrefix(reqPath, "/api") {
 			c.FileFromFS(reqPath, http.FS(web.DistFS))
-			c.Abort()
-		}
-
-		webPrefixPaths := []string{
-			"/_next", "/favicon.ico", "/search", "/login", "/register", "/settings", "/profile",
-		}
-
-		for _, path := range webPrefixPaths {
-
-			if strings.HasPrefix(reqPath, path) {
-				router.RedirectTrailingSlash = false
-
-				c.FileFromFS(reqPath, http.FS(web.DistFS))
-				c.Abort()
-				return
-			}
-
+			// c.Abort()
+			return
 		}
 	})
 
 	apiRouter := router.Group("/api")
 
 	if zerolog.GlobalLevel() == zerolog.DebugLevel {
-		server.AddPProf(router, apiRouter)
+		server.AddPProf(apiRouter)
+	} else {
+		// Dont enable some things with debug level.
+		// Middleware for rate limit.
+		ratelimit.NewMiddleware(router, cache)
+
 	}
 
 	{

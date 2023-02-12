@@ -20,3 +20,5 @@ configs/corgi.yaml
 /.buildx-initialized
 /tools/.go
 /tools/bin
+
+k6-output.json
