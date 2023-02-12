@@ -397,7 +397,7 @@ $(BUILD_DIRS):
 	mkdir -p $@
 
 clean: # @HELP removes built binaries and temporary files
-clean: container-clean bin-clean
+clean: container-clean bin-clean load-test-clean
 
 container-clean:
 	rm -rf .container-* .dockerfile-* .push-* .buildx-initialized $(LICENSES)
@@ -405,6 +405,9 @@ container-clean:
 bin-clean:
 	test -d .go && chmod -R u+w .go || true
 	rm -rf .go bin
+
+load-test-clean:
+	rm -fv k6-output.json
 
 help: # @HELP prints this message
 help:

@@ -3,14 +3,17 @@
 package database
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/oklog/ulid/v2"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
+	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/crypto/bcrypt"
 
@@ -20,11 +23,13 @@ import (
 
 // NewSQL create a sql database object.
 func NewSQL() (db *sql.DB) {
+	log := logger.Logger(context.TODO())
+
 	datasource := viper.GetString("DB_URL")
 	db, err := sql.Open("postgres", datasource)
 
 	if err != nil {
-		panic("failed to connect in sqlite database")
+		log.Fatal().Caller().Msg(fmt.Sprintf("failed to connect to database: %s", err.Error()))
 	}
 
 	return
@@ -32,14 +37,27 @@ func NewSQL() (db *sql.DB) {
 
 // NewKV create a cache/redis database object.
 func NewCache() (db *redis.Client) {
+	log := logger.Logger(context.TODO())
+
 	datasource := viper.GetString("CACHE_URL")
 	opt, err := redis.ParseURL(datasource)
 
+	opt.DialTimeout = 3 * time.Second // no time unit = seconds
+	opt.ReadTimeout = 6 * time.Second
+	opt.MaxRetries = 2
+
 	if err != nil {
-		panic(err)
+		log.Fatal().Caller().Msg(fmt.Sprintf("failed to connect to cache: %s", err.Error()))
 	}
 
-	return redis.NewClient(opt)
+	db = redis.NewClient(opt)
+	status := db.Ping(context.TODO())
+
+	if status.Err() != nil {
+		log.Fatal().Caller().Msg(fmt.Sprintf("failed to connect to cache: %s", status.Err().Error()))
+	}
+
+	return
 }
 
 func CreateUserAdmin(db *sql.DB) {
