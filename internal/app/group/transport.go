@@ -122,7 +122,7 @@ func (s service) HTTPInviteAdd(c *gin.Context) {
 
 	groupInvite := model.GroupInvite{GroupID: payload.GroupID, UserID: payload.UserID, InvitedBy: payload.InvitedBy}
 
-	groupInvite, err = s.InviteAdd(c, groupInvite)
+	_, err = s.InviteAdd(c, groupInvite)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
