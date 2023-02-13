@@ -12,4 +12,11 @@ type findAllResponse struct {
 	Err   error        `json:"error,omitempty"`
 }
 
-func (r findAllResponse) Error() error { return r.Err }
+type findByKeywordResponse struct {
+	URL string `json:"url"`
+}
+
+func encodeFindByKeyword(link model.Link) (r findByKeywordResponse) {
+	r.URL = link.URL
+	return
+}

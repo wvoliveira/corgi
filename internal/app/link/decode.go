@@ -47,6 +47,11 @@ type deleteRequest struct {
 	UserID  string `json:"user_id"`
 }
 
+type findFullURLRequest struct {
+	Domain  string `json:"-"`
+	Keyword string `json:"keyword"`
+}
+
 func decodeAdd(c *gin.Context) (r addRequest, err error) {
 
 	session := sessions.Default(c)
@@ -169,5 +174,16 @@ func decodeDelete(c *gin.Context) (r deleteRequest, err error) {
 	r.ID = linkID
 	r.UserID = v.(model.User).ID
 
+	return r, nil
+}
+
+func decodeFullURL(c *gin.Context) (r findFullURLRequest, err error) {
+	keyword := c.Param("keyword")
+	if keyword == "" {
+		return r, errors.New("impossible to get keyword from path")
+	}
+
+	r.Domain = c.Request.Host
+	r.Keyword = keyword
 	return r, nil
 }

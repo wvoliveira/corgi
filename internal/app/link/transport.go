@@ -17,11 +17,11 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 
 	r.OPTIONS("", nil)
 	r.POST("", s.HTTPAdd)
-	r.GET("/:id", s.HTTPFindByID)
-	r.GET("/status/:id", s.HTTPFindByID)
 	r.GET("", s.HTTPFindAll)
+	r.GET("/:id", s.HTTPFindByID)
 	r.PATCH("/:id", s.HTTPUpdate)
 	r.DELETE("/:id", s.HTTPDelete)
+	r.GET("/f/:keyword", s.HTTPFindFullURL)
 }
 
 func (s service) HTTPAdd(c *gin.Context) {
@@ -137,4 +137,23 @@ func (s service) HTTPDelete(c *gin.Context) {
 	}
 
 	response.Default(c, nil, "", http.StatusOK)
+}
+
+func (s service) HTTPFindFullURL(c *gin.Context) {
+	d, err := decodeFullURL(c)
+
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	link, err := s.FindFullURL(c, d.Domain, d.Keyword)
+
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	url := encodeFindByKeyword(link)
+	response.Default(c, url, "", http.StatusOK)
 }

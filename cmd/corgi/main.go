@@ -17,7 +17,6 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/group"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
-	"github.com/wvoliveira/corgi/internal/app/short"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
@@ -124,13 +123,6 @@ func main() {
 	{
 		// Healthcheck endpoints.
 		service := health.NewService(db, cache, constants.VERSION)
-		service.NewHTTP(apiRouter)
-	}
-
-	{
-		// Central business service: redirect short link.
-		// Note: this service is on root router.
-		service := short.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 

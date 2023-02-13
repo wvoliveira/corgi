@@ -25,6 +25,7 @@ type Service interface {
 	FindAll(*gin.Context, findAllRequest) (int64, int, []model.Link, error)
 	Update(*gin.Context, model.Link) error
 	Delete(*gin.Context, string, string) (err error)
+	FindFullURL(*gin.Context, string, string) (model.Link, error)
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPAdd(*gin.Context)
@@ -32,6 +33,7 @@ type Service interface {
 	HTTPFindAll(*gin.Context)
 	HTTPUpdate(*gin.Context)
 	HTTPDelete(*gin.Context)
+	HTTPFindFullURL(*gin.Context)
 }
 
 type service struct {
@@ -254,6 +256,51 @@ func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return e.ErrInternalServerError
+	}
+
+	return
+}
+
+// Find get a shortener link from keyword.
+func (s service) FindFullURL(c *gin.Context, domain, keyword string) (m model.Link, err error) {
+	log := logger.Logger(c)
+
+	key := fmt.Sprintf("link_%s_%s", domain, keyword)
+
+	log.Info().Caller().Msg("Trying to collect data from cache")
+	val, err := s.cache.Get(c, key).Result()
+
+	if err != nil {
+		if !errors.Is(err, redis.Nil) {
+			log.Error().Caller().Msg(err.Error())
+		}
+	}
+
+	if val != "" {
+		log.Info().Caller().Msg("OK, I gotten from cache!")
+		m.URL = val
+		return
+	}
+
+	log.Info().Caller().Msg("No, link is not cached!")
+
+	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2 AND active = true"
+	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return m, e.ErrLinkNotFound
+		}
+
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	status := s.cache.Set(c, key, m.URL, 10*time.Minute)
+	err = status.Err()
+
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 
 	return
