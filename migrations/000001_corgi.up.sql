@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS groups(
 	name VARCHAR (100) NOT NULL,
 	display_name VARCHAR (100),
 	description VARCHAR (300),
+
 	created_by VARCHAR (30) NOT NULL,
 	owner_id VARCHAR (30) NOT NULL,
 

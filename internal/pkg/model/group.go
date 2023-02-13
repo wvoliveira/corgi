@@ -18,5 +18,4 @@ type Group struct {
 	// UserID but you can pass the owner to another user
 	CreatedBy string `json:"created_by"`
 	OwnerID   string `json:"owner_id"`
-	Users     []User `json:"users,omitempty"`
 }

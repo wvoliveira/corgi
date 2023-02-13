@@ -112,8 +112,9 @@ func (s service) List(c *gin.Context, offset, limit int, sort, userID string) (t
 	// TODO: fix to use "sort" variable
 	sttData, _ := s.db.PrepareContext(c, `
 		SELECT g.* FROM groups g
-		JOIN group_user gu ON gu.user_id = $1
-		GROUP BY g.id
+		INNER JOIN group_user gu ON gu.group_id = g.id
+		INNER JOIN users u ON u.id = gu.user_id
+		WHERE u.id = $1
 		ORDER BY g.id ASC OFFSET $2 LIMIT $3
 	`)
 
@@ -154,9 +155,10 @@ func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.G
 	// Get group details.
 	sttGroup, _ := s.db.PrepareContext(c, `
 		SELECT g.* FROM groups g
-		JOIN group_user gu ON gu.user_id = $1
-		WHERE g.id = $2
-		GROUP BY g.id;
+		INNER JOIN group_user gu ON gu.group_id = g.id
+		INNER JOIN users u ON u.id = gu.user_id
+		WHERE u.id = $1
+		AND g.id = $2
 	`)
 
 	err = sttGroup.QueryRowContext(c, userID, groupID).Scan(
@@ -177,13 +179,14 @@ func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.G
 
 	// Get all users by group ID.
 	sttUsers, _ := s.db.PrepareContext(c, `
-		SELECT u.id, u.name FROM users u
-		JOIN groups g ON g.id = $1
-		JOIN group_user gu ON gu.user_id = u.id
-		GROUP BY u.id;
+	SELECT u.id, u.name FROM users u
+	INNER JOIN group_user gu ON gu.user_id = u.id
+	INNER JOIN groups g ON g.id = gu.group_id
+	WHERE u.id = $1
+	AND g.id = $2
 	`)
 
-	rows, err := sttUsers.QueryContext(c, groupID)
+	rows, err := sttUsers.QueryContext(c, userID, groupID)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
