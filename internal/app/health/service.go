@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"golang.org/x/oauth2/facebook"
@@ -26,12 +27,13 @@ type Service interface {
 
 type service struct {
 	db      *sql.DB
+	cache   *redis.Client
 	version string
 }
 
 // NewService creates a new healthcheck service.
-func NewService(db *sql.DB, version string) Service {
-	return service{db, version}
+func NewService(db *sql.DB, cache *redis.Client, version string) Service {
+	return service{db, cache, version}
 }
 
 // Health make a health check for system dependencies
@@ -39,6 +41,7 @@ func NewService(db *sql.DB, version string) Service {
 func (s service) Health(c *gin.Context) (hs []model.Health, err error) {
 
 	hs = append(hs, s.healthDatabase(c))
+	hs = append(hs, s.healthCache(c))
 	hs = append(hs, s.healthAuthentication(c, "google"))
 	hs = append(hs, s.healthAuthentication(c, "facebook"))
 
@@ -60,6 +63,24 @@ func (s service) healthDatabase(c *gin.Context) (h model.Health) {
 	if err != nil {
 		h.Status = "error"
 		h.Description = fmt.Sprintf("Integrity check return error: %s", err.Error())
+	}
+
+	return
+}
+
+func (s service) healthCache(c *gin.Context) (h model.Health) {
+	h = model.Health{
+		Required:    false,
+		Status:      "ok",
+		Component:   "cache",
+		Description: "ping check is ok",
+	}
+
+	status := s.cache.Ping(c)
+
+	if status.Err() != nil {
+		h.Status = "error"
+		h.Description = fmt.Sprintf("ping check error: %s", status.Err().Error())
 	}
 
 	return

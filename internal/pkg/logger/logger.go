@@ -11,15 +11,15 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
-func Logger(ctx context.Context) (l zerolog.Logger) {
+func Logger(c context.Context) (l zerolog.Logger) {
 	logContext := log.Logger.With()
 
-	if ctxRequest, ok := ctx.Value(model.CorrelationID{}).(model.CorrelationID); ok {
+	if ctxRequest, ok := c.Value(model.CorrelationID{}).(model.CorrelationID); ok {
 		logContext = logContext.Str("req_id", ctxRequest.ID)
 	}
 
-	if ctxIdentity, ok := ctx.Value(model.IdentityInfo{}).(model.IdentityInfo); ok {
-		logContext = logContext.Str("user_id", ctxIdentity.UserID)
+	if user_id, ok := c.Value("user_id").(string); ok {
+		logContext = logContext.Str("user_id", user_id)
 	}
 
 	return logContext.Logger()

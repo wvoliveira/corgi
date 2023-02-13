@@ -1,6 +1,7 @@
 package link
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -25,6 +26,7 @@ type Service interface {
 	FindAll(*gin.Context, findAllRequest) (int64, int, []model.Link, error)
 	Update(*gin.Context, model.Link) error
 	Delete(*gin.Context, string, string) (err error)
+	FindFullURL(*gin.Context, string, string) (model.Link, error)
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPAdd(*gin.Context)
@@ -32,6 +34,7 @@ type Service interface {
 	HTTPFindAll(*gin.Context)
 	HTTPUpdate(*gin.Context)
 	HTTPDelete(*gin.Context)
+	HTTPFindFullURL(*gin.Context)
 }
 
 type service struct {
@@ -77,7 +80,8 @@ func (s service) Add(c *gin.Context, payload model.Link) (m model.Link, err erro
 	}
 
 	if m.ID != "" {
-		l.Warn().Caller().Msg("domain with keyword already exists")
+		message := fmt.Sprintf("link with domain '%s' and keyword '%s' already exists", payload.Domain, payload.Keyword)
+		l.Warn().Caller().Msg(message)
 		return m, e.ErrLinkAlreadyExists
 	}
 
@@ -256,5 +260,62 @@ func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 		return e.ErrInternalServerError
 	}
 
+	return
+}
+
+// Find get a shortener link from keyword.
+func (s service) FindFullURL(c *gin.Context, domain, keyword string) (m model.Link, err error) {
+	log := logger.Logger(c)
+
+	key := fmt.Sprintf("link_full_%s_%s", domain, keyword)
+	val, _ := itemFromCache(c, s.cache, key)
+
+	if val != "" {
+		m.URL = val
+		return
+	}
+
+	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2 AND active = true"
+	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return m, e.ErrLinkNotFound
+		}
+
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	status := s.cache.Set(c, key, m.URL, 10*time.Minute)
+	err = status.Err()
+
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return
+}
+
+func itemFromCache(c context.Context, cache *redis.Client, key string) (item string, err error) {
+	log := logger.Logger(c)
+
+	log.Debug().Caller().Msg(fmt.Sprintf("Collecting key '%s' from cache", key))
+
+	item, err = cache.Get(c, key).Result()
+
+	if err != nil {
+		if !errors.Is(err, redis.Nil) {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+	}
+
+	if item != "" {
+		log.Debug().Caller().Msg(fmt.Sprintf("OK, I gotten key '%s' from cache!", key))
+		return
+	}
+
+	log.Debug().Caller().Msg("No, key '%s' is not cached!")
 	return
 }

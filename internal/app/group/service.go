@@ -3,10 +3,12 @@ package group
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	"github.com/redis/go-redis/v9"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -18,18 +20,21 @@ type Service interface {
 	List(*gin.Context, int, int, string, string) (int64, int, []model.Group, error)
 	FindByID(*gin.Context, string, string) (model.Group, []model.User, error)
 
+	InviteAdd(*gin.Context, model.GroupInvite) (model.GroupInvite, error)
+
 	NewHTTP(*gin.RouterGroup)
 	HTTPAdd(*gin.Context)
 	HTTPList(*gin.Context)
 }
 
 type service struct {
-	db *sql.DB
+	db    *sql.DB
+	cache *redis.Client
 }
 
 // NewService creates a new group service.
-func NewService(database *sql.DB) Service {
-	return service{database}
+func NewService(db *sql.DB, cache *redis.Client) Service {
+	return service{db, cache}
 }
 
 func (s service) Add(c *gin.Context, payload model.Group, userID string) (group model.Group, err error) {
@@ -112,8 +117,9 @@ func (s service) List(c *gin.Context, offset, limit int, sort, userID string) (t
 	// TODO: fix to use "sort" variable
 	sttData, _ := s.db.PrepareContext(c, `
 		SELECT g.* FROM groups g
-		JOIN group_user gu ON gu.user_id = $1
-		GROUP BY g.id
+		INNER JOIN group_user gu ON gu.group_id = g.id
+		INNER JOIN users u ON u.id = gu.user_id
+		WHERE u.id = $1
 		ORDER BY g.id ASC OFFSET $2 LIMIT $3
 	`)
 
@@ -154,9 +160,10 @@ func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.G
 	// Get group details.
 	sttGroup, _ := s.db.PrepareContext(c, `
 		SELECT g.* FROM groups g
-		JOIN group_user gu ON gu.user_id = $1
-		WHERE g.id = $2
-		GROUP BY g.id;
+		INNER JOIN group_user gu ON gu.group_id = g.id
+		INNER JOIN users u ON u.id = gu.user_id
+		WHERE u.id = $1
+		AND g.id = $2
 	`)
 
 	err = sttGroup.QueryRowContext(c, userID, groupID).Scan(
@@ -171,6 +178,11 @@ func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.G
 	)
 
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = e.ErrGroupNotFound
+			return
+		}
+
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
@@ -178,12 +190,14 @@ func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.G
 	// Get all users by group ID.
 	sttUsers, _ := s.db.PrepareContext(c, `
 		SELECT u.id, u.name FROM users u
-		JOIN groups g ON g.id = $1
-		JOIN group_user gu ON gu.user_id = u.id
-		GROUP BY u.id;
+		INNER JOIN group_user gu ON gu.user_id = u.id
+		INNER JOIN groups g ON g.id = gu.group_id
+		WHERE u.id = $1
+		AND g.id = $2
 	`)
 
-	rows, err := sttUsers.QueryContext(c, groupID)
+	rows, err := sttUsers.QueryContext(c, userID, groupID)
+
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
@@ -206,6 +220,101 @@ func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.G
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return group, users, e.ErrInternalServerError
+	}
+
+	return
+}
+
+// Delete delete a group by ID.
+func (s service) Delete(c *gin.Context, userID, groupID string) (err error) {
+	log := logger.Logger(c)
+
+	group := model.Group{}
+
+	query := "SELECT id FROM groups WHERE id = $1 AND owner_id = $2"
+	err = s.db.QueryRowContext(c, query, groupID, userID).Scan(&group.ID)
+
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Error().Caller().Msg(err.Error())
+			return e.ErrInternalServerError
+		}
+	}
+
+	if group.ID == "" {
+		message := fmt.Sprintf("Group with id = '%s' and owner_id = '%s' was not found", groupID, userID)
+		log.Info().Caller().Msg(message)
+		return e.ErrGroupNotFound
+	}
+
+	key := fmt.Sprintf("group_%s", groupID)
+	_, err = s.cache.Del(c, key).Result()
+
+	// Keep going on error from cache.
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+	}
+
+	query = "DELETE FROM groups WHERE id = $1 AND owner_id = $2"
+	_, err = s.db.ExecContext(c, query, groupID, userID)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return e.ErrInternalServerError
+	}
+
+	return
+}
+
+func (s service) InviteAdd(c *gin.Context, payload model.GroupInvite) (groupInvite model.GroupInvite, err error) {
+	log := logger.Logger(c)
+
+	stt, err := s.db.PrepareContext(c, "SELECT id FROM groups_invites WHERE group_id = $1 AND user_id = $2 AND invited_by = $3")
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	err = stt.QueryRowContext(c, payload.GroupID, payload.UserID, payload.InvitedBy).Scan(&groupInvite.ID)
+
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+	}
+
+	user := model.User{}
+
+	stt, err = s.db.PrepareContext(c, "SELECT id FROM users WHERE NOT id = $1 AND id = $2")
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	err = stt.QueryRowContext(c, 0, payload.UserID).Scan(&user.ID)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	if user.ID == "" {
+		err = e.ErrUserNotFound
+		return
+	}
+
+	payload.ID = ulid.Make().String()
+
+	stt, err = s.db.PrepareContext(c, "INSERT INTO groups_invites(id, group_id, user_id, invited_by) VALUES($1, $2, $3, $4)")
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	_, err = stt.ExecContext(c, payload.ID, payload.GroupID, payload.UserID, payload.InvitedBy)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
 	}
 
 	return

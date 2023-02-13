@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"net/http"
 	"strings"
 
@@ -12,16 +13,17 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
-	"github.com/wvoliveira/corgi/internal/app/clicks"
+	"github.com/wvoliveira/corgi/internal/app/click"
 	"github.com/wvoliveira/corgi/internal/app/group"
 	"github.com/wvoliveira/corgi/internal/app/health"
 	"github.com/wvoliveira/corgi/internal/app/link"
-	"github.com/wvoliveira/corgi/internal/app/short"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
+	"github.com/wvoliveira/corgi/internal/pkg/model"
 	ratelimit "github.com/wvoliveira/corgi/internal/pkg/rate-limit"
 	"github.com/wvoliveira/corgi/internal/pkg/server"
 	"github.com/wvoliveira/corgi/web"
@@ -30,6 +32,9 @@ import (
 func init() {
 	config.New()
 	logger.Default()
+
+	// Used as type for security session.
+	gob.Register(model.User{})
 }
 
 func main() {
@@ -42,7 +47,10 @@ func main() {
 
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
-	router := gin.Default()
+	router := gin.New()
+	router.Use(middleware.Logger())
+	router.Use(gin.Recovery())
+
 	server.AddStoreSession(router)
 
 	// First, check if request path is inside web app.
@@ -65,7 +73,6 @@ func main() {
 		// Dont enable some things with debug level.
 		// Middleware for rate limit.
 		ratelimit.NewMiddleware(router, cache)
-
 	}
 
 	{
@@ -100,7 +107,7 @@ func main() {
 
 	{
 		// Group management service. Like create group, add users, etc.
-		service := group.NewService(db)
+		service := group.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
@@ -112,20 +119,13 @@ func main() {
 
 	{
 		// Clicks service. Metrics for each link.
-		service := clicks.NewService(db, cache)
+		service := click.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 
 	{
 		// Healthcheck endpoints.
-		service := health.NewService(db, constants.VERSION)
-		service.NewHTTP(apiRouter)
-	}
-
-	{
-		// Central business service: redirect short link.
-		// Note: this service is on root router.
-		service := short.NewService(db, cache)
+		service := health.NewService(db, cache, constants.VERSION)
 		service.NewHTTP(apiRouter)
 	}
 

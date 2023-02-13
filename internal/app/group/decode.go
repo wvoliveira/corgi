@@ -27,26 +27,37 @@ type findByIDRequest struct {
 	ID string `json:"id"`
 }
 
-func decodeAdd(c *gin.Context) (payload addRequest, userID string, err error) {
+type deleteRequest struct {
+	UserID  string `json:"-"`
+	GroupID string `json:"-"`
+}
+
+type inviteAddRequest struct {
+	GroupID   string `json:"group_id"`
+	UserID    string `json:"user_id"`
+	InvitedBy string `json:"-"`
+}
+
+func decodeAdd(c *gin.Context) (req addRequest, userID string, err error) {
 	userID, err = common.GetUserFromSession(c)
 
 	if err != nil {
 		return
 	}
 
-	if err = c.ShouldBindJSON(&payload); err != nil {
-		return payload, userID, err
+	if err = c.ShouldBindJSON(&req); err != nil {
+		return req, userID, err
 	}
 
-	payload.Name = strings.ToLower(payload.Name)
-	err = checkName(payload.Name)
+	req.Name = strings.ToLower(req.Name)
+	err = checkName(req.Name)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func decodeList(c *gin.Context) (request listRequest, userID string, err error) {
+func decodeList(c *gin.Context) (req listRequest, userID string, err error) {
 	userID, err = common.GetUserFromSession(c)
 
 	if err != nil {
@@ -75,10 +86,10 @@ func decodeList(c *gin.Context) (request listRequest, userID string, err error) 
 	}
 	offset := (page - 1) * limit
 
-	request.Page = page
-	request.Sort = sort
-	request.Limit = limit
-	request.Offset = offset
+	req.Page = page
+	req.Sort = sort
+	req.Limit = limit
+	req.Offset = offset
 	return
 }
 
@@ -97,4 +108,39 @@ func decodeFindByID(c *gin.Context) (req findByIDRequest, userID string, err err
 
 	req.ID = GroupID
 	return req, userID, err
+}
+
+func decodeDelete(c *gin.Context) (req deleteRequest, err error) {
+	userID, err := common.GetUserFromSession(c)
+	if err != nil {
+		return
+	}
+
+	GroupID := c.Param("id")
+	if GroupID == "" {
+		return req, errors.New("impossible to get group id from path")
+	}
+
+	req.UserID = userID
+	req.GroupID = GroupID
+	return
+}
+
+func decodeInviteAdd(c *gin.Context) (req inviteAddRequest, err error) {
+	userID, err := common.GetUserFromSession(c)
+	if err != nil {
+		return
+	}
+
+	if err = c.ShouldBindJSON(&req); err != nil {
+		return req, err
+	}
+
+	req.InvitedBy = userID
+
+	if req.GroupID == "" || req.UserID == "" {
+		err = errors.New("you need specific group_id and user_id to send invite to the group")
+	}
+
+	return
 }
