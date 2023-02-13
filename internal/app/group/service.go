@@ -173,20 +173,26 @@ func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.G
 	)
 
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			err = e.ErrGroupNotFound
+			return
+		}
+
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
 	// Get all users by group ID.
 	sttUsers, _ := s.db.PrepareContext(c, `
-	SELECT u.id, u.name FROM users u
-	INNER JOIN group_user gu ON gu.user_id = u.id
-	INNER JOIN groups g ON g.id = gu.group_id
-	WHERE u.id = $1
-	AND g.id = $2
+		SELECT u.id, u.name FROM users u
+		INNER JOIN group_user gu ON gu.user_id = u.id
+		INNER JOIN groups g ON g.id = gu.group_id
+		WHERE u.id = $1
+		AND g.id = $2
 	`)
 
 	rows, err := sttUsers.QueryContext(c, userID, groupID)
+
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
