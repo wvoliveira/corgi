@@ -20,6 +20,8 @@ type Service interface {
 	List(*gin.Context, int, int, string, string) (int64, int, []model.Group, error)
 	FindByID(*gin.Context, string, string) (model.Group, []model.User, error)
 
+	InviteAdd(*gin.Context, model.GroupInvite) (model.GroupInvite, error)
+
 	NewHTTP(*gin.RouterGroup)
 	HTTPAdd(*gin.Context)
 	HTTPList(*gin.Context)
@@ -259,6 +261,60 @@ func (s service) Delete(c *gin.Context, userID, groupID string) (err error) {
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return e.ErrInternalServerError
+	}
+
+	return
+}
+
+func (s service) InviteAdd(c *gin.Context, payload model.GroupInvite) (groupInvite model.GroupInvite, err error) {
+	log := logger.Logger(c)
+
+	stt, err := s.db.PrepareContext(c, "SELECT id FROM groups_invites WHERE group_id = $1 AND user_id = $2 AND invited_by = $3")
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	err = stt.QueryRowContext(c, payload.GroupID, payload.UserID, payload.InvitedBy).Scan(&groupInvite.ID)
+
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+	}
+
+	user := model.User{}
+
+	stt, err = s.db.PrepareContext(c, "SELECT id FROM users WHERE NOT id = $1 AND id = $2")
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	err = stt.QueryRowContext(c, 0, payload.UserID).Scan(&user.ID)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	if user.ID == "" {
+		err = e.ErrUserNotFound
+		return
+	}
+
+	payload.ID = ulid.Make().String()
+
+	stt, err = s.db.PrepareContext(c, "INSERT INTO groups_invites(id, group_id, user_id, invited_by) VALUES($1, $2, $3, $4)")
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	_, err = stt.ExecContext(c, payload.ID, payload.GroupID, payload.UserID, payload.InvitedBy)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
 	}
 
 	return

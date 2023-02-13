@@ -18,6 +18,8 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r.GET("", s.HTTPList)
 	r.GET("/:id", s.HTTPFindByID)
 	r.DELETE("/:id", s.HTTPDelete)
+
+	r.POST("/invites", s.HTTPInviteAdd)
 }
 
 func (s service) HTTPAdd(c *gin.Context) {
@@ -107,6 +109,24 @@ func (s service) HTTPDelete(c *gin.Context) {
 
 	// Not implemented yet.
 	_ = encodeDelete(c)
+
+	response.Default(c, nil, "", http.StatusOK)
+}
+
+func (s service) HTTPInviteAdd(c *gin.Context) {
+	payload, err := decodeInviteAdd(c)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	groupInvite := model.GroupInvite{GroupID: payload.GroupID, UserID: payload.UserID, InvitedBy: payload.InvitedBy}
+
+	groupInvite, err = s.InviteAdd(c, groupInvite)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
 
 	response.Default(c, nil, "", http.StatusOK)
 }

@@ -79,9 +79,14 @@ var (
 	// ErrRequestNeedBody error if client not send a body payload.
 	ErrRequestNeedBody = errors.New("methods POST and PATCH needs a body payload")
 
+	/**
+		Group errors.
+	**/
+
 	// ErrGroupAlreadyExists error when user try to create a group with a existent group name.
-	ErrGroupAlreadyExists = errors.New("group with this name already exists. Choose another one")
-	ErrGroupNotFound      = errors.New("group with this ID was not found")
+	ErrGroupAlreadyExists       = errors.New("group with this name already exists. Choose another one")
+	ErrGroupNotFound            = errors.New("group with this ID was not found")
+	ErrGroupInviteAlreadyExists = errors.New("this invite already exists. You need wait for response user")
 )
 
 type response struct {

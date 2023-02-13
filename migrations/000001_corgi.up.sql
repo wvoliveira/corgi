@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS groups_invites(
 	user_id VARCHAR (30) NOT NULL,
 	invited_by VARCHAR (30) NOT NULL, -- invited by user_id
 
+	accepted BOOLEAN DEFAULT false,
+
 	CONSTRAINT fk_group_id FOREIGN KEY(group_id) REFERENCES groups(id),
 	CONSTRAINT fk_user_id FOREIGN KEY(user_id) REFERENCES users(id),
 	CONSTRAINT fk_invited_by FOREIGN KEY(invited_by) REFERENCES users(id)

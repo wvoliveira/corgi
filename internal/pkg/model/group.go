@@ -19,3 +19,13 @@ type Group struct {
 	CreatedBy string `json:"created_by"`
 	OwnerID   string `json:"owner_id"`
 }
+
+type GroupInvite struct {
+	ID        string       `json:"id"`
+	CreatedAt time.Time    `json:"created_at"`
+	UpdatedAt sql.NullTime `json:"updated_at"`
+
+	GroupID   string `json:"group_id"`
+	UserID    string `json:"user_id"`
+	InvitedBy string `json:"invited_by"`
+}
