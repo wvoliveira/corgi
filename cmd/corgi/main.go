@@ -104,7 +104,7 @@ func main() {
 
 	{
 		// Group management service. Like create group, add users, etc.
-		service := group.NewService(db)
+		service := group.NewService(db, cache)
 		service.NewHTTP(apiRouter)
 	}
 

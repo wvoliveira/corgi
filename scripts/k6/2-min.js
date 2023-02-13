@@ -16,5 +16,5 @@ export const options = {
 };
 
 export default function () {
-  const res = http.get(`${BASE_URL}/api/health`);
+  const res = http.get(`${BASE_URL}/api/links/f/google`);
 }

@@ -30,6 +30,8 @@ type findByIDResponse struct {
 	}
 }
 
+type deleteResponse struct{}
+
 func encodeFindByID(c *gin.Context, group model.Group, users []model.User) (res findByIDResponse) {
 	res.Group = group
 
@@ -44,4 +46,8 @@ func encodeFindByID(c *gin.Context, group model.Group, users []model.User) (res 
 	}
 
 	return res
+}
+
+func encodeDelete(c *gin.Context) (res deleteResponse) {
+	return
 }

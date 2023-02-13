@@ -3,10 +3,12 @@ package group
 import (
 	"database/sql"
 	"errors"
+	"fmt"
 	"math"
 
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
+	"github.com/redis/go-redis/v9"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -24,12 +26,13 @@ type Service interface {
 }
 
 type service struct {
-	db *sql.DB
+	db    *sql.DB
+	cache *redis.Client
 }
 
 // NewService creates a new group service.
-func NewService(database *sql.DB) Service {
-	return service{database}
+func NewService(db *sql.DB, cache *redis.Client) Service {
+	return service{db, cache}
 }
 
 func (s service) Add(c *gin.Context, payload model.Group, userID string) (group model.Group, err error) {
@@ -215,6 +218,47 @@ func (s service) FindByID(c *gin.Context, groupID, userID string) (group model.G
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return group, users, e.ErrInternalServerError
+	}
+
+	return
+}
+
+// Delete delete a group by ID.
+func (s service) Delete(c *gin.Context, userID, groupID string) (err error) {
+	log := logger.Logger(c)
+
+	group := model.Group{}
+
+	query := "SELECT id FROM groups WHERE id = $1 AND owner_id = $2"
+	err = s.db.QueryRowContext(c, query, groupID, userID).Scan(&group.ID)
+
+	if err != nil {
+		if err != sql.ErrNoRows {
+			log.Error().Caller().Msg(err.Error())
+			return e.ErrInternalServerError
+		}
+	}
+
+	if group.ID == "" {
+		message := fmt.Sprintf("Group with id = '%s' and owner_id = '%s' was not found", groupID, userID)
+		log.Info().Caller().Msg(message)
+		return e.ErrGroupNotFound
+	}
+
+	key := fmt.Sprintf("group_%s", groupID)
+	_, err = s.cache.Del(c, key).Result()
+
+	// Keep going on error from cache.
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+	}
+
+	query = "DELETE FROM groups WHERE id = $1 AND owner_id = $2"
+	_, err = s.db.ExecContext(c, query, groupID, userID)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return e.ErrInternalServerError
 	}
 
 	return

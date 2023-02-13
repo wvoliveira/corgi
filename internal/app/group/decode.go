@@ -27,6 +27,11 @@ type findByIDRequest struct {
 	ID string `json:"id"`
 }
 
+type deleteRequest struct {
+	UserID  string `json:"-"`
+	GroupID string `json:"-"`
+}
+
 func decodeAdd(c *gin.Context) (payload addRequest, userID string, err error) {
 	userID, err = common.GetUserFromSession(c)
 
@@ -97,4 +102,20 @@ func decodeFindByID(c *gin.Context) (req findByIDRequest, userID string, err err
 
 	req.ID = GroupID
 	return req, userID, err
+}
+
+func decodeDelete(c *gin.Context) (req deleteRequest, err error) {
+	userID, err := common.GetUserFromSession(c)
+	if err != nil {
+		return
+	}
+
+	GroupID := c.Param("id")
+	if GroupID == "" {
+		return req, errors.New("impossible to get group id from path")
+	}
+
+	req.UserID = userID
+	req.GroupID = GroupID
+	return
 }

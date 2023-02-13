@@ -451,9 +451,10 @@ dev-env:
 dev-run:
 	go run cmd/corgi/*
 
-# This use k6 and asciigraph. Check out: 
+# This use jq, k6 and asciigraph. Check out: 
+# - https://stedolan.github.io/jq
 # - https://k6.io/docs
 # - https://github.com/guptarohit/asciigraph
 dev-load-test:
 	k6 run --out json=k6-output.json scripts/k6/2-min.js > /dev/null &
-	tail -f k6-output.json | jq --unbuffered  -r '.data.tags | select(has("status")) | .status' | go run scripts/k6/graph.go
+	sleep 1; tail -f k6-output.json | jq --unbuffered  -r '.data.tags | select(has("status")) | .status' | go run scripts/k6/graph.go

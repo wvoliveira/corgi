@@ -17,6 +17,7 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r.POST("", s.HTTPAdd)
 	r.GET("", s.HTTPList)
 	r.GET("/:id", s.HTTPFindByID)
+	r.DELETE("/:id", s.HTTPDelete)
 }
 
 func (s service) HTTPAdd(c *gin.Context) {
@@ -89,4 +90,23 @@ func (s service) HTTPFindByID(c *gin.Context) {
 	}
 
 	response.Default(c, resp, "", http.StatusOK)
+}
+
+func (s service) HTTPDelete(c *gin.Context) {
+	d, err := decodeDelete(c)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	err = s.Delete(c, d.UserID, d.GroupID)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	// Not implemented yet.
+	_ = encodeDelete(c)
+
+	response.Default(c, nil, "", http.StatusOK)
 }
