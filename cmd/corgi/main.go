@@ -22,6 +22,7 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
+	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 	ratelimit "github.com/wvoliveira/corgi/internal/pkg/rate-limit"
 	"github.com/wvoliveira/corgi/internal/pkg/server"
@@ -46,7 +47,10 @@ func main() {
 
 	// Create a root router and attach session.
 	// I think its a good idea because we can manager user access with cookie based.
-	router := gin.Default()
+	router := gin.New()
+	router.Use(middleware.Logger())
+	router.Use(gin.Recovery())
+
 	server.AddStoreSession(router)
 
 	// First, check if request path is inside web app.
@@ -69,7 +73,6 @@ func main() {
 		// Dont enable some things with debug level.
 		// Middleware for rate limit.
 		ratelimit.NewMiddleware(router, cache)
-
 	}
 
 	{

@@ -1,6 +1,7 @@
 package link
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"fmt"
@@ -79,7 +80,8 @@ func (s service) Add(c *gin.Context, payload model.Link) (m model.Link, err erro
 	}
 
 	if m.ID != "" {
-		l.Warn().Caller().Msg("domain with keyword already exists")
+		message := fmt.Sprintf("link with domain '%s' and keyword '%s' already exists", payload.Domain, payload.Keyword)
+		l.Warn().Caller().Msg(message)
 		return m, e.ErrLinkAlreadyExists
 	}
 
@@ -265,24 +267,13 @@ func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 func (s service) FindFullURL(c *gin.Context, domain, keyword string) (m model.Link, err error) {
 	log := logger.Logger(c)
 
-	key := fmt.Sprintf("link_%s_%s", domain, keyword)
-
-	log.Info().Caller().Msg("Trying to collect data from cache")
-	val, err := s.cache.Get(c, key).Result()
-
-	if err != nil {
-		if !errors.Is(err, redis.Nil) {
-			log.Error().Caller().Msg(err.Error())
-		}
-	}
+	key := fmt.Sprintf("link_full_%s_%s", domain, keyword)
+	val, _ := itemFromCache(c, s.cache, key)
 
 	if val != "" {
-		log.Info().Caller().Msg("OK, I gotten from cache!")
 		m.URL = val
 		return
 	}
-
-	log.Info().Caller().Msg("No, link is not cached!")
 
 	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2 AND active = true"
 	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
@@ -303,5 +294,28 @@ func (s service) FindFullURL(c *gin.Context, domain, keyword string) (m model.Li
 		fmt.Println(err.Error())
 	}
 
+	return
+}
+
+func itemFromCache(c context.Context, cache *redis.Client, key string) (item string, err error) {
+	log := logger.Logger(c)
+
+	log.Debug().Caller().Msg(fmt.Sprintf("Collecting key '%s' from cache", key))
+
+	item, err = cache.Get(c, key).Result()
+
+	if err != nil {
+		if !errors.Is(err, redis.Nil) {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+	}
+
+	if item != "" {
+		log.Debug().Caller().Msg(fmt.Sprintf("OK, I gotten key '%s' from cache!", key))
+		return
+	}
+
+	log.Debug().Caller().Msg("No, key '%s' is not cached!")
 	return
 }

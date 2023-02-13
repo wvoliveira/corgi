@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -44,7 +45,7 @@ func Auth() gin.HandlerFunc {
 
 			if err != nil {
 				log.Error().Caller().Msg(err.Error())
-				e.EncodeError(c, e.ErrRequestNeedBody)
+				e.EncodeError(c, e.ErrInternalServerError)
 				return
 			}
 		}
@@ -56,10 +57,12 @@ func Auth() gin.HandlerFunc {
 			err := session.Save()
 			if err != nil {
 				log.Error().Caller().Msg(err.Error())
-				e.EncodeError(c, e.ErrRequestNeedBody)
+				e.EncodeError(c, e.ErrInternalServerError)
 				return
 			}
 		}
+
+		c.Set("user_id", user.ID)
 
 		c.Next()
 	}
@@ -129,5 +132,52 @@ func UniqueUserForKeywords() gin.HandlerFunc {
 		}
 
 		c.Next()
+	}
+}
+
+func Logger() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log := logger.Logger(c)
+
+		// Start timer
+		start := time.Now()
+		path := c.Request.URL.Path
+		raw := c.Request.URL.RawQuery
+
+		// Process request
+		c.Next()
+
+		param := gin.LogFormatterParams{
+			Request: c.Request,
+			Keys:    c.Keys,
+		}
+
+		// Stop timer
+		param.TimeStamp = time.Now()
+		param.Latency = param.TimeStamp.Sub(start)
+
+		param.ClientIP = c.ClientIP()
+		param.Method = c.Request.Method
+		param.StatusCode = c.Writer.Status()
+		param.ErrorMessage = c.Errors.ByType(gin.ErrorTypePrivate).String()
+
+		param.BodySize = c.Writer.Size()
+
+		if raw != "" {
+			path = path + "?" + raw
+		}
+
+		param.Path = path
+
+		log.Info().Caller().
+			Time("timestamp", param.TimeStamp).
+			Str("client_ip", param.ClientIP).
+			Str("method", param.Method).
+			Str("path", param.Path).
+			Str("proto", param.Request.Proto).
+			Int("status_code", param.StatusCode).
+			Dur("latency", param.Latency).
+			Str("user_agent", param.Request.UserAgent()).
+			Msg(param.ErrorMessage)
 	}
 }
