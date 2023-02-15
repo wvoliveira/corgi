@@ -10,12 +10,12 @@ import (
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/wvoliveira/corgi/internal/pkg/token"
 )
 
 // Service encapsulates the authentication logic.
 type Service interface {
-	Login(*gin.Context, model.Identity) (model.User, error)
+	Login(*gin.Context, model.Identity) (string, string, model.User, error)
 	Register(*gin.Context, model.Identity, model.User) error
 
 	NewHTTP(*gin.RouterGroup)
@@ -35,32 +35,34 @@ func NewService(db *sql.DB, cache *redis.Client) Service {
 }
 
 // Login authenticates a user and generates a JWT token if authentication succeeds.
-func (s service) Login(c *gin.Context, identity model.Identity) (user model.User, err error) {
+func (s service) Login(c *gin.Context, identity model.Identity) (accessToken, refreshToken string, user model.User, err error) {
 	log := logger.Logger(c.Request.Context())
-	idenDB := model.Identity{}
+	identityFromDB := model.Identity{}
 
 	query := "SELECT user_id, password FROM identities WHERE provider IN ('username', 'email') AND uid = $1"
-	err = s.db.QueryRowContext(c, query, identity.UID).Scan(&idenDB.UserID, &idenDB.Password)
+	err = s.db.QueryRowContext(c, query, identity.UID).Scan(&identityFromDB.UserID, &identityFromDB.Password)
 
 	if err != nil {
 		log.Warn().Caller().Msg(err.Error())
-		return user, e.ErrUnauthorized
+		return accessToken, refreshToken, user, e.ErrUnauthorized
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(idenDB.Password), []byte(identity.Password)); err != nil {
-		log.Info().Caller().Msg("authentication failed")
-		return user, e.ErrUnauthorized
+	err = identity.CheckPassword(identityFromDB.Password)
+	if err != nil {
+		log.Info().Caller().Msg(fmt.Sprintf("username/email and password dont match: %s", err.Error()))
+		return accessToken, refreshToken, user, e.ErrUnauthorized
 	}
 
 	query = "SELECT * FROM users WHERE id = $1"
-	err = s.db.QueryRowContext(c, query, idenDB.UserID).
+	err = s.db.QueryRowContext(c, query, identityFromDB.UserID).
 		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Name, &user.Role, &user.Active)
 
 	if err != nil {
 		log.Warn().Caller().Msg(err.Error())
-		return user, e.ErrAuthPasswordInternalError
+		return accessToken, refreshToken, user, e.ErrAuthPasswordInternalError
 	}
 
+	accessToken, refreshToken, err = token.GenerateJWTAccess(user)
 	return
 }
 
@@ -86,15 +88,8 @@ func (s service) Register(c *gin.Context, identity model.Identity, user model.Us
 		return e.ErrAuthPasswordUserAlreadyExists
 	}
 
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(identity.Password), 8)
-
-	if err != nil {
-		log.Error().Caller().Msg(err.Error())
-		return e.ErrAuthPasswordInternalError
-	}
-
 	identity.ID = ulid.Make().String()
-	identity.Password = string(hashedPassword)
+	identity.HashPassword(identity.Password)
 
 	user.ID = ulid.Make().String()
 	user.Role = "user"

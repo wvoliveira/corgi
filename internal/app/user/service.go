@@ -32,9 +32,9 @@ func NewService(db *sql.DB, cache *redis.Client) Service {
 
 // Find get a shortener link from ID.
 func (s service) Find(c *gin.Context, userID string) (user model.User, err error) {
-	log := logger.Logger(c.Request.Context())
+	log := logger.Logger(c)
 
-	if userID == "anonymous" {
+	if userID == "0" {
 		user.Name = "Anonymous"
 		return
 	}

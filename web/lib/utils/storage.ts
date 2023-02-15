@@ -1,6 +1,11 @@
 const storage = async key => {
   const value = localStorage.getItem(key);
-  return !!value ? JSON.parse(value) : JSON.parse("");
+
+  if (value) {
+    return JSON.parse(value);
+  }
+
+  return "";
 };
 
 export default storage;

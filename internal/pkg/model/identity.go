@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"golang.org/x/crypto/bcrypt"
+)
 
 type Identity struct {
 	ID        string    `json:"id" gorm:"primaryKey;autoIncrement:false"`
@@ -25,4 +29,19 @@ type IdentityInfo struct {
 	UserID         string
 	UserRole       string
 	RefreshTokenID string
+}
+
+func (iden *Identity) CheckPassword(password string) (err error) {
+	return bcrypt.CompareHashAndPassword([]byte(password), []byte(iden.Password))
+}
+
+func (iden *Identity) HashPassword(password string) error {
+	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
+	if err != nil {
+		return err
+	}
+
+	// Store hashed password in own identity.
+	iden.Password = string(bytes)
+	return nil
 }

@@ -1,7 +1,8 @@
 package password
 
 import (
-	"github.com/gin-contrib/sessions"
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -16,7 +17,6 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 }
 
 func (s service) HTTPLogin(c *gin.Context) {
-
 	dr, err := decodeLogin(c)
 
 	if err != nil {
@@ -30,33 +30,16 @@ func (s service) HTTPLogin(c *gin.Context) {
 		Password: dr.Password,
 	}
 
-	user, err := s.Login(c, identity)
+	accessToken, refreshToken, user, err := s.Login(c, identity)
 
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	session := sessions.Default(c)
-	session.Set("user", user)
+	res := encodeLogin(user.Name, user.Role, user.Active, accessToken, refreshToken)
 
-	err = session.Save()
-
-	if err != nil {
-		e.EncodeError(c, err)
-		return
-	}
-
-	data := gin.H{
-		"name":   user.Name,
-		"role":   user.Role,
-		"active": user.Active,
-	}
-
-	c.JSON(200, response.Response{
-		Status: "successful",
-		Data:   data,
-	})
+	response.Default(c, res, "", http.StatusOK)
 }
 
 func (s service) HTTPRegister(c *gin.Context) {

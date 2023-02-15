@@ -26,7 +26,7 @@ export default function Navbar() {
     const isLoggedIn = checkLogin(currentUser);
     setIsLoggedIn(isLoggedIn);
     return;
-  }, currentUser);
+  }, [currentUser]);
 
   const handleLogout = async (e: any) => {
     e.preventDefault();

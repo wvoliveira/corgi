@@ -10,6 +10,7 @@ import (
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"github.com/wvoliveira/corgi/internal/pkg/token"
 )
 
 type loggingResponseWriter struct {
@@ -31,35 +32,25 @@ func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log := logger.Logger(c)
 
-		session := sessions.Default(c)
 		user := model.User{}
 
-		v := session.Get("user")
+		tokenString := c.GetHeader("Authorization")
 
-		if v == nil {
+		if tokenString == "" {
 			user.ID = "0"
 			user.Name = "Anonymous"
-
-			session.Set("user", user)
-			err := session.Save()
-
-			if err != nil {
-				log.Error().Caller().Msg(err.Error())
-				e.EncodeError(c, e.ErrInternalServerError)
-				return
-			}
 		}
 
-		if v != nil {
-			user = v.(model.User)
-			session.Set("user", user)
+		if tokenString != "" {
+			user, err := token.ValidateToken(tokenString)
 
-			err := session.Save()
 			if err != nil {
 				log.Error().Caller().Msg(err.Error())
 				e.EncodeError(c, e.ErrInternalServerError)
-				return
+				c.Abort()
 			}
+
+			log.Info().Caller().Msg(user.ID)
 		}
 
 		c.Set("user_id", user.ID)
@@ -146,6 +137,9 @@ func Logger() gin.HandlerFunc {
 
 		// Process request
 		c.Next()
+
+		// Update context with more info.
+		log = logger.Logger(c)
 
 		param := gin.LogFormatterParams{
 			Request: c.Request,

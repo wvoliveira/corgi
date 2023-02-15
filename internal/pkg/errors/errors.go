@@ -18,11 +18,11 @@ var (
 	ErrNotFound        = errors.New("not found")
 	ErrOnlyAdmin       = errors.New("only admin can do it")
 	ErrEmailNotValid   = errors.New("try a valid e-mail")
-
-	ErrFieldsRequired = errors.New("require more body fields for this request")
+	ErrFieldsRequired  = errors.New("require more body fields for this request")
 
 	// Token errors.
 	ErrTokenInvalid = errors.New("invalid token")
+	ErrTokenType    = errors.New("type token must be 'auth' or 'personal'")
 
 	// ErrUnauthorized default authentication error.
 	ErrUnauthorized     = errors.New("sorry, you are not unauthorized")
