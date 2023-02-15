@@ -4,32 +4,29 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
 func decodeFind(c *gin.Context) (user model.User, err error) {
-	session := sessions.Default(c)
-	v := session.Get("user")
+	v, ok := c.Get("user_id")
 
-	if v == nil {
-		return user, errors.New("impossible to get user from session")
+	if !ok {
+		return user, errors.New("impossible to get user from context")
 	}
 
-	user = v.(model.User)
+	user.ID = v.(string)
 	return
 }
 
 func decodeUpdate(c *gin.Context) (user model.User, err error) {
-	session := sessions.Default(c)
-	v := session.Get("user")
+	v, ok := c.Get("user_id")
 
-	if v == nil {
-		return user, errors.New("impossible to get user from session")
+	if !ok {
+		return user, errors.New("impossible to get user from context")
 	}
 
-	user = v.(model.User)
+	user.ID = v.(string)
 
 	if err = json.NewDecoder(c.Request.Body).Decode(&user); err != nil {
 		return user, err

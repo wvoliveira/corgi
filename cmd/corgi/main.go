@@ -9,10 +9,10 @@ import (
 	"github.com/spf13/viper"
 
 	"github.com/gin-gonic/gin"
-	"github.com/wvoliveira/corgi/internal/app/auth"
 	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
+	"github.com/wvoliveira/corgi/internal/app/auth/token"
 	"github.com/wvoliveira/corgi/internal/app/click"
 	"github.com/wvoliveira/corgi/internal/app/group"
 	"github.com/wvoliveira/corgi/internal/app/health"
@@ -77,7 +77,7 @@ func main() {
 
 	{
 		// Auth service: logout and check.
-		service := auth.NewService(db)
+		service := token.NewService(db)
 		service.NewHTTP(apiRouter)
 	}
 

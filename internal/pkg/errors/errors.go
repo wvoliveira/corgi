@@ -19,6 +19,7 @@ var (
 	ErrOnlyAdmin       = errors.New("only admin can do it")
 	ErrEmailNotValid   = errors.New("try a valid e-mail")
 	ErrFieldsRequired  = errors.New("require more body fields for this request")
+	ErrNotImplemented  = errors.New("not implemented yet")
 
 	// Token errors.
 	ErrTokenInvalid = errors.New("invalid token")
