@@ -1,5 +1,7 @@
 import axios from "axios";
 
+import { SERVER_BASE_URL } from "../utils/constant";
+
 const UserAPI = {
   current: async () => {
     const user: any = window.localStorage.getItem("user");
@@ -12,14 +14,14 @@ const UserAPI = {
       });
       return response;
     } catch (error) {
-      return error;
+      return error.response;
     }
   },
-  login: async (email: string, password: string) => {
+  login: async (email, password) => {
     try {
       const response = await axios.post(
-        `/api/auth/password/login`,
-        JSON.stringify({ email: email, password: password}),
+        `${SERVER_BASE_URL}/auth/password/login`,
+        JSON.stringify({ email: email, password: password }),
         {
           headers: {
             "Content-Type": "application/json",
@@ -27,30 +29,30 @@ const UserAPI = {
         }
       );
       return response;
-    } catch (error: any) {
-      console.log(error);
-      return error?.response;
+    } catch (error) {
+      return error.response;
     }
   },
-  register: async (name: string, email: string, password: string) => {
-    const { data, status } = await axios.post(
-      `/api/auth/password/register`,
-      JSON.stringify({ name: name, email: email, password: password }),
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-    return {
-      data,
-      status,
-    };
+  register: async (username, email, password) => {
+    try {
+      const response = await axios.post(
+        `${SERVER_BASE_URL}/auth/password/register`,
+        JSON.stringify({ user: { username, email, password } }),
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      return response;
+    } catch (error) {
+      return error.response;
+    }
   },
-  save: async (user: any) => {
+  save: async (user) => {
     try {
       const response = await axios.put(
-        `/api/user`,
+        `${SERVER_BASE_URL}/user`,
         JSON.stringify({ user }),
         {
           headers: {
@@ -60,40 +62,45 @@ const UserAPI = {
       );
       return response;
     } catch (error) {
-      return error;
+      return error.response;
     }
   },
-  logout: async () => {
-    try {
-      const response = await axios.get(
-        `/api/auth/logout`,
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return response;
-    } catch (error) {
-      return error;
-    }
-  },
-  reset: async (email: string) => {
+  follow: async (username) => {
+    const user: any = JSON.parse(window.localStorage.getItem("user"));
+    const token = user?.token;
     try {
       const response = await axios.post(
-        `/api/auth/reset`,
-        JSON.stringify({ email: email }),
+        `${SERVER_BASE_URL}/profiles/${username}/follow`,
+        {},
         {
           headers: {
-            "Content-Type": "application/json",
+            Authorization: `Token ${encodeURIComponent(token)}`,
           },
         }
       );
       return response;
     } catch (error) {
-      return error;
+      return error.response;
     }
-  }
+  },
+  unfollow: async (username) => {
+    const user: any = JSON.parse(window.localStorage.getItem("user"));
+    const token = user?.token;
+    try {
+      const response = await axios.delete(
+        `${SERVER_BASE_URL}/profiles/${username}/follow`,
+        {
+          headers: {
+            Authorization: `Token ${encodeURIComponent(token)}`,
+          },
+        }
+      );
+      return response;
+    } catch (error) {
+      return error.response;
+    }
+  },
+  get: async (username) => axios.get(`${SERVER_BASE_URL}/profiles/${username}`),
 };
 
 export default UserAPI;

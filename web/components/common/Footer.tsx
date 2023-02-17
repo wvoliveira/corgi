@@ -1,13 +1,17 @@
-import Head from "next/head";
-import Link from "next/link";
 import React from "react";
-import Navbar from "./Navbar";
 
-export default function Footer() {
+const Footer = () => (
+  <footer>
+    <div className="container">
+      <a href="/" className="logo-font">
+        Corgi
+      </a>
+      <span className="attribution">
+        A shortener system{" "}
+        <a href="https://elga.io">ELGA</a>.
+      </span>
+    </div>
+  </footer>
+);
 
-  return (
-    <>
-
-    </>
-  )
-}
+export default Footer;

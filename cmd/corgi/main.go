@@ -50,6 +50,7 @@ func main() {
 	router := gin.New()
 	router.Use(middleware.Logger())
 	router.Use(gin.Recovery())
+	router.Use(middleware.CORS())
 
 	server.AddStoreSession(router)
 
