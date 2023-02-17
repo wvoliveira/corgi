@@ -9,14 +9,15 @@ const updateOptions = () => {
 
   const user = JSON.parse(window.localStorage.user);
 
-  if (!!user.token) {
+  if (!!user.access_token) {
     return {
       headers: {
-        Authorization: `Token ${user.token}`,
+        Authorization: `Token ${user.access_token}`,
       },
     };
   }
 };
+
 export default async function (url) {
   const { data } = await axios.get(url, updateOptions());
   return data;

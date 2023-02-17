@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/sessions"
@@ -32,29 +33,30 @@ func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log := logger.Logger(c)
 
-		user := model.User{}
+		var user model.User
+		var err error
 
-		tokenString := c.GetHeader("Authorization")
+		headerAuth := c.GetHeader("Authorization")
 
-		if tokenString == "" {
+		if headerAuth == "" {
 			user.ID = "0"
 			user.Name = "Anonymous"
 		}
 
-		if tokenString != "" {
-			user, err := token.ValidateToken(tokenString)
+		headerToken := strings.Split(headerAuth, "Bearer ")
+		accessToken := headerToken[len(headerToken)-1]
+
+		if headerAuth != "" && accessToken != "" {
+			user, err = token.ValidateToken(accessToken)
 
 			if err != nil {
 				log.Error().Caller().Msg(err.Error())
 				e.EncodeError(c, e.ErrInternalServerError)
 				c.Abort()
 			}
-
-			log.Info().Caller().Msg(user.ID)
 		}
 
 		c.Set("user_id", user.ID)
-
 		c.Next()
 	}
 }

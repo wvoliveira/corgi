@@ -41,11 +41,15 @@ const Navbar = () => {
               </NavLink>
             </li>
             <li className="nav-item">
+              {/* <NavLink
+                href={`/profile/${currentUser?.name}`}
+                as={`/profile/${currentUser?.name}`}
+              > */}
               <NavLink
-                href={`/profile/${currentUser?.username}`}
-                as={`/profile/${currentUser?.username}`}
+                href={`/profile`}
+                as={`/profile`}
               >
-                <span onClick={handleClick}>{currentUser?.username}</span>
+                <span onClick={handleClick}>{currentUser?.name}</span>
               </NavLink>
             </li>
           </Maybe>
