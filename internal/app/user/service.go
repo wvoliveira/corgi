@@ -39,9 +39,9 @@ func (s service) Find(c *gin.Context, userID string) (user model.User, err error
 		return
 	}
 
-	query := "SELECT * FROM users WHERE id = $1"
+	query := "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE id = $1"
 	err = s.db.QueryRowContext(c, query, userID).Scan(
-		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Name, &user.Role, &user.Active)
+		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Username, &user.Name, &user.Role, &user.Active)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())

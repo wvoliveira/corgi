@@ -6,6 +6,7 @@ type identity struct {
 }
 
 type userResponse struct {
+	Username   string     `json:"username"`
 	Name       string     `json:"name"`
 	Role       string     `json:"role,omitempty"`
 	Identities []identity `json:"identities,omitempty"`

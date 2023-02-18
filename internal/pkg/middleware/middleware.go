@@ -14,20 +14,6 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/token"
 )
 
-type loggingResponseWriter struct {
-	http.ResponseWriter
-	statusCode int
-}
-
-func NewLoggingResponseWriter(w http.ResponseWriter) *loggingResponseWriter {
-	return &loggingResponseWriter{w, http.StatusOK}
-}
-
-func (lrw *loggingResponseWriter) WriteHeader(code int) {
-	lrw.statusCode = code
-	lrw.ResponseWriter.WriteHeader(code)
-}
-
 // Auth check if auth ok and set claims in request header.
 func Auth() gin.HandlerFunc {
 	return func(c *gin.Context) {

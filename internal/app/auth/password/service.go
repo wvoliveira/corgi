@@ -7,6 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	"github.com/redis/go-redis/v9"
+	"github.com/teris-io/shortid"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -53,9 +54,9 @@ func (s service) Login(c *gin.Context, identity model.Identity) (accessToken, re
 		return accessToken, refreshToken, user, e.ErrUnauthorized
 	}
 
-	query = "SELECT * FROM users WHERE id = $1"
+	query = "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE id = $1"
 	err = s.db.QueryRowContext(c, query, identityFromDB.UserID).
-		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Name, &user.Role, &user.Active)
+		Scan(&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Username, &user.Name, &user.Role, &user.Active)
 
 	if err != nil {
 		log.Warn().Caller().Msg(err.Error())
@@ -94,14 +95,20 @@ func (s service) Register(c *gin.Context, identity model.Identity, user model.Us
 	user.ID = ulid.Make().String()
 	user.Role = "user"
 
+	if user.Username == "" {
+		sid, _ := shortid.New(1, shortid.DefaultABC, 2342)
+		keyword, _ := sid.Generate()
+		user.Username = fmt.Sprintf("user%s", keyword)
+	}
+
 	tx, err := s.db.BeginTx(c, &sql.TxOptions{})
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return e.ErrAuthPasswordInternalError
 	}
 
-	_, err = tx.Exec(`INSERT INTO users(id, name, role) 
-	VALUES($1, $2, $3)`, user.ID, user.Name, user.Role)
+	_, err = tx.Exec(`INSERT INTO users(id, username, name, role) 
+	VALUES($1, $2, $3, $4)`, user.ID, user.Username, user.Name, user.Role)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())

@@ -4,9 +4,14 @@ CREATE TABLE IF NOT EXISTS users(
 	updated_at TIMESTAMP,
 
 	name VARCHAR (100) NOT NULL,
+	username VARCHAR (100) NOT NULL UNIQUE,
 	role VARCHAR (50) NOT NULL,
 	active BOOLEAN DEFAULT true
 );
+
+CREATE UNIQUE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_active ON users(active);
 
 INSERT INTO users(id, name, role, active) VALUES('0', 'Anonymous', 'anonymous', false);
 

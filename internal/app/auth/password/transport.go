@@ -18,7 +18,6 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 
 func (s service) HTTPLogin(c *gin.Context) {
 	dr, err := decodeLogin(c)
-
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -31,14 +30,12 @@ func (s service) HTTPLogin(c *gin.Context) {
 	}
 
 	accessToken, refreshToken, user, err := s.Login(c, identity)
-
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	res := encodeLogin(user.Name, user.Role, user.Active, accessToken, refreshToken)
-
+	res := encodeLogin(user.Username, user.Name, user.Role, user.Active, accessToken, refreshToken)
 	response.Default(c, res, "", http.StatusOK)
 }
 

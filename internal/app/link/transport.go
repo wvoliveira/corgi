@@ -15,7 +15,6 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r.Use(middleware.Checks())
 	r.Use(middleware.Auth())
 
-	r.OPTIONS("", nil)
 	r.POST("", s.HTTPAdd)
 	r.GET("", s.HTTPFindAll)
 	r.GET("/:id", s.HTTPFindByID)

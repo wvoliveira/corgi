@@ -45,6 +45,7 @@ func (s service) HTTPFind(c *gin.Context) {
 	}
 
 	resp := userResponse{
+		Username:   user.Username,
 		Name:       user.Name,
 		Role:       user.Role,
 		Identities: identities,
