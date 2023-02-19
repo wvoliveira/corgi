@@ -37,7 +37,7 @@ func Auth() gin.HandlerFunc {
 
 			if err != nil {
 				log.Error().Caller().Msg(err.Error())
-				e.EncodeError(c, e.ErrInternalServerError)
+				e.EncodeError(c, e.ErrUnauthorized)
 				c.Abort()
 			}
 		}

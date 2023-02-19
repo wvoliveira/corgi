@@ -3,17 +3,17 @@ import React from "react";
 import { mutate } from "swr";
 
 import ListErrors from "../common/ListErrors";
-import UserAPI from "../../lib/api/user";
+import APIAuthPassword from "../../lib/api/authPassword";
 
 const RegisterForm = () => {
   const [isLoading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState([]);
-  const [username, setUsername] = React.useState("");
+  const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  const handleUsernameChange = React.useCallback(
-    (e) => setUsername(e.target.value),
+  const handleNameChange = React.useCallback(
+    (e) => setName(e.target.value),
     []
   );
   const handleEmailChange = React.useCallback(
@@ -30,8 +30,8 @@ const RegisterForm = () => {
     setLoading(true);
 
     try {
-      const { data, status } = await UserAPI.register(
-        username,
+      const { data, status } = await APIAuthPassword.register(
+        name,
         email,
         password
       );
@@ -61,8 +61,8 @@ const RegisterForm = () => {
               className="form-control form-control-lg"
               type="text"
               placeholder="Username"
-              value={username}
-              onChange={handleUsernameChange}
+              value={name}
+              onChange={handleNameChange}
             />
           </fieldset>
 

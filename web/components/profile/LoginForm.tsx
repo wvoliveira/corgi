@@ -3,16 +3,16 @@ import React from "react";
 import { mutate } from "swr";
 
 import ListErrors from "../common/ListErrors";
-import UserAPI from "../../lib/api/user";
+import APIAuthPassword from "../../lib/api/authPassword";
 
 const LoginForm = () => {
   const [isLoading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState([]);
-  const [email, setEmail] = React.useState("");
+  const [usernameEmail, setUsernameEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  const handleEmailChange = React.useCallback(
-    (e) => setEmail(e.target.value),
+  const handleUsernameEmailChange = React.useCallback(
+    (e) => setUsernameEmail(e.target.value),
     []
   );
   const handlePasswordChange = React.useCallback(
@@ -25,7 +25,7 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
-      const { data, status } = await UserAPI.login(email, password);
+      const { data, status } = await APIAuthPassword.login(usernameEmail, password);
 
       console.log(status);
       console.log(data);
@@ -34,9 +34,11 @@ const LoginForm = () => {
         setErrors(data.errors);
       }
 
-      if (data?.data) {
-        window.localStorage.setItem("user", JSON.stringify(data.data));
-        mutate("user", data?.data);
+      if (data?.data?.user && data?.data?.tokens) {
+        window.localStorage.setItem("user", JSON.stringify(data.data.user));
+        window.localStorage.setItem("tokens", JSON.stringify(data.data.tokens));
+
+        mutate("user", data.data.user);
         Router.push("/");
       }
     } catch (error) {
@@ -55,10 +57,10 @@ const LoginForm = () => {
           <fieldset className="form-group">
             <input
               className="form-control form-control-lg"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={handleEmailChange}
+              type="text"
+              placeholder="Username or email"
+              value={usernameEmail}
+              onChange={handleUsernameEmailChange}
             />
           </fieldset>
 
