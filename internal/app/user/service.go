@@ -15,12 +15,14 @@ import (
 type Service interface {
 	FindMe(*gin.Context, string) (model.User, error)
 	UpdateMe(*gin.Context, string, string) error
-	FindByIDorUsername(*gin.Context, string, string) (model.User, error)
-	UpdateByIDorUsername(*gin.Context, string, string, string) error
+	FindByID(*gin.Context, string, string) (model.User, error)
+	UpdateByID(*gin.Context, string, string, string) error
+	FindByUsername(*gin.Context, string, string) (model.User, error)
 
 	NewHTTP(*gin.RouterGroup)
-	HTTPFindByIDorUsername(*gin.Context)
-	HTTPUpdateByIDorUsername(*gin.Context)
+	HTTPFindByID(*gin.Context)
+	HTTPUpdateByID(*gin.Context)
+	HTTPFindByUsername(*gin.Context)
 }
 
 type service struct {
@@ -71,12 +73,12 @@ func (s service) UpdateMe(c *gin.Context, whoID string, name string) (err error)
 }
 
 // Find get a shortener link from ID or username.
-func (s service) FindByIDorUsername(c *gin.Context, whoID string, idOrUsername string) (user model.User, err error) {
+func (s service) FindByID(c *gin.Context, whoID string, id string) (user model.User, err error) {
 	log := logger.Logger(c)
 
-	query := "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE id = $1 OR username = $1"
+	query := "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE id = $1"
 
-	err = s.db.QueryRowContext(c, query, idOrUsername).Scan(
+	err = s.db.QueryRowContext(c, query, id).Scan(
 		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Username, &user.Name, &user.Role, &user.Active)
 
 	if err != nil {
@@ -93,17 +95,39 @@ func (s service) FindByIDorUsername(c *gin.Context, whoID string, idOrUsername s
 }
 
 // Update change specific link by ID or username.
-func (s service) UpdateByIDorUsername(c *gin.Context, whoID, idOrUsername, name string) (err error) {
+func (s service) UpdateByID(c *gin.Context, whoID, id, name string) (err error) {
 	log := logger.Logger(c.Request.Context())
 
 	// TODO:
 	// 	- check if user is updating yourself
 	// 	- update all values
-	query := "UPDATE users SET name = $1 WHERE id = $2 or username = $2"
-	_, err = s.db.ExecContext(c, query, name, idOrUsername)
+	query := "UPDATE users SET name = $1 WHERE id = $2"
+	_, err = s.db.ExecContext(c, query, name, id)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	return
+}
+
+// Find get a user from username.
+func (s service) FindByUsername(c *gin.Context, whoID string, username string) (user model.User, err error) {
+	log := logger.Logger(c)
+
+	query := "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE username = $1"
+
+	err = s.db.QueryRowContext(c, query, username).Scan(
+		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Username, &user.Name, &user.Role, &user.Active)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return user, e.ErrUserNotFound
+		}
+
 		return
 	}
 

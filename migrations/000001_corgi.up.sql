@@ -13,7 +13,7 @@ CREATE UNIQUE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_active ON users(active);
 
-INSERT INTO users(id, name, role, active) VALUES('0', 'Anonymous', 'anonymous', false);
+INSERT INTO users(id, name, username, role, active) VALUES('0', 'Anonymous', 'anonymous', 'anonymous', false);
 
 CREATE TABLE IF NOT EXISTS identities(
 	id         VARCHAR (30) PRIMARY KEY,

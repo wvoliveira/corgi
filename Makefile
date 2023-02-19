@@ -443,7 +443,7 @@ build-web:
     mv dist ../cmd/corgi/web
 
 dev-dep:
-	docker-compose -f deployments/container/docker-compose.yaml up -d
+	docker-compose -f deployments/container/docker-compose.yaml up
 
 dev-env:
 	cp -f .env.example .env

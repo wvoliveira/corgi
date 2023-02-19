@@ -49,63 +49,48 @@ const PublishArticleEditor = () => {
   };
 
   return (
-    <div className="editor-page">
-      <div className="container page">
-        <div className="row">
-          <div className="col-md-10 offset-md-1 col-xs-12">
-            <ListErrors errors={errors} />
-            <form>
-              <fieldset>
-                <fieldset className="form-group">
-                  <input
-                    className="form-control form-control-lg"
-                    type="text"
-                    placeholder="Article Title"
-                    value={posting.title}
-                    onChange={handleTitle}
-                  />
-                </fieldset>
+    <>
+      <ListErrors errors={errors} />
 
-                <fieldset className="form-group">
-                  <input
-                    className="form-control"
-                    type="text"
-                    placeholder="What's this article about?"
-                    value={posting.description}
-                    onChange={handleDescription}
-                  />
-                </fieldset>
-
-                <fieldset className="form-group">
-                  <textarea
-                    className="form-control"
-                    rows={8}
-                    placeholder="Write your article (in markdown)"
-                    value={posting.body}
-                    onChange={handleBody}
-                  />
-                </fieldset>
-
-                <TagInput
-                  tagList={posting.tagList}
-                  addTag={addTag}
-                  removeTag={removeTag}
-                />
-
-                <button
-                  className="btn btn-lg pull-xs-right btn-primary"
-                  type="button"
-                  disabled={isLoading}
-                  onClick={handleSubmit}
-                >
-                  Publish Article
-                </button>
-              </fieldset>
-            </form>
-          </div>
-        </div>
-      </div>
-    </div>
+      <form>
+        <p />
+        <input
+          type="text"
+          placeholder="Article Title"
+          value={posting.title}
+          onChange={handleTitle}
+        />
+        <p />
+        <input
+          type="text"
+          placeholder="What's this article about?"
+          value={posting.description}
+          onChange={handleDescription}
+        />
+        <p />
+        <textarea
+          rows={8}
+          cols={21}
+          placeholder="Write your article (in markdown)"
+          value={posting.body}
+          onChange={handleBody}
+        />
+        <p />
+        <TagInput
+          tagList={posting.tagList}
+          addTag={addTag}
+          removeTag={removeTag}
+        />
+        <p />
+        <button
+          type="button"
+          disabled={isLoading}
+          onClick={handleSubmit}
+        >
+          Publish Article
+        </button>
+      </form>
+    </>
   );
 };
 

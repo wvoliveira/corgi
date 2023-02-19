@@ -31,27 +31,25 @@ const TagInput = ({ tagList, addTag, removeTag }) => {
 
   return (
     <>
-      <fieldset>
-        <input
-          type="text"
-          placeholder="Enter tags"
-          value={tag}
-          onChange={changeTagInput}
-          onBlur={handleAddTag}
-          onKeyDown={handleTagInputKeyDown}
-        />
+      <input
+        type="text"
+        placeholder="Enter tags"
+        value={tag}
+        onChange={changeTagInput}
+        onBlur={handleAddTag}
+        onKeyDown={handleTagInputKeyDown}
+      />
 
-        <div>
-          {tagList.map((tag, index) => (
-            <span key={index}>
-              <i
-                onClick={() => handleRemoveTag(tag)}
-              />
-              {tag}
-            </span>
-          ))}
-        </div>
-      </fieldset>
+      <div>
+        {tagList.map((tag, index) => (
+          <span key={index}>
+            <i
+              onClick={() => handleRemoveTag(tag)}
+            />
+            {tag}
+          </span>
+        ))}
+      </div>
     </>
   );
 };

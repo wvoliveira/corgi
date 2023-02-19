@@ -18,17 +18,22 @@ type updateMeRequest struct {
 	}
 }
 
-type findByIDorUsernameRequest struct {
-	whoID        string
-	IDorUsername string `uri:"id_username" binding:"required"`
+type findByIDRequest struct {
+	whoID string
+	ID    string `uri:"id" binding:"required"`
 }
 
-type updateIDorUsernameRequest struct {
-	whoID        string
-	IDorUsername string `uri:"id_username" binding:"required"`
-	User         struct {
+type updateIDRequest struct {
+	whoID string
+	ID    string `uri:"id" binding:"required"`
+	User  struct {
 		Name string `json:"name"`
 	}
+}
+
+type findByUsernameRequest struct {
+	whoID    string
+	Username string `uri:"username" binding:"required"`
 }
 
 func decodeFindMe(c *gin.Context) (r findMeRequest, err error) {
@@ -51,7 +56,7 @@ func decodeUpdateMe(c *gin.Context) (r updateMeRequest, err error) {
 
 	err = c.ShouldBindUri(&r)
 	if err != nil {
-		return r, errors.New("impossible to get user ID or username from URI")
+		return r, errors.New("impossible to get user ID from URI")
 	}
 
 	if err = json.NewDecoder(c.Request.Body).Decode(&r.User); err != nil {
@@ -60,7 +65,7 @@ func decodeUpdateMe(c *gin.Context) (r updateMeRequest, err error) {
 	return
 }
 
-func decodeFindByIDorUsername(c *gin.Context) (r findByIDorUsernameRequest, err error) {
+func decodeFindByID(c *gin.Context) (r findByIDRequest, err error) {
 	v, ok := c.Get("user_id")
 	if !ok {
 		return r, errors.New("impossible to know who you are")
@@ -70,12 +75,12 @@ func decodeFindByIDorUsername(c *gin.Context) (r findByIDorUsernameRequest, err 
 
 	err = c.ShouldBindUri(&r)
 	if err != nil {
-		return r, errors.New("impossible to get user ID or username from URI")
+		return r, errors.New("impossible to get username from URI")
 	}
 	return
 }
 
-func decodeUpdateByIDorUsername(c *gin.Context) (r updateIDorUsernameRequest, err error) {
+func decodeUpdateByID(c *gin.Context) (r updateIDRequest, err error) {
 	v, ok := c.Get("user_id")
 	if !ok {
 		return r, errors.New("impossible to know who you are")
@@ -85,11 +90,26 @@ func decodeUpdateByIDorUsername(c *gin.Context) (r updateIDorUsernameRequest, er
 
 	err = c.ShouldBindUri(&r)
 	if err != nil {
-		return r, errors.New("impossible to get user ID or username from URI")
+		return r, errors.New("impossible to get username from URI")
 	}
 
 	if err = json.NewDecoder(c.Request.Body).Decode(&r.User); err != nil {
 		return r, err
+	}
+	return
+}
+
+func decodeFindByUsername(c *gin.Context) (r findByUsernameRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		return r, errors.New("impossible to know who you are")
+	}
+
+	r.whoID = v.(string)
+
+	err = c.ShouldBindUri(&r)
+	if err != nil {
+		return r, errors.New("impossible to get user ID from URI")
 	}
 	return
 }
