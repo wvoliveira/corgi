@@ -5,13 +5,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
 func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r := rg.Group("/users")
-	r.Use(middleware.Auth())
 
 	r.GET("/me", s.HTTPFindMe)
 	r.PATCH("/me", s.HTTPUpdateMe)

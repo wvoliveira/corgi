@@ -51,6 +51,7 @@ func main() {
 	router.Use(middleware.Logger())
 	router.Use(gin.Recovery())
 	router.Use(middleware.CORS())
+	router.Use(middleware.Auth())
 
 	server.AddStoreSession(router)
 

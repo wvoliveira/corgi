@@ -13,7 +13,6 @@ import (
 func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r := rg.Group("/links")
 	r.Use(middleware.Checks())
-	r.Use(middleware.Auth())
 
 	r.POST("", s.HTTPAdd)
 	r.GET("", s.HTTPFindAll)
