@@ -1,3 +1,4 @@
+import LinkForm from "components/link/LinkForm";
 import Head from "next/head";
 import React from "react";
 
@@ -15,8 +16,10 @@ const Home = () => (
       />
     </Head>
     <div className="home-page">
-      <Banner />
+      {/* <Banner /> */}
       <div className="container page">
+        <LinkForm />
+
         <div className="row">
           <MainView />
           <div className="col-md-3">

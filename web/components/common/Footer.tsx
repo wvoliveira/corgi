@@ -7,8 +7,7 @@ const Footer = () => (
         Corgi
       </a>
       <span className="attribution">
-        A shortener system{" "}
-        <a href="https://elga.io">ELGA</a>.
+        A <a href="https://elga.io">ELGA</a> shortener system.
       </span>
     </div>
   </footer>
