@@ -2,6 +2,7 @@ import { useRouter } from "next/router";
 import React from "react";
 import useSWR, { mutate, trigger } from "swr";
 
+import { SERVER_BASE_URL } from "../../lib/utils/constant";
 import ArticleList from "../../components/article/ArticleList";
 import CustomImage from "../../components/common/CustomImage";
 import ErrorMessage from "../../components/common/ErrorMessage";
@@ -11,7 +12,6 @@ import FollowUserButton from "../../components/profile/FollowUserButton";
 import ProfileTab from "../../components/profile/ProfileTab";
 import UserAPI from "../../lib/api/user";
 import checkLogin from "../../lib/utils/checkLogin";
-import { SERVER_BASE_URL } from "../../lib/utils/constant";
 import fetcher from "../../lib/utils/fetcher";
 import storage from "../../lib/utils/storage";
 
@@ -25,38 +25,41 @@ const Profile = ({ initialProfile }) => {
     data: fetchedProfile,
     error: profileError,
   } = useSWR(
-    `${SERVER_BASE_URL}/profiles/${encodeURIComponent(String(pid))}`,
+    `${SERVER_BASE_URL}/users/${encodeURIComponent(String(pid))}`,
     fetcher,
     { initialData: initialProfile }
   );
 
   if (profileError) return <ErrorMessage message="Can't load profile" />;
 
-  const { profile } = fetchedProfile || initialProfile;
-  const { username, bio, image, following } = profile;
+  const profile = fetchedProfile.data || initialProfile.data;
+
+  // const { username, bio, image, following } = profile;
+  const { username, name, role } = profile;
 
   const { data: currentUser } = useSWR("user", storage);
   const isLoggedIn = checkLogin(currentUser);
+
   const isUser = currentUser && username === currentUser?.username;
 
   const handleFollow = async () => {
     mutate(
-      `${SERVER_BASE_URL}/profiles/${pid}`,
+      `${SERVER_BASE_URL}/users/${pid}`,
       { profile: { ...profile, following: true } },
       false
     );
     UserAPI.follow(pid);
-    trigger(`${SERVER_BASE_URL}/profiles/${pid}`);
+    trigger(`${SERVER_BASE_URL}/users/${pid}`);
   };
 
   const handleUnfollow = async () => {
     mutate(
-      `${SERVER_BASE_URL}/profiles/${pid}`,
+      `${SERVER_BASE_URL}/users/${pid}`,
       { profile: { ...profile, following: true } },
       true
     );
     UserAPI.unfollow(pid);
-    trigger(`${SERVER_BASE_URL}/profiles/${pid}`);
+    trigger(`${SERVER_BASE_URL}/users/${pid}`);
   };
 
   return (
@@ -66,18 +69,21 @@ const Profile = ({ initialProfile }) => {
           <div className="row">
             <div className="col-xs-12 col-md-10 offset-md-1">
               <CustomImage
-                src={image}
+                // src={image}
+                src="image here"
                 alt="User's profile image"
                 className="user-img"
               />
               <h4>{username}</h4>
-              <p>{bio}</p>
+              {/* <p>{bio}</p> */}
+              <p>"bio here"</p>
               <EditProfileButton isUser={isUser} />
               <Maybe test={isLoggedIn}>
                 <FollowUserButton
                   isUser={isUser}
                   username={username}
-                  following={following}
+                  // following={following}
+                  following="following here"
                   follow={handleFollow}
                   unfollow={handleUnfollow}
                 />

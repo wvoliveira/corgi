@@ -74,8 +74,6 @@ func (s service) UpdateMe(c *gin.Context, whoID string, name string) (err error)
 func (s service) FindByIDorUsername(c *gin.Context, whoID string, idOrUsername string) (user model.User, err error) {
 	log := logger.Logger(c)
 
-	log.Debug().Caller().Msg("ID or username: " + idOrUsername)
-
 	query := "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE id = $1 OR username = $1"
 
 	err = s.db.QueryRowContext(c, query, idOrUsername).Scan(
