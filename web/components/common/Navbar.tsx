@@ -16,54 +16,38 @@ const Navbar = () => {
   const handleClick = React.useCallback(() => setPage(0), []);
 
   return (
-    <nav className="navbar navbar-light">
-      <div className="container">
-        <CustomLink className="navbar-brand" href="/" as="/">
-          <span onClick={handleClick}>Corgi</span>
-        </CustomLink>
-        <ul className="nav navbar-nav pull-xs-right">
-          <li className="nav-item">
-            <NavLink href="/" as="/">
-              <span onClick={handleClick}>Home</span>
-            </NavLink>
-          </li>
-          <Maybe test={isLoggedIn}>
-            <li className="nav-item">
-              <NavLink href="/editor/new" as="/editor/new">
-                <i className="ion-compose" />
-                &nbsp;New Post
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink href="/user/settings" as="/user/settings">
-                <i className="ion-gear-a" />
-                &nbsp;Settings
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink
-                href={`/profile/${currentUser?.username}`}
-                as={`/profile/${currentUser?.username}`}
-              >
-                <span onClick={handleClick}>{currentUser?.name}</span>
-              </NavLink>
-            </li>
-          </Maybe>
-          <Maybe test={!isLoggedIn}>
-            <li className="nav-item">
-              <NavLink href="/user/login" as="/user/login">
-                Sign in
-              </NavLink>
-            </li>
-            <li className="nav-item">
-              <NavLink href="/user/register" as="/user/register">
-                Sign up
-              </NavLink>
-            </li>
-          </Maybe>
-        </ul>
-      </div>
-    </nav>
+    <>
+      <a href="/" onClick={handleClick}>
+        Corgi
+      </a>
+      { " · " }
+      <a href="/" onClick={handleClick}>
+        Home
+      </a>
+      { " · " }
+      <Maybe test={isLoggedIn}>
+        <a href="/editor/new">
+          New Post
+        </a>
+        { " · " }
+        <a href="/user/settings">
+          Settings
+        </a>
+        { " · " }
+        <a href={`/profile/${currentUser?.username}`} onClick={handleClick}>
+          {currentUser?.name}
+        </a>
+      </Maybe>
+      <Maybe test={!isLoggedIn}>
+        <a href="/user/login">
+          Sign in
+        </a>
+        { " · " }
+        <a href="/user/register">
+          Sign up
+        </a>
+      </Maybe>
+    </>
   );
 };
 

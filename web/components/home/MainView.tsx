@@ -4,11 +4,11 @@ import TabList from "./TabList";
 import ArticleList from "../article/ArticleList";
 
 const MainView = () => (
-  <div className="col-md-9">
-    <div className="feed-toggle">
+  <div>
+    {/* <div>
       <TabList />
     </div>
-    <ArticleList />
+    <ArticleList /> */}
   </div>
 );
 

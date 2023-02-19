@@ -6,7 +6,7 @@ const Banner = () => (
   <div className="banner">
     <div className="container">
       <h1 className="logo-font">{APP_NAME.toLowerCase()}</h1>
-      <p>A shortener app.</p>
+      <p>A URL shortener app.</p>
     </div>
   </div>
 );

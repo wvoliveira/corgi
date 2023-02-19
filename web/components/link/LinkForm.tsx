@@ -1,22 +1,21 @@
 import Router from "next/router";
 import React from "react";
-import { mutate } from "swr";
+import useSWR, { mutate } from "swr";
 
+import storage from "../../lib/utils/storage";
 import ListErrors from "../common/ListErrors";
-import APIAuthPassword from "../../lib/api/authPassword";
+import APILink from "../../lib/api/link";
 
 const LinkForm = () => {
   const [isLoading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState([]);
-  const [usernameEmail, setUsernameEmail] = React.useState("");
-  const [password, setPassword] = React.useState("");
+  const [url, setURL] = React.useState("");
+  const [response, setResponse] = React.useState({});
 
-  const handleUsernameEmailChange = React.useCallback(
-    (e) => setUsernameEmail(e.target.value),
-    []
-  );
-  const handlePasswordChange = React.useCallback(
-    (e) => setPassword(e.target.value),
+  const { data: tokens } = useSWR("tokens", storage);
+
+  const handleURLChange = React.useCallback(
+    (e) => setURL(e.target.value),
     []
   );
 
@@ -25,21 +24,20 @@ const LinkForm = () => {
     setLoading(true);
 
     try {
-      const { data, status } = await APIAuthPassword.login(usernameEmail, password);
+      const { data, status } = await APILink.create(url, tokens.access_token);
 
       console.log(status);
       console.log(data);
 
-      if (status !== 200) {
+      if (status !== 201) {
         setErrors(data.errors);
       }
 
-      if (data?.data?.user && data?.data?.tokens) {
-        window.localStorage.setItem("user", JSON.stringify(data.data.user));
-        window.localStorage.setItem("tokens", JSON.stringify(data.data.tokens));
-
-        mutate("user", data.data.user);
-        Router.push("/");
+      if (data?.data) {
+        setResponse(data.data)
+        console.log(response)
+        // mutate("user", data.data.user);
+        // Router.push("/");
       }
     } catch (error) {
       console.error(error);
@@ -52,27 +50,22 @@ const LinkForm = () => {
     <>
       <ListErrors errors={errors} />
 
-      <form className="row g-3" onSubmit={handleSubmit}>
-      <div className="col-auto">
-          <input
-            // className="form-control form-control-lg"
-            className="form-control"
-            type="text"
-            placeholder="URL"
-            value={usernameEmail}
-            onChange={handleUsernameEmailChange}
-          />
-          </div>
-          <div className="col-auto">
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          placeholder="URL"
+          value={url}
+          onChange={handleURLChange}
+        />
 
-          <button
-            className="btn btn-primary mb-3"
-            type="submit"
-            disabled={isLoading}
-          >
-            Create
-          </button>
-          </div>
+        { " " }
+
+        <button
+          type="submit"
+          disabled={isLoading}
+        >
+          Create
+        </button>
       </form>
     </>
   );

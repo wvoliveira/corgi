@@ -21,35 +21,35 @@ class MyDocument extends Document {
           <meta name="google" content="notranslate" />
           <meta name="mobile-web-app-capable" content="yes" />
           <meta name="apple-mobile-web-app-capable" content="yes" />
-          <meta name="keywords" content="nextjs, realworld" />
+          <meta name="keywords" content="corgi, shortener, elga" />
           <meta property="og:locale" content="en_US" />
-          <meta property="og:site_name" content="next-realworld" />
-          <meta property="og:title" content="Next.js realworld example app" />
+          <meta property="og:site_name" content="corgi" />
+          <meta property="og:title" content="Corgi. A URL shortener app" />
           <meta
             property="og:description"
-            content="Next.js + SWR codebase containing realworld examples"
+            content="Corgi. A simple and fast URL shortener app"
           />
-          <meta property="og:url" content="https://next-realworld.now.sh/" />
+          <meta property="og:url" content="https://corgi.app/" />
           <meta
             property="og:image"
-            content="https://next-realworld.now.sh/images/share-link.png"
+            content="https://corgi.app/images/share-link.png"
           />
-          <meta property="twitter:card" content="next-realworld" />
+          <meta property="twitter:card" content="corgi-shortener" />
           <meta
             property="twitter:url"
-            content="https://next-realworld.now.sh/"
+            content="https://corgi.app/"
           />
           <meta
             property="twitter:title"
-            content="Next.js realworld example app"
+            content="Corgi. A URL shortener app"
           />
           <meta
             property="twitter:description"
-            content="Next.js + SWR codebase containing realworld examples"
+            content="Corgi. A URL shortener app"
           />
           <meta
             property="twitter:image"
-            content="https://machimban.com/images/talk-link.jpg"
+            content="https://corgi.app/images/talk-link.jpg"
           />
           <meta name="msapplication-TileColor" content="#000" />
           <meta
@@ -132,27 +132,25 @@ class MyDocument extends Document {
               __html: `{
               "@context": "http://schema.org/",
               "@type": "Organization",
-              "url": "https://next-realworld.now.sh/",
-              "logo": "https://next-realworld.now.sh/images/share-link.png",
+              "url": "https://corgi.app/",
+              "logo": "https://corgi.app/images/share-link.png",
               "sameAs": [
-                "https://realworld.io",
-                "https://medium.com/@ericsimons/introducing-realworld-6016654d36b5",
+                "https://elga.io",
               ],
             }`,
             }}
           />
           <link rel="manifest" href="/manifest.json" />
-          <link rel="stylesheet" href="/css/bootstrap.min.css" />
-          <link
+          {/* <link rel="stylesheet" href="/css/bootstrap.min.css" /> */}
+          {/* <link
             rel="stylesheet"
-            // href="/css/ionicons.min.css"
-            href="//code.ionicframework.com/ionicons/2.0.1/css/ionicons.min.css"
-          />
+            href="/css/ionicons.min.css"
+          /> */}
 
-          <link
+          {/* <link
             rel="stylesheet"
             href="/css/fonts.css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic&display=swap"
-          />
+          /> */}
         </Head>
         <body>
           <Main />

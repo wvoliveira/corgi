@@ -12,22 +12,21 @@ const Home = () => (
       <title>Corgi</title>
       <meta
         name="description"
-        content="A shortener app."
+        content="A URL shortener app."
       />
     </Head>
-    <div className="home-page">
-      {/* <Banner /> */}
-      <div className="container page">
+    <div>
+      <div>
         <LinkForm />
 
-        <div className="row">
+        <div>
           <MainView />
-          <div className="col-md-3">
-            <div className="sidebar">
+          {/* <div>
+            <div>
               <p>Popular Tags</p>
               <Tags />
             </div>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>

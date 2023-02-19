@@ -35,19 +35,16 @@ const LinkActions = ({ article }) => {
   return (
     <Maybe test={canModify}>
       <span>
-        <CustomLink
+        <a
           href="/editor/[pid]"
-          as={`/editor/${article.slug}`}
-          className="btn btn-outline-secondary btn-sm"
         >
-          <i className="ion-edit" /> Edit Article
-        </CustomLink>
+          <i /> Edit Article
+        </a>
 
         <button
-          className="btn btn-outline-danger btn-sm"
           onClick={handleDelete}
         >
-          <i className="ion-trash-a" /> Delete Article
+          <i /> Delete Article
         </button>
       </span>
     </Maybe>

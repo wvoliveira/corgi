@@ -31,9 +31,8 @@ const TagInput = ({ tagList, addTag, removeTag }) => {
 
   return (
     <>
-      <fieldset className="form-group">
+      <fieldset>
         <input
-          className="form-control"
           type="text"
           placeholder="Enter tags"
           value={tag}
@@ -42,11 +41,10 @@ const TagInput = ({ tagList, addTag, removeTag }) => {
           onKeyDown={handleTagInputKeyDown}
         />
 
-        <div className="tag-list">
+        <div>
           {tagList.map((tag, index) => (
-            <span className="tag-default tag-pill" key={index}>
+            <span key={index}>
               <i
-                className="ion-close-round"
                 onClick={() => handleRemoveTag(tag)}
               />
               {tag}

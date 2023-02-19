@@ -53,35 +53,26 @@ const LoginForm = () => {
       <ListErrors errors={errors} />
 
       <form onSubmit={handleSubmit}>
-        <fieldset>
-          <fieldset className="form-group">
-            <input
-              className="form-control form-control-lg"
-              type="text"
-              placeholder="Username or email"
-              value={usernameEmail}
-              onChange={handleUsernameEmailChange}
-            />
-          </fieldset>
-
-          <fieldset className="form-group">
-            <input
-              className="form-control form-control-lg"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={handlePasswordChange}
-            />
-          </fieldset>
-
-          <button
-            className="btn btn-lg btn-primary pull-xs-right"
-            type="submit"
-            disabled={isLoading}
-          >
-            Sign in
-          </button>
-        </fieldset>
+        <input
+          type="text"
+          placeholder="Username or email"
+          value={usernameEmail}
+          onChange={handleUsernameEmailChange}
+        />
+        {" "}
+        <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={handlePasswordChange}
+        />
+        {" "}
+        <button
+          type="submit"
+          disabled={isLoading}
+        >
+          Sign in
+        </button>
       </form>
     </>
   );

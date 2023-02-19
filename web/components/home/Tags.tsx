@@ -18,16 +18,14 @@ const Tags = () => {
 
   const { tags } = data;
   return (
-    <div className="tag-list">
+    <div>
       {tags?.map((tag) => (
-        <CustomLink
+        <a
           key={tag}
           href={`/?tag=${tag}`}
-          as={`/?tag=${tag}`}
-          className="tag-default tag-pill"
         >
           <span onClick={handleClick}>{tag}</span>
-        </CustomLink>
+        </a>
       ))}
     </div>
   );

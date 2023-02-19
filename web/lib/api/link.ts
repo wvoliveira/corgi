@@ -64,10 +64,10 @@ const APILink = {
     };
   },
 
-  create: async (article, token) => {
+  create: async (url, token) => {
     const { data, status } = await axios.post(
-      `${SERVER_BASE_URL}/articles`,
-      JSON.stringify({ article }),
+      `${SERVER_BASE_URL}/links`,
+      JSON.stringify({url: url}),
       {
         headers: {
           "Content-Type": "application/json",
