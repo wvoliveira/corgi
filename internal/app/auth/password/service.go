@@ -17,7 +17,7 @@ import (
 // Service encapsulates the authentication logic.
 type Service interface {
 	Login(*gin.Context, model.Identity) (string, string, model.User, error)
-	Register(*gin.Context, model.Identity, model.User) error
+	Register(*gin.Context, model.Identity) error
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPLogin(c *gin.Context)
@@ -68,7 +68,7 @@ func (s service) Login(c *gin.Context, identity model.Identity) (accessToken, re
 }
 
 // Register a new user to our database.
-func (s service) Register(c *gin.Context, identity model.Identity, user model.User) (err error) {
+func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
 	log := logger.Logger(c)
 
 	idenDB := model.Identity{}
@@ -92,6 +92,7 @@ func (s service) Register(c *gin.Context, identity model.Identity, user model.Us
 	identity.ID = ulid.Make().String()
 	identity.HashPassword(identity.Password)
 
+	user := model.User{}
 	user.ID = ulid.Make().String()
 	user.Role = "user"
 

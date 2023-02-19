@@ -19,11 +19,11 @@ const APIAuthPassword = {
       return error.response;
     }
   },
-  register: async (name, email, password) => {
+  register: async (email, password) => {
     try {
       const response = await axios.post(
         `${SERVER_BASE_URL}/auth/password/register`,
-        JSON.stringify({ name: name, email: email, password: password }),
+        JSON.stringify({ email: email, password: password }),
         {
           headers: {
             "Content-Type": "application/json",

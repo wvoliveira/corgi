@@ -52,9 +52,6 @@ func (s service) HTTPRegister(c *gin.Context) {
 			Provider: "email",
 			UID:      dr.Email,
 			Password: dr.Password,
-		},
-		model.User{
-			Name: dr.Name,
 		})
 
 	if err != nil {

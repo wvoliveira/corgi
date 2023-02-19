@@ -8,11 +8,11 @@ import APIAuthPassword from "../../lib/api/authPassword";
 const LoginForm = () => {
   const [isLoading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState([]);
-  const [usernameEmail, setUsernameEmail] = React.useState("");
+  const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  const handleUsernameEmailChange = React.useCallback(
-    (e) => setUsernameEmail(e.target.value),
+  const handleEmailChange = React.useCallback(
+    (e) => setEmail(e.target.value),
     []
   );
   const handlePasswordChange = React.useCallback(
@@ -25,7 +25,7 @@ const LoginForm = () => {
     setLoading(true);
 
     try {
-      const { data, status } = await APIAuthPassword.login(usernameEmail, password);
+      const { data, status } = await APIAuthPassword.login(email, password);
 
       console.log(status);
       console.log(data);
@@ -55,9 +55,9 @@ const LoginForm = () => {
       <form onSubmit={handleSubmit}>
         <input
           type="text"
-          placeholder="Username or email"
-          value={usernameEmail}
-          onChange={handleUsernameEmailChange}
+          placeholder="Email"
+          value={email}
+          onChange={handleEmailChange}
         />
         {" "}
         <input

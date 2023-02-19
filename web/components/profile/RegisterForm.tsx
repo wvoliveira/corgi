@@ -8,14 +8,9 @@ import APIAuthPassword from "../../lib/api/authPassword";
 const RegisterForm = () => {
   const [isLoading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState([]);
-  const [name, setName] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
-  const handleNameChange = React.useCallback(
-    (e) => setName(e.target.value),
-    []
-  );
   const handleEmailChange = React.useCallback(
     (e) => setEmail(e.target.value),
     []
@@ -31,7 +26,6 @@ const RegisterForm = () => {
 
     try {
       const { data, status } = await APIAuthPassword.register(
-        name,
         email,
         password
       );
@@ -55,13 +49,6 @@ const RegisterForm = () => {
       <ListErrors errors={errors} />
 
       <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Username"
-          value={name}
-          onChange={handleNameChange}
-        />
-        {" "}
         <input
           type="email"
           placeholder="Email"
