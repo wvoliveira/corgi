@@ -8,14 +8,17 @@ const Login = () => (
   <>
     <Head>
       <title>Login | Corgi</title>
-      <meta name="description" content="Please login to use fully-featured next-realworld site. (Post articles, comments, and like, follow etc.)" />
+      <meta 
+        name="description" 
+        content="Please login to use fully-featured Corgi site. (Create custom links, groups, change your profile, etc.)" 
+      />
     </Head>
-    <div className="auth-page">
-      <div className="container page">
-        <div className="row">
-          <div className="col-md-6 offset-md-3 col-xs-12">
-            <h1 className="text-xs-center">Sign in</h1>
-            <p className="text-xs-center">
+    <div>
+      <div>
+        <div>
+          <div>
+            <h1>Login</h1>
+            <p>
               <CustomLink href="/user/register" as="/user/register">
                 Need an account?
               </CustomLink>

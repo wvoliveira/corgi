@@ -17,35 +17,36 @@ const Navbar = () => {
 
   return (
     <>
-      <a href="/" onClick={handleClick}>
-        Corgi
-      </a>
-      { " · " }
-      <a href="/" onClick={handleClick}>
-        Home
-      </a>
-      { " · " }
+      Corgi
+      {" · "}
+      <CustomLink href="/" as="/">
+        <span onClick={handleClick}>Home</span>
+      </CustomLink>
+      {" · "}
       <Maybe test={isLoggedIn}>
-        <a href="/editor/new">
+        <CustomLink href="/editor/new" as="/editor/new">
           New Post
-        </a>
-        { " · " }
-        <a href="/user/settings">
+        </CustomLink>
+        {" · "}
+        <CustomLink href="/user/settings" as="/user/settings">
           Settings
-        </a>
-        { " · " }
-        <a href={`/profile/${currentUser?.username}`} onClick={handleClick}>
-          {currentUser?.name}
-        </a>
+        </CustomLink>
+        {" · "}
+        <CustomLink 
+          href={`/profile/${currentUser?.username}`}
+          as={`/profile/${currentUser?.username}`}
+        >
+          <span onClick={handleClick}>{currentUser?.name}</span>
+        </CustomLink>
       </Maybe>
       <Maybe test={!isLoggedIn}>
-        <a href="/user/login">
-          Sign in
-        </a>
-        { " · " }
-        <a href="/user/register">
-          Sign up
-        </a>
+        <CustomLink href="/user/login" as="/user/login">
+          Login
+        </CustomLink>
+        {" · "}
+        <CustomLink href="/user/register" as="/user/register">
+          Register
+        </CustomLink>
       </Maybe>
     </>
   );
