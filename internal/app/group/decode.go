@@ -32,20 +32,28 @@ type deleteRequest struct {
 	GroupID string `uri:"id" binding:"required"`
 }
 
-type invitesAddRequest struct {
+type invitesAddByIDRequest struct {
 	WhoID     string
 	InvitedBy string
 	GroupID   string `uri:"id"`
 	UserEmail string `json:"user_email" binding:"required"`
 }
 
-type invitesListRequest struct {
+type invitesListByIDRequest struct {
 	WhoID   string
 	GroupID string `uri:"id"`
 	Page    int    `form:"page"`
 	Sort    string `form:"sort"`
 	Offset  int    `form:"offset"`
 	Limit   int    `form:"limit"`
+}
+
+type invitesListRequest struct {
+	WhoID  string
+	Page   int    `form:"page"`
+	Sort   string `form:"sort"`
+	Offset int    `form:"offset"`
+	Limit  int    `form:"limit"`
 }
 
 func decodeAdd(c *gin.Context) (req addRequest, err error) {
@@ -128,7 +136,7 @@ func decodeDelete(c *gin.Context) (req deleteRequest, err error) {
 	return
 }
 
-func decodeInvitesAdd(c *gin.Context) (req invitesAddRequest, err error) {
+func decodeInvitesAddByID(c *gin.Context) (req invitesAddByIDRequest, err error) {
 	v, ok := c.Get("user_id")
 	if !ok {
 		err = errors.New("impossible to know who you are")
@@ -142,6 +150,40 @@ func decodeInvitesAdd(c *gin.Context) (req invitesAddRequest, err error) {
 	req.GroupID = c.Param("id")
 	req.WhoID = v.(string)
 	req.InvitedBy = req.WhoID
+	return
+}
+
+func decodeInvitesListByID(c *gin.Context) (req invitesListByIDRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
+	}
+
+	req.WhoID = v.(string)
+	if err = c.ShouldBindQuery(&req); err != nil {
+		return req, err
+	}
+
+	if req.Page == 0 {
+		req.Page = 1
+	}
+
+	// TODO: rule for "sort" content like ASC or DESC
+	if req.Sort == "" {
+		req.Sort = "ASC"
+	}
+
+	switch {
+	case req.Limit > 100:
+		req.Limit = 100
+	case req.Limit <= 0:
+		req.Limit = 10
+	}
+	offset := (req.Page - 1) * req.Limit
+
+	req.GroupID = c.Param("id")
+	req.Offset = offset
 	return
 }
 
@@ -174,7 +216,6 @@ func decodeInvitesList(c *gin.Context) (req invitesListRequest, err error) {
 	}
 	offset := (req.Page - 1) * req.Limit
 
-	req.GroupID = c.Param("id")
 	req.Offset = offset
 	return
 }

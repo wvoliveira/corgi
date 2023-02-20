@@ -16,8 +16,9 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r.GET("", s.HTTPList)
 	r.GET("/:id", s.HTTPFindByID)
 	r.DELETE("/:id", s.HTTPDelete)
-	r.POST("/:id/invites", s.HTTPInvitesAdd)
-	r.GET("/:id/invites", s.HTTPInvitesList)
+	r.GET("/invites", s.HTTPInvitesList)
+	r.POST("/:id/invites", s.HTTPInvitesAddByID)
+	r.GET("/:id/invites", s.HTTPInvitesListByID)
 }
 
 func (s service) HTTPAdd(c *gin.Context) {
@@ -110,20 +111,45 @@ func (s service) HTTPDelete(c *gin.Context) {
 	response.Default(c, nil, "", http.StatusOK)
 }
 
-func (s service) HTTPInvitesAdd(c *gin.Context) {
-	d, err := decodeInvitesAdd(c)
+func (s service) HTTPInvitesAddByID(c *gin.Context) {
+	d, err := decodeInvitesAddByID(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	_, err = s.InvitesAdd(c, d)
+	_, err = s.InvitesAddByID(c, d)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	response.Default(c, nil, "", http.StatusOK)
+}
+
+func (s service) HTTPInvitesListByID(c *gin.Context) {
+	d, err := decodeInvitesListByID(c)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	total, pages, invites, err := s.InvitesListByID(c, d)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	resp := invitesListResponse{
+		Invites: invites,
+		Limit:   d.Limit,
+		Page:    d.Page,
+		Sort:    d.Sort,
+		Total:   total,
+		Pages:   pages,
+	}
+
+	response.Default(c, resp, "", http.StatusOK)
 }
 
 func (s service) HTTPInvitesList(c *gin.Context) {

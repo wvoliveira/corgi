@@ -20,7 +20,8 @@ type Service interface {
 	List(*gin.Context, string, int, int, string) (int64, int, []model.Group, error)
 	FindByID(*gin.Context, string, string) (model.Group, []model.User, error)
 	Delete(*gin.Context, string, string) error
-	InvitesAdd(*gin.Context, invitesAddRequest) (model.GroupInvite, error)
+	InvitesAddByID(*gin.Context, invitesAddByIDRequest) (model.GroupInvite, error)
+	InvitesListByID(*gin.Context, invitesListByIDRequest) (int64, int, []model.GroupInvite, error)
 	InvitesList(*gin.Context, invitesListRequest) (int64, int, []model.GroupInvite, error)
 
 	NewHTTP(*gin.RouterGroup)
@@ -28,7 +29,8 @@ type Service interface {
 	HTTPList(*gin.Context)
 	HTTPFindByID(*gin.Context)
 	HTTPDelete(*gin.Context)
-	HTTPInvitesAdd(*gin.Context)
+	HTTPInvitesAddByID(*gin.Context)
+	HTTPInvitesListByID(*gin.Context)
 	HTTPInvitesList(*gin.Context)
 }
 
@@ -280,7 +282,7 @@ func (s service) Delete(c *gin.Context, whoID, groupID string) (err error) {
 	return
 }
 
-func (s service) InvitesAdd(c *gin.Context, payload invitesAddRequest) (groupInvite model.GroupInvite, err error) {
+func (s service) InvitesAddByID(c *gin.Context, payload invitesAddByIDRequest) (groupInvite model.GroupInvite, err error) {
 	log := logger.Logger(c)
 
 	// Check if invite already exists.
@@ -348,7 +350,7 @@ func (s service) InvitesAdd(c *gin.Context, payload invitesAddRequest) (groupInv
 	return
 }
 
-func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (total int64, pages int, invites []model.GroupInvite, err error) {
+func (s service) InvitesListByID(c *gin.Context, payload invitesListByIDRequest) (total int64, pages int, invites []model.GroupInvite, err error) {
 	log := logger.Logger(c)
 
 	sttCount, _ := s.db.PrepareContext(c, "SELECT COUNT(0) FROM group_user WHERE group_id = $1")
@@ -369,6 +371,66 @@ func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (total 
 	sttData, _ := s.db.PrepareContext(c, query)
 
 	rows, err := sttData.QueryContext(c, payload.GroupID, payload.Offset, payload.Limit)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	defer rows.Close()
+	invites = []model.GroupInvite{}
+	gi := model.GroupInvite{}
+
+	for rows.Next() {
+		err = rows.Scan(&gi.ID, &gi.CreatedAt, &gi.UpdatedAtNull, &gi.GroupID, &gi.UserID, &gi.InvitedBy, &gi.Accepted)
+		if err != nil {
+			log.Error().Caller().Msg(err.Error())
+			return
+		}
+
+		if gi.UpdatedAtNull.Valid {
+			gi.UpdatedAt = &gi.UpdatedAtNull.Time
+		}
+
+		invites = append(invites, gi)
+	}
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return total, pages, invites, e.ErrInternalServerError
+	}
+
+	pages = int(math.Ceil(float64(total) / float64(payload.Limit)))
+	return
+}
+
+func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (total int64, pages int, invites []model.GroupInvite, err error) {
+	log := logger.Logger(c)
+
+	query := `
+		SELECT COUNT(0) FROM groups_invites
+		INNER JOIN group_user gu on gu.group_id = groups_invites.group_id
+		WHERE gu.user_id = $1
+	`
+
+	sttCount, _ := s.db.PrepareContext(c, query)
+	err = sttCount.QueryRowContext(c, payload.WhoID).Scan(&total)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	// TODO: fix to use "sort" variable
+	query = `
+		SELECT gi.* FROM groups_invites gi
+		INNER JOIN group_user gu on gu.group_id = gi.group_id
+		WHERE gu.user_id = $1
+		ORDER BY gi.id ASC OFFSET $2 LIMIT $3
+	`
+
+	log.Debug().Caller().Msg(query)
+	sttData, _ := s.db.PrepareContext(c, query)
+
+	rows, err := sttData.QueryContext(c, payload.WhoID, payload.Offset, payload.Limit)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
