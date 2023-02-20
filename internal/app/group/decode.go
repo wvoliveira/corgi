@@ -2,14 +2,13 @@ package group
 
 import (
 	"errors"
-	"strconv"
-	"strings"
-
 	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
+	"strconv"
 )
 
 type addRequest struct {
+	WhoID       string   `json:"-"`
 	Name        string   `json:"name"`
 	DisplayName string   `json:"display_name"`
 	Description string   `json:"description"`
@@ -17,6 +16,7 @@ type addRequest struct {
 }
 
 type listRequest struct {
+	WhoID  string `json:"-"`
 	Page   int    `json:"page"`
 	Sort   string `json:"sort"`
 	Offset int    `json:"offset"`
@@ -38,32 +38,26 @@ type inviteAddRequest struct {
 	InvitedBy string `json:"-"`
 }
 
-func decodeAdd(c *gin.Context) (req addRequest, userID string, err error) {
-	userID, err = common.GetUserFromSession(c)
-
-	if err != nil {
+func decodeAdd(c *gin.Context) (req addRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
 		return
 	}
 
-	if err = c.ShouldBindJSON(&req); err != nil {
-		return req, userID, err
-	}
-
-	req.Name = strings.ToLower(req.Name)
-	err = checkName(req.Name)
-	if err != nil {
-		return
-	}
+	req.WhoID = v.(string)
+	err = c.ShouldBindJSON(&req)
 	return
 }
 
-func decodeList(c *gin.Context) (req listRequest, userID string, err error) {
-	userID, err = common.GetUserFromSession(c)
-
-	if err != nil {
+func decodeList(c *gin.Context) (req listRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
 		return
 	}
 
+	req.WhoID = v.(string)
 	page, _ := strconv.Atoi(c.Query("page"))
 	limit, _ := strconv.Atoi(c.Query("limit"))
 	sort := c.Query("sort")

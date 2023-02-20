@@ -2,6 +2,9 @@ package main
 
 import (
 	"encoding/gob"
+	"github.com/casbin/casbin/v2"
+	cfa "github.com/naucon/casbin-fs-adapter"
+	"github.com/wvoliveira/corgi/configs/authorization"
 	"net/http"
 	"strings"
 
@@ -45,13 +48,21 @@ func main() {
 	// You can desactive this user after installation!
 	database.CreateUserAdmin(db)
 
+	//authModel, err := authorization.DistFiles.ReadFile("model.conf")
+	//authModel, err := authorization.DistFiles.Open("model.conf")
+	authModel, _ := cfa.NewModel(authorization.DistFiles, "model.conf")
+	authPolicy := cfa.NewAdapter(authorization.DistFiles, "policy.csv")
+
+	enforcer, _ := casbin.NewEnforcer(authModel, authPolicy)
+
 	// Create a root router and attach session.
-	// I think its a good idea because we can manager user access with cookie based.
+	// I think it's a good idea because we can manage user access with cookie based.
 	router := gin.New()
 	router.Use(middleware.Logger())
 	router.Use(gin.Recovery())
 	router.Use(middleware.CORS())
-	router.Use(middleware.Auth())
+	router.Use(middleware.Authentication())
+	router.Use(middleware.Authorization(enforcer))
 
 	server.AddStoreSession(router)
 

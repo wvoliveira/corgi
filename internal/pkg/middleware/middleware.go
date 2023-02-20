@@ -1,6 +1,8 @@
 package middleware
 
 import (
+	"fmt"
+	"github.com/casbin/casbin/v2"
 	"net/http"
 	"strings"
 	"time"
@@ -14,8 +16,8 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/token"
 )
 
-// Auth check if auth ok and set claims in request header.
-func Auth() gin.HandlerFunc {
+// Authentication check if auth ok and set claims in request header.
+func Authentication() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log := logger.Logger(c)
 
@@ -43,6 +45,40 @@ func Auth() gin.HandlerFunc {
 		}
 
 		c.Set("user_id", user.ID)
+		c.Set("user_role", user.Role)
+		c.Next()
+	}
+}
+
+// Authorization check if auth ok and set claims in request header.
+func Authorization(en *casbin.Enforcer) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		log := logger.Logger(c)
+
+		v, ok := c.Get("user_role")
+		if !ok {
+			log.Error().Caller().Msg("impossible to know who you are")
+			e.EncodeError(c, e.ErrUnauthorized)
+			c.Abort()
+		}
+
+		role := v.(string)
+
+		sub := role                 // role that wants to access a resource.
+		obj := c.Request.RequestURI // the resource that is going to be accessed.
+		act := c.Request.Method     // the operation that the user performs on the resource.
+
+		log.Debug().Caller().Msg(fmt.Sprintf("Sub: %s, Obj: %s, Act: %s", sub, obj, act))
+
+		ok, _ = en.Enforce(sub, obj, act)
+		if !ok {
+			// deny the request, show an error
+			log.Debug().Caller().Msg("Deny by authorization config")
+			e.EncodeError(c, e.ErrUnauthorized)
+			c.Abort()
+			return
+		}
+
 		c.Next()
 	}
 }
@@ -50,7 +86,6 @@ func Auth() gin.HandlerFunc {
 // Checks returns a middleware that verify some points before business logic.
 func Checks() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		if c.Request.Method == "POST" || c.Request.Method == "PATCH" {
 
 			if c.Request.Body == http.NoBody {
@@ -59,15 +94,13 @@ func Checks() gin.HandlerFunc {
 				c.Abort()
 			}
 		}
-
 		c.Next()
 	}
 }
 
-// UniqueUser add session for unique user verification.
+// UniqueUserForKeywords add session for unique user verification.
 func UniqueUserForKeywords() gin.HandlerFunc {
 	return func(c *gin.Context) {
-
 		var keywords []string
 		var keyword = c.Param("keyword")
 
@@ -89,18 +122,14 @@ func UniqueUserForKeywords() gin.HandlerFunc {
 		}
 
 		keywords = v.([]string)
-
 		for _, k := range keywords {
-
 			if k == keyword {
 				c.Next()
 				return
 			}
-
 		}
 
 		keywords = append(keywords, keyword)
-
 		session.Set("keywords", keywords)
 		err := session.Save()
 
@@ -118,15 +147,11 @@ func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log := logger.Logger(c)
 
-		// Start timer
 		start := time.Now()
 		path := c.Request.URL.Path
 		raw := c.Request.URL.RawQuery
 
-		// Process request
 		c.Next()
-
-		// Update context with more info.
 		log = logger.Logger(c)
 
 		param := gin.LogFormatterParams{
@@ -134,7 +159,6 @@ func Logger() gin.HandlerFunc {
 			Keys:    c.Keys,
 		}
 
-		// Stop timer
 		param.TimeStamp = time.Now()
 		param.Latency = param.TimeStamp.Sub(start)
 
@@ -142,7 +166,6 @@ func Logger() gin.HandlerFunc {
 		param.Method = c.Request.Method
 		param.StatusCode = c.Writer.Status()
 		param.ErrorMessage = c.Errors.ByType(gin.ErrorTypePrivate).String()
-
 		param.BodySize = c.Writer.Size()
 
 		if raw != "" {

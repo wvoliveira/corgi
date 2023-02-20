@@ -21,15 +21,15 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 }
 
 func (s service) HTTPAdd(c *gin.Context) {
-	payload, userID, err := decodeAdd(c)
+	d, err := decodeAdd(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	group := model.Group{Name: payload.Name, DisplayName: payload.DisplayName, Description: payload.Description}
+	group := model.Group{Name: d.Name, DisplayName: d.DisplayName, Description: d.Description}
 
-	group, err = s.Add(c, group, userID)
+	group, err = s.Add(c, d.WhoID, group)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -45,14 +45,14 @@ func (s service) HTTPAdd(c *gin.Context) {
 }
 
 func (s service) HTTPList(c *gin.Context) {
-	payload, userID, err := decodeList(c)
+	d, err := decodeList(c)
 
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	total, pages, groups, err := s.List(c, payload.Offset, payload.Limit, payload.Sort, userID)
+	total, pages, groups, err := s.List(c, d.WhoID, d.Offset, d.Limit, d.Sort)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -60,9 +60,9 @@ func (s service) HTTPList(c *gin.Context) {
 
 	resp := listResponse{
 		Groups: groups,
-		Limit:  payload.Limit,
-		Page:   payload.Page,
-		Sort:   payload.Sort,
+		Limit:  d.Limit,
+		Page:   d.Page,
+		Sort:   d.Sort,
 		Total:  total,
 		Pages:  pages,
 	}

@@ -4,12 +4,10 @@ import (
 	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
-	"github.com/wvoliveira/corgi/internal/pkg/middleware"
 )
 
 func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r := rg.Group("/auth/token")
-	r.Use(middleware.Auth())
 
 	r.GET("/valid", s.HTTPValid)
 	r.POST("/refresh", s.HTTPRefresh)

@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS identities(
 
 	last_login TIMESTAMP,
 	provider VARCHAR (30), -- phone, email, wechat, github...
-	uid VARCHAR (30), 		 -- e-mail, google id, facebook id, etc
+	uid VARCHAR (30), 	   -- e-mail, google id, facebook id, etc
 	password VARCHAR (300),
 	verified BOOLEAN DEFAULT false,
 	confirmed_at TIMESTAMP,

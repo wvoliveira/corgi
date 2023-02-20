@@ -6,7 +6,7 @@ import (
 )
 
 func checkName(name string) (err error) {
-	err = errors.New("the name is required and must be alphanumeric, lowercase and 3-30 length")
+	err = errors.New("the name is required and must be alphanumeric and 3-30 length")
 
 	if name == "" || len(name) < 3 || len(name) > 30 {
 		return

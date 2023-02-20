@@ -16,8 +16,8 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Add(*gin.Context, model.Group, string) (model.Group, error)
-	List(*gin.Context, int, int, string, string) (int64, int, []model.Group, error)
+	Add(*gin.Context, string, model.Group) (model.Group, error)
+	List(*gin.Context, string, int, int, string) (int64, int, []model.Group, error)
 	FindByID(*gin.Context, string, string) (model.Group, []model.User, error)
 
 	InviteAdd(*gin.Context, model.GroupInvite) (model.GroupInvite, error)
@@ -37,7 +37,7 @@ func NewService(db *sql.DB, cache *redis.Client) Service {
 	return service{db, cache}
 }
 
-func (s service) Add(c *gin.Context, payload model.Group, userID string) (group model.Group, err error) {
+func (s service) Add(c *gin.Context, whoID string, payload model.Group) (group model.Group, err error) {
 	log := logger.Logger(c)
 
 	err = s.db.QueryRowContext(c, "SELECT id FROM groups WHERE name = $1", payload.Name).Scan(&group)
@@ -51,8 +51,8 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 
 	group = payload
 	group.ID = ulid.Make().String()
-	group.CreatedBy = userID
-	group.OwnerID = userID
+	group.CreatedBy = whoID
+	group.OwnerID = whoID
 
 	tx, err := s.db.BeginTx(c, &sql.TxOptions{})
 	if err != nil {
@@ -85,7 +85,7 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 		return
 	}
 
-	_, err = stmt.ExecContext(c, group.ID, userID)
+	_, err = stmt.ExecContext(c, group.ID, whoID)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		_ = tx.Rollback()
@@ -103,41 +103,49 @@ func (s service) Add(c *gin.Context, payload model.Group, userID string) (group 
 	return
 }
 
-func (s service) List(c *gin.Context, offset, limit int, sort, userID string) (total int64, pages int, groups []model.Group, err error) {
+func (s service) List(c *gin.Context, whoID string, offset, limit int, sort string) (total int64, pages int, groups []model.Group, err error) {
 	log := logger.Logger(c)
 
 	sttCount, _ := s.db.PrepareContext(c, "SELECT COUNT(0) FROM group_user WHERE user_id = $1")
 
-	err = sttCount.QueryRowContext(c, userID).Scan(&total)
+	err = sttCount.QueryRowContext(c, whoID).Scan(&total)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
 	// TODO: fix to use "sort" variable
-	sttData, _ := s.db.PrepareContext(c, `
-		SELECT g.* FROM groups g
+	query := `SELECT g.* FROM groups g
 		INNER JOIN group_user gu ON gu.group_id = g.id
 		INNER JOIN users u ON u.id = gu.user_id
 		WHERE u.id = $1
-		ORDER BY g.id ASC OFFSET $2 LIMIT $3
-	`)
+		ORDER BY g.id ASC OFFSET $2 LIMIT $3`
 
-	rows, err := sttData.QueryContext(c, userID, offset, limit)
+	log.Debug().Caller().Msg(query)
+	sttData, _ := s.db.PrepareContext(c, query)
+
+	rows, err := sttData.QueryContext(c, whoID, offset, limit)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
 	defer rows.Close()
+
+	groups = []model.Group{}
 	var group model.Group
 
 	for rows.Next() {
-		err = rows.Scan(&group.ID, &group.CreatedAt, &group.UpdatedAt, &group.Name, &group.DisplayName, &group.Description, &group.CreatedBy, &group.OwnerID)
-
+		err = rows.Scan(&group.ID, &group.CreatedAt, &group.UpdatedAtNull, &group.Name, &group.DisplayName, &group.Description, &group.CreatedBy, &group.OwnerID)
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
 			return
+		}
+
+		fmt.Println(group.UpdatedAtNull)
+
+		if group.UpdatedAtNull.Valid {
+			group.UpdatedAt = group.UpdatedAtNull.Time
 		}
 
 		groups = append(groups, group)
