@@ -56,7 +56,7 @@ func (s service) FindMe(c *gin.Context, whoID string) (user model.User, err erro
 	return
 }
 
-// Update change my profile.
+// UpdateMe change my profile.
 func (s service) UpdateMe(c *gin.Context, whoID string, name string) (err error) {
 	log := logger.Logger(c.Request.Context())
 
@@ -72,7 +72,7 @@ func (s service) UpdateMe(c *gin.Context, whoID string, name string) (err error)
 	return
 }
 
-// Find get a shortener link from ID or username.
+// FindByID get a shortener link from ID or username.
 func (s service) FindByID(c *gin.Context, whoID string, id string) (user model.User, err error) {
 	log := logger.Logger(c)
 
@@ -94,7 +94,7 @@ func (s service) FindByID(c *gin.Context, whoID string, id string) (user model.U
 	return
 }
 
-// Update change specific link by ID or username.
+// UpdateByID change specific link by ID or username.
 func (s service) UpdateByID(c *gin.Context, whoID, id, name string) (err error) {
 	log := logger.Logger(c.Request.Context())
 
@@ -112,7 +112,7 @@ func (s service) UpdateByID(c *gin.Context, whoID, id, name string) (err error) 
 	return
 }
 
-// Find get a user from username.
+// FindByUsername get a user from username.
 func (s service) FindByUsername(c *gin.Context, whoID string, username string) (user model.User, err error) {
 	log := logger.Logger(c)
 

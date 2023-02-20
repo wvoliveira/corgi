@@ -29,6 +29,7 @@ func Authentication() gin.HandlerFunc {
 		if headerAuth == "" {
 			user.ID = "0"
 			user.Name = "Anonymous"
+			user.Role = "anon"
 		}
 
 		headerToken := strings.Split(headerAuth, "Bearer ")

@@ -8,7 +8,7 @@ import (
 type Group struct {
 	ID            string       `json:"id"`
 	CreatedAt     time.Time    `json:"created_at"`
-	UpdatedAt     time.Time    `json:"updated_at"`
+	UpdatedAt     *time.Time   `json:"updated_at"`
 	UpdatedAtNull sql.NullTime `json:"-"`
 
 	Name        string `json:"name"`
@@ -22,11 +22,13 @@ type Group struct {
 }
 
 type GroupInvite struct {
-	ID        string       `json:"id"`
-	CreatedAt time.Time    `json:"created_at"`
-	UpdatedAt sql.NullTime `json:"updated_at"`
+	ID            string       `json:"id"`
+	CreatedAt     time.Time    `json:"created_at"`
+	UpdatedAt     *time.Time   `json:"updated_at"`
+	UpdatedAtNull sql.NullTime `json:"-"`
 
 	GroupID   string `json:"group_id"`
 	UserID    string `json:"user_id"`
 	InvitedBy string `json:"invited_by"`
+	Accepted  bool   `json:"accepted"`
 }
