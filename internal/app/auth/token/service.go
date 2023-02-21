@@ -36,7 +36,7 @@ func (s service) Valid(c *gin.Context, accessToken string) (err error) {
 	return
 }
 
-// Refresh refresh access token given a refresh token.
+// Refresh access token given a refresh token.
 func (s service) Refresh(c *gin.Context, refreshToken string) (accessToken string, err error) {
 	log := logger.Logger(c)
 

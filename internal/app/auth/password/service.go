@@ -90,7 +90,7 @@ func (s service) Register(c *gin.Context, identity model.Identity) (err error) {
 	}
 
 	identity.ID = ulid.Make().String()
-	identity.HashPassword(identity.Password)
+	_ = identity.HashPassword(identity.Password)
 
 	user := model.User{}
 	user.ID = ulid.Make().String()

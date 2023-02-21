@@ -7,9 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/rs/zerolog/log"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
@@ -94,8 +92,9 @@ func Authorization(en *casbin.Enforcer) gin.HandlerFunc {
 // Checks returns a middleware that verify some points before business logic.
 func Checks() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if c.Request.Method == "POST" || c.Request.Method == "PATCH" {
+		log := logger.Logger(c)
 
+		if c.Request.Method == "POST" || c.Request.Method == "PATCH" {
 			if c.Request.Body == http.NoBody {
 				log.Warn().Caller().Msg("Empty body in POST or PATCH request")
 				e.EncodeError(c, e.ErrRequestNeedBody)
@@ -106,53 +105,9 @@ func Checks() gin.HandlerFunc {
 	}
 }
 
-// UniqueUserForKeywords add session for unique user verification.
-func UniqueUserForKeywords() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		var keywords []string
-		var keyword = c.Param("keyword")
-
-		session := sessions.Default(c)
-		v := session.Get("keywords")
-
-		if v == nil {
-			session.Set("keywords", []string{keyword})
-			err := session.Save()
-
-			if err != nil {
-				log.Error().Caller().Msg(err.Error())
-				e.EncodeError(c, e.ErrRequestNeedBody)
-				return
-			}
-
-			c.Next()
-			return
-		}
-
-		keywords = v.([]string)
-		for _, k := range keywords {
-			if k == keyword {
-				c.Next()
-				return
-			}
-		}
-
-		keywords = append(keywords, keyword)
-		session.Set("keywords", keywords)
-		err := session.Save()
-
-		if err != nil {
-			log.Error().Caller().Msg(err.Error())
-			e.EncodeError(c, e.ErrRequestNeedBody)
-			return
-		}
-
-		c.Next()
-	}
-}
-
 func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
+		//nolint:ineffassign
 		log := logger.Logger(c)
 
 		start := time.Now()
