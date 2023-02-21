@@ -77,11 +77,15 @@ func main() {
 
 	apiRouter := router.Group("/api")
 
+	// Enable /metrics path Prometheus metrics like.
+	// And middleware to add some basic metrics from routes.
+	server.NewMetrics(apiRouter)
+
+	// Don't enable some things with debug level.
+	// Middleware for rate limit.
 	if zerolog.GlobalLevel() == zerolog.DebugLevel {
 		server.AddPProf(apiRouter)
 	} else {
-		// Don't enable some things with debug level.
-		// Middleware for rate limit.
 		ratelimit.NewMiddleware(router, cache)
 	}
 
@@ -135,14 +139,10 @@ func main() {
 
 	{
 		// Healthcheck endpoints.
-		// Kubernetes health like: ready and live.
+		// Kubernetes healthcheck like: readiness and liveness.
 		service := health.NewService(db, cache, constants.VERSION)
 		service.NewHTTP(apiRouter)
 	}
-
-	// Enable /metrics path Prometheus metrics like.
-	// And middleware to add some basic metrics from routes.
-	server.NewMetrics(apiRouter)
 
 	server.Graceful(router, viper.GetInt("SERVER_HTTP_PORT"))
 }

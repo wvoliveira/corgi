@@ -25,7 +25,7 @@
     "sourceMap": true,
     "strict": false,
     "suppressImplicitAnyIndexErrors": true,
-    "incremental": true
+    "incremental": false
   },
   "exclude": [
     "node_modules"

@@ -435,6 +435,14 @@ help:
 	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes >/dev/null
 	date > $@
 
+build-app-docker:
+	docker buildx build                       \
+        --progress=plain                      \
+        --load                                \
+        -t wvoliveira/corgi:0.0.1             \
+        -f build/package/container/Dockerfile \
+        .
+
 build-web:
 	cd web && \
 	npm install --frozen-lockfile && \

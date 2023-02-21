@@ -15,7 +15,7 @@ import checkLogin from "../../lib/utils/checkLogin";
 import fetcher from "../../lib/utils/fetcher";
 import storage from "../../lib/utils/storage";
 
-const Profile = ({ initialProfile }) => {
+const Profile = () => {
   const router = useRouter();
   const {
     query: { pid },
@@ -26,21 +26,20 @@ const Profile = ({ initialProfile }) => {
     error: profileError,
   } = useSWR(
     `${SERVER_BASE_URL}/users/${encodeURIComponent(String(pid))}`,
-    fetcher,
-    { initialData: initialProfile }
+    fetcher
   );
 
   if (profileError) return <ErrorMessage message="Can't load profile" />;
 
-  const profile = fetchedProfile.data || initialProfile.data;
+  const profile = fetchedProfile?.data;
 
   // const { username, bio, image, following } = profile;
-  const { username, name, role } = profile;
+  // const username = profile;
 
   const { data: currentUser } = useSWR("user", storage);
   const isLoggedIn = checkLogin(currentUser);
 
-  const isUser = currentUser && username === currentUser?.username;
+  const isUser = currentUser && profile?.username === currentUser?.username;
 
   const handleFollow = async () => {
     mutate(
@@ -74,14 +73,14 @@ const Profile = ({ initialProfile }) => {
                 alt="User's profile image"
                 className="user-img"
               />
-              <h4>{username}</h4>
+              <h4>{profile?.username}</h4>
               {/* <p>{bio}</p> */}
               <p>"bio here"</p>
               <EditProfileButton isUser={isUser} />
               <Maybe test={isLoggedIn}>
                 <FollowUserButton
                   isUser={isUser}
-                  username={username}
+                  username={profile?.username}
                   // following={following}
                   following="following here"
                   follow={handleFollow}
@@ -107,9 +106,9 @@ const Profile = ({ initialProfile }) => {
   );
 };
 
-Profile.getInitialProps = async ({ query: { pid } }) => {
-  const { data: initialProfile } = await UserAPI.get(pid);
-  return { initialProfile };
-};
+// Profile.getInitialProps = async ({ query: { pid } }) => {
+//   const { data: initialProfile } = await UserAPI.get(pid);
+//   return { initialProfile };
+// };
 
 export default Profile;

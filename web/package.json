@@ -1,7 +1,7 @@
 {
-  "name": "next-realworld-example-app",
-  "version": "1.0.0",
-  "author": "reck1ess",
+  "name": "corgi-app",
+  "version": "0.0.1",
+  "author": "Wellington Oliveira",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
