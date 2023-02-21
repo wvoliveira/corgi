@@ -34,7 +34,7 @@ ARG version
 
 LABEL version=$version
 LABEL ksdate=$ksdate
-LABEL description="Corgi. A shortener app."
+LABEL description="Corgi. A URL shortener app."
 
 RUN /sbin/apk --no-cache add ca-certificates curl iproute2 tini
 

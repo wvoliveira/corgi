@@ -62,9 +62,10 @@ func NewCache() (db *redis.Client) {
 
 func CreateUserAdmin(db *sql.DB) {
 	user := model.User{
-		ID:   ulid.Make().String(),
-		Name: "Administrator",
-		Role: "admin",
+		ID:       ulid.Make().String(),
+		Name:     "Administrator",
+		Username: "admin",
+		Role:     "admin",
 	}
 
 	identity := model.Identity{
@@ -97,17 +98,17 @@ func CreateUserAdmin(db *sql.DB) {
 		os.Exit(2)
 	}
 
-	_, err = tx.Exec(`INSERT INTO users(id, name, role) VALUES($1, $2, $3)`,
-		user.ID, user.Name, user.Role)
+	_, err = tx.Exec(`INSERT INTO users(id, name, username, role) VALUES($1, $2, $3, $4)`,
+		user.ID, user.Name, user.Username, user.Role)
 
 	if err != nil {
-		log.Error().Caller().Msg(err.Error())
+		log.Error().Caller().Msg("Error to create user admin: " + err.Error())
 
 		err = tx.Rollback()
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
 		}
-		return
+		os.Exit(2)
 	}
 
 	_, err = tx.Exec(`INSERT INTO identities(id, user_id, provider, uid, password) 
@@ -120,13 +121,13 @@ func CreateUserAdmin(db *sql.DB) {
 	)
 
 	if err != nil {
-		log.Error().Caller().Msg(err.Error())
+		log.Error().Caller().Msg("Error to create user admin: " + err.Error())
 
 		err = tx.Rollback()
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
 		}
-		return
+		os.Exit(2)
 	}
 
 	err = tx.Commit()

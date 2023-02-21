@@ -12,7 +12,7 @@ type addResponse struct {
 }
 
 type listResponse struct {
-	Groups []model.Group `json:"data"`
+	Groups []model.Group `json:"groups"`
 	Limit  int           `json:"limit"`
 	Page   int           `json:"page"`
 	Sort   string        `json:"sort"`
@@ -31,6 +31,15 @@ type findByIDResponse struct {
 }
 
 type deleteResponse struct{}
+
+type invitesListResponse struct {
+	Invites []model.GroupInvite `json:"invites"`
+	Limit   int                 `json:"limit"`
+	Page    int                 `json:"page"`
+	Sort    string              `json:"sort"`
+	Total   int64               `json:"total"`
+	Pages   int                 `json:"pages"`
+}
 
 func encodeFindByID(c *gin.Context, group model.Group, users []model.User) (res findByIDResponse) {
 	res.Group = group

@@ -4,36 +4,112 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
-func decodeFind(c *gin.Context) (user model.User, err error) {
-	session := sessions.Default(c)
-	v := session.Get("user")
+type findMeRequest struct {
+	whoID string
+}
 
-	if v == nil {
-		return user, errors.New("impossible to get user from session")
+type updateMeRequest struct {
+	whoID string
+	User  struct {
+		Name string `json:"name"`
+	}
+}
+
+type findByIDRequest struct {
+	whoID string
+	ID    string `uri:"id" binding:"required"`
+}
+
+type updateIDRequest struct {
+	whoID string
+	ID    string `uri:"id" binding:"required"`
+	User  struct {
+		Name string `json:"name"`
+	}
+}
+
+type findByUsernameRequest struct {
+	whoID    string
+	Username string `uri:"username" binding:"required"`
+}
+
+func decodeFindMe(c *gin.Context) (r findMeRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		return r, errors.New("impossible to know who you are")
 	}
 
-	user = v.(model.User)
+	r.whoID = v.(string)
 	return
 }
 
-func decodeUpdate(c *gin.Context) (user model.User, err error) {
-	session := sessions.Default(c)
-	v := session.Get("user")
-
-	if v == nil {
-		return user, errors.New("impossible to get user from session")
+func decodeUpdateMe(c *gin.Context) (r updateMeRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		return r, errors.New("impossible to know who you are")
 	}
 
-	user = v.(model.User)
+	r.whoID = v.(string)
 
-	if err = json.NewDecoder(c.Request.Body).Decode(&user); err != nil {
-		return user, err
+	err = c.ShouldBindUri(&r)
+	if err != nil {
+		return r, errors.New("impossible to get user ID from URI")
 	}
 
+	if err = json.NewDecoder(c.Request.Body).Decode(&r.User); err != nil {
+		return r, err
+	}
+	return
+}
+
+func decodeFindByID(c *gin.Context) (r findByIDRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		return r, errors.New("impossible to know who you are")
+	}
+
+	r.whoID = v.(string)
+
+	err = c.ShouldBindUri(&r)
+	if err != nil {
+		return r, errors.New("impossible to get username from URI")
+	}
+	return
+}
+
+func decodeUpdateByID(c *gin.Context) (r updateIDRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		return r, errors.New("impossible to know who you are")
+	}
+
+	r.whoID = v.(string)
+
+	err = c.ShouldBindUri(&r)
+	if err != nil {
+		return r, errors.New("impossible to get username from URI")
+	}
+
+	if err = json.NewDecoder(c.Request.Body).Decode(&r.User); err != nil {
+		return r, err
+	}
+	return
+}
+
+func decodeFindByUsername(c *gin.Context) (r findByUsernameRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		return r, errors.New("impossible to know who you are")
+	}
+
+	r.whoID = v.(string)
+
+	err = c.ShouldBindUri(&r)
+	if err != nil {
+		return r, errors.New("impossible to get user ID from URI")
+	}
 	return
 }

@@ -1,16 +1,36 @@
-import Head from 'next/head'
-import Link from 'next/link'
-import Image from 'next/image'
-import { Inter } from '@next/font/google'
-import styles from '../styles/Home.module.css'
-import LinkForm from '../components/link/LinkCreateForm'
+import LinkForm from "components/link/LinkForm";
+import Head from "next/head";
+import React from "react";
 
-const inter = Inter({ subsets: ['latin'] })
+import Banner from "../components/home/Banner";
+import MainView from "../components/home/MainView";
+import Tags from "../components/home/Tags";
 
-export default function Home() {
-  return (
-    <>
-      <LinkForm />
-    </>
-  )
-}
+const Home = () => (
+  <>
+    <Head>
+      <title>Corgi</title>
+      <meta
+        name="description"
+        content="A URL shortener app."
+      />
+    </Head>
+    <div>
+      <div>
+        <LinkForm />
+
+        <div>
+          <MainView />
+          {/* <div>
+            <div>
+              <p>Popular Tags</p>
+              <Tags />
+            </div>
+          </div> */}
+        </div>
+      </div>
+    </div>
+  </>
+);
+
+export default Home;

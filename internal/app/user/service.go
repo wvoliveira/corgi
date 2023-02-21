@@ -2,6 +2,7 @@ package user
 
 import (
 	"database/sql"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 	"github.com/redis/go-redis/v9"
@@ -12,12 +13,16 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
-	Find(*gin.Context, string) (model.User, error)
-	Update(*gin.Context, model.User) error
+	FindMe(*gin.Context, string) (model.User, error)
+	UpdateMe(*gin.Context, string, string) error
+	FindByID(*gin.Context, string, string) (model.User, error)
+	UpdateByID(*gin.Context, string, string, string) error
+	FindByUsername(*gin.Context, string, string) (model.User, error)
 
 	NewHTTP(*gin.RouterGroup)
-	HTTPFind(*gin.Context)
-	HTTPUpdate(*gin.Context)
+	HTTPFindByID(*gin.Context)
+	HTTPUpdateByID(*gin.Context)
+	HTTPFindByUsername(*gin.Context)
 }
 
 type service struct {
@@ -30,23 +35,74 @@ func NewService(db *sql.DB, cache *redis.Client) Service {
 	return service{db, cache}
 }
 
-// Find get a shortener link from ID.
-func (s service) Find(c *gin.Context, userID string) (user model.User, err error) {
-	log := logger.Logger(c.Request.Context())
+// FindMe get my personal info.
+func (s service) FindMe(c *gin.Context, whoID string) (user model.User, err error) {
+	log := logger.Logger(c)
 
-	if userID == "anonymous" {
-		user.Name = "Anonymous"
-		return
-	}
-
-	query := "SELECT * FROM users WHERE id = $1"
-	err = s.db.QueryRowContext(c, query, userID).Scan(
-		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Name, &user.Role, &user.Active)
+	query := "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE id = $1"
+	err = s.db.QueryRowContext(c, query, whoID).Scan(
+		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Username, &user.Name, &user.Role, &user.Active)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-		return user, e.ErrUserNotFound
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return user, e.ErrUserNotFound
+		}
+
+		return
 	}
+
+	return
+}
+
+// UpdateMe change my profile.
+func (s service) UpdateMe(c *gin.Context, whoID string, name string) (err error) {
+	log := logger.Logger(c.Request.Context())
+
+	// TODO: update all values
+	query := "UPDATE users SET name = $1 WHERE id = $2"
+
+	_, err = s.db.ExecContext(c, query, name, whoID)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	return
+}
+
+// FindByID get a shortener link from ID or username.
+func (s service) FindByID(c *gin.Context, whoID string, id string) (user model.User, err error) {
+	log := logger.Logger(c)
+
+	query := "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE id = $1"
+
+	err = s.db.QueryRowContext(c, query, id).Scan(
+		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Username, &user.Name, &user.Role, &user.Active)
+
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return user, e.ErrUserNotFound
+		}
+
+		return
+	}
+
+	return
+}
+
+// UpdateByID change specific link by ID or username.
+func (s service) UpdateByID(c *gin.Context, whoID, id, name string) (err error) {
+	log := logger.Logger(c.Request.Context())
+
+	// TODO:
+	// 	- check if user is updating yourself
+	// 	- update all values
+	query := "UPDATE users SET name = $1 WHERE id = $2"
+	_, err = s.db.ExecContext(c, query, name, id)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
@@ -56,20 +112,22 @@ func (s service) Find(c *gin.Context, userID string) (user model.User, err error
 	return
 }
 
-// Update change specific link by ID.
-func (s service) Update(c *gin.Context, req model.User) (err error) {
-	log := logger.Logger(c.Request.Context())
+// FindByUsername get a user from username.
+func (s service) FindByUsername(c *gin.Context, whoID string, username string) (user model.User, err error) {
+	log := logger.Logger(c)
 
-	if req.ID == "0" {
-		return e.ErrUnauthorized
-	}
+	query := "SELECT id, created_at, updated_at, username, name, role, active FROM users WHERE username = $1"
 
-	// TODO: update all values
-	query := "UPDATE users SET name = $1 WHERE id = $2"
-	_, err = s.db.ExecContext(c, query, req.Name, req.ID)
+	err = s.db.QueryRowContext(c, query, username).Scan(
+		&user.ID, &user.CreatedAt, &user.UpdatedAt, &user.Username, &user.Name, &user.Role, &user.Active)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
+
+		if errors.Is(err, sql.ErrNoRows) {
+			return user, e.ErrUserNotFound
+		}
+
 		return
 	}
 

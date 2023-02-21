@@ -4,11 +4,16 @@ CREATE TABLE IF NOT EXISTS users(
 	updated_at TIMESTAMP,
 
 	name VARCHAR (100) NOT NULL,
+	username VARCHAR (100) NOT NULL UNIQUE,
 	role VARCHAR (50) NOT NULL,
 	active BOOLEAN DEFAULT true
 );
 
-INSERT INTO users(id, name, role, active) VALUES('0', 'Anonymous', 'anonymous', false);
+CREATE UNIQUE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_users_role ON users(role);
+CREATE INDEX idx_users_active ON users(active);
+
+INSERT INTO users(id, name, username, role, active) VALUES('0', 'Anonymous', 'anonymous', 'anonymous', false);
 
 CREATE TABLE IF NOT EXISTS identities(
 	id         VARCHAR (30) PRIMARY KEY,
@@ -17,7 +22,7 @@ CREATE TABLE IF NOT EXISTS identities(
 
 	last_login TIMESTAMP,
 	provider VARCHAR (30), -- phone, email, wechat, github...
-	uid VARCHAR (30), 		 -- e-mail, google id, facebook id, etc
+	uid VARCHAR (30), 	   -- e-mail, google id, facebook id, etc
 	password VARCHAR (300),
 	verified BOOLEAN DEFAULT false,
 	confirmed_at TIMESTAMP,

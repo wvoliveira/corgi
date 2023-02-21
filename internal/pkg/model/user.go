@@ -11,9 +11,10 @@ type User struct {
 	CreatedAt time.Time    `json:"created_at"`
 	UpdatedAt sql.NullTime `json:"updated_at"`
 
-	Name   string `json:"name"`
-	Role   string `json:"role"`
-	Active bool   `json:"active"`
+	Username string `json:"username"`
+	Name     string `json:"name"`
+	Role     string `json:"role"`
+	Active   bool   `json:"active"`
 
 	Identities []Identity `json:"identities,omitempty"`
 	Tokens     []Token    `json:"tokens,omitempty"`

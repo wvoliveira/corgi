@@ -8,18 +8,13 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
 func Logger(c context.Context) (l zerolog.Logger) {
 	logContext := log.Logger.With()
 
-	if ctxRequest, ok := c.Value(model.CorrelationID{}).(model.CorrelationID); ok {
-		logContext = logContext.Str("req_id", ctxRequest.ID)
-	}
-
-	if user_id, ok := c.Value("user_id").(string); ok {
-		logContext = logContext.Str("user_id", user_id)
+	if userID, ok := c.Value("user_id").(string); ok {
+		logContext = logContext.Str("user_id", userID)
 	}
 
 	return logContext.Logger()

@@ -2,14 +2,12 @@ package group
 
 import (
 	"errors"
-	"strconv"
-	"strings"
-
 	"github.com/gin-gonic/gin"
-	"github.com/wvoliveira/corgi/internal/pkg/common"
+	"strconv"
 )
 
 type addRequest struct {
+	WhoID       string
 	Name        string   `json:"name"`
 	DisplayName string   `json:"display_name"`
 	Description string   `json:"description"`
@@ -17,6 +15,7 @@ type addRequest struct {
 }
 
 type listRequest struct {
+	WhoID  string
 	Page   int    `json:"page"`
 	Sort   string `json:"sort"`
 	Offset int    `json:"offset"`
@@ -24,46 +23,59 @@ type listRequest struct {
 }
 
 type findByIDRequest struct {
-	ID string `json:"id"`
+	WhoID   string
+	GroupID string `uri:"id" binding:"required"`
 }
 
 type deleteRequest struct {
-	UserID  string `json:"-"`
-	GroupID string `json:"-"`
+	WhoID   string
+	GroupID string `uri:"id" binding:"required"`
 }
 
-type inviteAddRequest struct {
-	GroupID   string `json:"group_id"`
-	UserID    string `json:"user_id"`
-	InvitedBy string `json:"-"`
+type invitesAddByIDRequest struct {
+	WhoID     string
+	InvitedBy string
+	GroupID   string `uri:"id"`
+	UserEmail string `json:"user_email" binding:"required"`
 }
 
-func decodeAdd(c *gin.Context) (req addRequest, userID string, err error) {
-	userID, err = common.GetUserFromSession(c)
+type invitesListByIDRequest struct {
+	WhoID   string
+	GroupID string `uri:"id"`
+	Page    int    `form:"page"`
+	Sort    string `form:"sort"`
+	Offset  int    `form:"offset"`
+	Limit   int    `form:"limit"`
+}
 
-	if err != nil {
+type invitesListRequest struct {
+	WhoID  string
+	Page   int    `form:"page"`
+	Sort   string `form:"sort"`
+	Offset int    `form:"offset"`
+	Limit  int    `form:"limit"`
+}
+
+func decodeAdd(c *gin.Context) (req addRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
 		return
 	}
 
-	if err = c.ShouldBindJSON(&req); err != nil {
-		return req, userID, err
-	}
-
-	req.Name = strings.ToLower(req.Name)
-	err = checkName(req.Name)
-	if err != nil {
-		return
-	}
+	req.WhoID = v.(string)
+	err = c.ShouldBindJSON(&req)
 	return
 }
 
-func decodeList(c *gin.Context) (req listRequest, userID string, err error) {
-	userID, err = common.GetUserFromSession(c)
-
-	if err != nil {
+func decodeList(c *gin.Context) (req listRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
 		return
 	}
 
+	req.WhoID = v.(string)
 	page, _ := strconv.Atoi(c.Query("page"))
 	limit, _ := strconv.Atoi(c.Query("limit"))
 	sort := c.Query("sort")
@@ -93,42 +105,41 @@ func decodeList(c *gin.Context) (req listRequest, userID string, err error) {
 	return
 }
 
-func decodeFindByID(c *gin.Context) (req findByIDRequest, userID string, err error) {
-	userID, err = common.GetUserFromSession(c)
+func decodeFindByID(c *gin.Context) (req findByIDRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
+	}
 
+	err = c.ShouldBindUri(&req)
 	if err != nil {
 		return
 	}
 
-	GroupID := c.Param("id")
-
-	if GroupID == "" {
-		return req, userID, errors.New("impossible to get group id")
-	}
-
-	req.ID = GroupID
-	return req, userID, err
-}
-
-func decodeDelete(c *gin.Context) (req deleteRequest, err error) {
-	userID, err := common.GetUserFromSession(c)
-	if err != nil {
-		return
-	}
-
-	GroupID := c.Param("id")
-	if GroupID == "" {
-		return req, errors.New("impossible to get group id from path")
-	}
-
-	req.UserID = userID
-	req.GroupID = GroupID
+	req.WhoID = v.(string)
 	return
 }
 
-func decodeInviteAdd(c *gin.Context) (req inviteAddRequest, err error) {
-	userID, err := common.GetUserFromSession(c)
-	if err != nil {
+func decodeDelete(c *gin.Context) (req deleteRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
+	}
+
+	if err = c.ShouldBindUri(&req); err != nil {
+		return req, err
+	}
+
+	req.WhoID = v.(string)
+	return
+}
+
+func decodeInvitesAddByID(c *gin.Context) (req invitesAddByIDRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
 		return
 	}
 
@@ -136,11 +147,75 @@ func decodeInviteAdd(c *gin.Context) (req inviteAddRequest, err error) {
 		return req, err
 	}
 
-	req.InvitedBy = userID
+	req.GroupID = c.Param("id")
+	req.WhoID = v.(string)
+	req.InvitedBy = req.WhoID
+	return
+}
 
-	if req.GroupID == "" || req.UserID == "" {
-		err = errors.New("you need specific group_id and user_id to send invite to the group")
+func decodeInvitesListByID(c *gin.Context) (req invitesListByIDRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
 	}
 
+	req.WhoID = v.(string)
+	if err = c.ShouldBindQuery(&req); err != nil {
+		return req, err
+	}
+
+	if req.Page == 0 {
+		req.Page = 1
+	}
+
+	// TODO: rule for "sort" content like ASC or DESC
+	if req.Sort == "" {
+		req.Sort = "ASC"
+	}
+
+	switch {
+	case req.Limit > 100:
+		req.Limit = 100
+	case req.Limit <= 0:
+		req.Limit = 10
+	}
+	offset := (req.Page - 1) * req.Limit
+
+	req.GroupID = c.Param("id")
+	req.Offset = offset
+	return
+}
+
+func decodeInvitesList(c *gin.Context) (req invitesListRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
+	}
+
+	req.WhoID = v.(string)
+	if err = c.ShouldBindQuery(&req); err != nil {
+		return req, err
+	}
+
+	if req.Page == 0 {
+		req.Page = 1
+	}
+
+	// TODO: rule for "sort" content like ASC or DESC
+	if req.Sort == "" {
+		req.Sort = "ASC"
+	}
+
+	switch {
+	case req.Limit > 100:
+		req.Limit = 100
+	case req.Limit <= 0:
+		req.Limit = 10
+	}
+	offset := (req.Page - 1) * req.Limit
+
+	req.Offset = offset
 	return
 }

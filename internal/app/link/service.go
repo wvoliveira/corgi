@@ -184,7 +184,8 @@ func (s service) FindAll(c *gin.Context, r findAllRequest) (total int64, pages i
 	}
 
 	defer rows.Close()
-	var link model.Link
+	links = []model.Link{}
+	link := model.Link{}
 
 	for rows.Next() {
 		err = rows.Scan(&link.ID, &link.UserID, &link.CreatedAt, &link.UpdatedAt, &link.Domain, &link.Keyword, &link.URL, &link.Title, &link.Active)
@@ -263,7 +264,7 @@ func (s service) Delete(c *gin.Context, linkID, userID string) (err error) {
 	return
 }
 
-// Find get a shortener link from keyword.
+// FindFullURL get a shortener link from keyword.
 func (s service) FindFullURL(c *gin.Context, domain, keyword string) (m model.Link, err error) {
 	log := logger.Logger(c)
 

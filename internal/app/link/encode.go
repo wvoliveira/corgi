@@ -3,7 +3,7 @@ package link
 import "github.com/wvoliveira/corgi/internal/pkg/model"
 
 type findAllResponse struct {
-	Links []model.Link `json:"data"`
+	Links []model.Link `json:"links"`
 	Limit int          `json:"limit"`
 	Page  int          `json:"page"`
 	Sort  string       `json:"sort"`

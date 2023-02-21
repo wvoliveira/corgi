@@ -1,92 +1,85 @@
 import axios from "axios";
 
-type Link = {
-  id: string;
-	createdAt: Date;
-	updatedAt: Date;
+import { SERVER_BASE_URL } from "../utils/constant";
+import { getQuery } from "../utils/getQuery";
 
-	domain:  string;
-	keyword: string;
-	url:     string;
-	title:   string;
-	active:  string;
-};
+const APILink = {
+  all: (page, limit = 10) =>
+    axios.get(`${SERVER_BASE_URL}/articles?${getQuery(limit, page)}`),
 
-const LinkAPI = {
-  create: async (payload: any) => {
-    try {
-      const response = await axios.post(
-        `/api/links`,
-        JSON.stringify(payload),
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-      return response;
-    } catch (error: any) {
-      return error.response;
-    }
-  },
-  FindAll: async (searchText = "") => {
-    var url = `/api/links`;
+  byAuthor: (author, page = 0, limit = 5) =>
+    axios.get(
+      `${SERVER_BASE_URL}/articles?author=${encodeURIComponent(
+        author
+      )}&${getQuery(limit, page)}`
+    ),
 
-    if (searchText != "") {
-      url = `${url}?q=${searchText}`
-    }
+  byTag: (tag, page = 0, limit = 10) =>
+    axios.get(
+      `${SERVER_BASE_URL}/articles?tag=${encodeURIComponent(tag)}&${getQuery(
+        limit,
+        page
+      )}`
+    ),
 
-    try {
-      const response = await axios.get(url, {
+  delete: (id, token) =>
+    axios.delete(`${SERVER_BASE_URL}/articles/${id}`, {
+      headers: {
+        Authorization: `Token ${token}`,
+      },
+    }),
+
+  favorite: (slug) =>
+    axios.post(`${SERVER_BASE_URL}/articles/${slug}/favorite`),
+
+  favoritedBy: (author, page) =>
+    axios.get(
+      `${SERVER_BASE_URL}/articles?favorited=${encodeURIComponent(
+        author
+      )}&${getQuery(10, page)}`
+    ),
+
+  feed: (page, limit = 10) =>
+    axios.get(`${SERVER_BASE_URL}/articles/feed?${getQuery(limit, page)}`),
+
+  get: (slug) => axios.get(`${SERVER_BASE_URL}/articles/${slug}`),
+
+  unfavorite: (slug) =>
+    axios.delete(`${SERVER_BASE_URL}/articles/${slug}/favorite`),
+
+  update: async (article, token) => {
+    const { data, status } = await axios.put(
+      `${SERVER_BASE_URL}/articles/${article.slug}`,
+      JSON.stringify({ article }),
+      {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Token ${encodeURIComponent(token)}`,
         },
-      });
-      return response;
+      }
+    );
+    return {
+      data,
+      status,
+    };
+  },
 
-    } catch (error: any) {
-      return error.response;
-    }
-  },
-  findByID: async (id: string) => {
-    try {
-      const response = await axios.get(`/api/links/${id}`, {
+  create: async (url, token) => {
+    const { data, status } = await axios.post(
+      `${SERVER_BASE_URL}/links`,
+      JSON.stringify({url: url}),
+      {
         headers: {
           "Content-Type": "application/json",
+          Authorization: `Token ${encodeURIComponent(token)}`,
         },
-      });
-      return response;
-    } catch (error: any) {
-      return error.response;
-    }
-  },
-  save: async (id: string, link: any) => {
-    try {
-      const response = await axios.patch(
-        `/api/links/${id}`,
-        JSON.stringify({ link }),
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-      });
-      return response;
-    } catch (error: any) {
-      return error.response;
-    }
-  },
-  delete: async (id: string) => {
-    try {
-      const response = await axios.delete(`/api/links/${id}`, {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      return response;
-    } catch (error: any) {
-      return error.response;
-    }
+      }
+    );
+    return {
+      data,
+      status,
+    };
   },
 };
 
-export default LinkAPI;
+export default APILink;
