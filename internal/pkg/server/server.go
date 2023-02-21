@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"fmt"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"net/http"
 	"os"
 	"os/signal"
@@ -77,8 +78,16 @@ func AddStoreSession(router *gin.Engine) {
 
 func AddPProf(rg *gin.RouterGroup) {
 	pprof.RouteRegister(rg)
-
 	// Debug service like env vars, pprof route, etc.
 	service := debug.NewService()
 	service.NewHTTP(rg)
+}
+
+func NewMetrics(rg *gin.RouterGroup) {
+	h := promhttp.Handler()
+	hf := func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+
+	rg.GET("/metrics", hf)
 }

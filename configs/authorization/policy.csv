@@ -1,4 +1,5 @@
 p, anon, /api/debug*, HEAD|GET
+p, anon, /api/metrics*, HEAD|GET
 p, anon, /api/auth*, HEAD|GET|POST
 p, anon, /api/users*, HEAD|GET|POST
 p, anon, /api/health*, HEAD|GET

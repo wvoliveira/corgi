@@ -37,6 +37,7 @@ func init() {
 	logger.Default()
 
 	// Used as type for security session.
+	// TODO: remove this because we use JWT now.
 	gob.Register(model.User{})
 }
 
@@ -45,14 +46,13 @@ func main() {
 	cache := database.NewCache()
 
 	// Create user Admin if not exists.
-	// You can desactive this user after installation!
+	// The password will be prompt to console at first run.
 	database.CreateUserAdmin(db)
 
-	//authModel, err := authorization.DistFiles.ReadFile("model.conf")
-	//authModel, err := authorization.DistFiles.Open("model.conf")
+	// Enforce some authorization rules.
+	// Check model and policy files in configs/authorization folder.
 	authModel, _ := cfa.NewModel(authorization.DistFiles, "model.conf")
 	authPolicy := cfa.NewAdapter(authorization.DistFiles, "policy.csv")
-
 	enforcer, _ := casbin.NewEnforcer(authModel, authPolicy)
 
 	// Create a root router and attach session.
@@ -64,8 +64,6 @@ func main() {
 	router.Use(middleware.Authentication())
 	router.Use(middleware.Authorization(enforcer))
 
-	server.AddStoreSession(router)
-
 	// First, check if request path is inside web app.
 	// If yes, just answer the request and finish the request.
 	router.Use(func(c *gin.Context) {
@@ -73,7 +71,6 @@ func main() {
 
 		if !strings.HasPrefix(reqPath, "/api") {
 			c.FileFromFS(reqPath, http.FS(web.DistFS))
-			// c.Abort()
 			return
 		}
 	})
@@ -83,7 +80,7 @@ func main() {
 	if zerolog.GlobalLevel() == zerolog.DebugLevel {
 		server.AddPProf(apiRouter)
 	} else {
-		// Dont enable some things with debug level.
+		// Don't enable some things with debug level.
 		// Middleware for rate limit.
 		ratelimit.NewMiddleware(router, cache)
 	}
@@ -138,9 +135,14 @@ func main() {
 
 	{
 		// Healthcheck endpoints.
+		// Kubernetes health like: ready and live.
 		service := health.NewService(db, cache, constants.VERSION)
 		service.NewHTTP(apiRouter)
 	}
+
+	// Enable /metrics path Prometheus metrics like.
+	// And middleware to add some basic metrics from routes.
+	server.NewMetrics(apiRouter)
 
 	server.Graceful(router, viper.GetInt("SERVER_HTTP_PORT"))
 }

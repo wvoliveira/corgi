@@ -56,6 +56,13 @@ func Authorization(en *casbin.Enforcer) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		log := logger.Logger(c)
 
+		// Only check authorization policy if request in API routes
+		// Otherwise just pass off.
+		if !strings.HasPrefix(c.Request.RequestURI, "/api/") {
+			c.Next()
+			return
+		}
+
 		v, ok := c.Get("user_role")
 		if !ok {
 			log.Error().Caller().Msg("impossible to know who you are")
