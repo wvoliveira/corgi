@@ -11,7 +11,11 @@ services:
     image: wvoliveira/corgi:0.0.1
     restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "8081-8082:8081"
+    deploy:
+      mode: replicated
+      replicas: 2
+      endpoint_mode: vip
     environment:
       CORGI_LOG_LEVEL: debug
       CORGI_SECRET_KEY: CHANGE_FOR_SOMETHING_MORE_SECURITY
@@ -29,6 +33,12 @@ services:
     depends_on:
       - db
       - cache
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8081/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
 
   db:
     image: postgres:15.1
@@ -43,10 +53,10 @@ services:
       POSTGRES_DB: corgi
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d postgres"]
-      interval: 30s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s  
+      start_period: 5s
 
   db-admin:
     image: adminer:4.8.1
@@ -56,8 +66,8 @@ services:
     depends_on:
       - db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8080"]
-      interval: 30s
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:8080 || exit 1"]
+      interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
@@ -79,11 +89,11 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-      test: ["CMD", "redis-cli","ping"]
-      interval: 30s
+      test: ["CMD-SHELL", "redis-cli","ping"]
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 5s  
+      start_period: 5s
 
   prometheus:
     image: prom/prometheus:v2.42.0
@@ -100,8 +110,8 @@ services:
       - '--web.console.templates=/etc/prometheus/consoles'
       - '--web.enable-lifecycle'
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9090"]
-      interval: 30s
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:9090/-/healthy || exit 1"]
+      interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
@@ -118,6 +128,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 5s
 
   promtail:
     image: grafana/promtail:2.7.3
@@ -146,7 +157,7 @@ services:
     user: "104"
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1"]
-      interval: 30s
+      interval: 10s
       timeout: 5s
       retries: 5
       start_period: 5s
