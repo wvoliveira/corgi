@@ -26,14 +26,13 @@ datasources:
   - name: postgres
     type: postgres
     url: db:5432
-    user: grafana
+    user: user
+    database: corgi
     readOnly: true
     secureJsonData:
-      username: user
       password: password
     jsonData:
       sslmode: "disable"
-      database: corgi
 
   - name: redis
     type: redis-datasource
