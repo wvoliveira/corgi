@@ -282,11 +282,32 @@ func (s service) Delete(c *gin.Context, whoID, groupID string) (err error) {
 	return
 }
 
+// InvitesAddByID send invite to some user with e-mail in specific group ID
+// TODO: check if user_email is equal to authenticated user.
 func (s service) InvitesAddByID(c *gin.Context, payload invitesAddByIDRequest) (groupInvite model.GroupInvite, err error) {
 	log := logger.Logger(c)
 
+	// Check if group exists.
+	query := `SELECT id FROM groups WHERE id = $1 LIMIT 1`
+	log.Debug().Caller().Msg(query)
+
+	stt, err := s.db.PrepareContext(c, query)
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	group := model.Group{}
+	err = stt.QueryRowContext(c, payload.GroupID).Scan(&group.ID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			log.Error().Caller().Msg(err.Error())
+			return groupInvite, e.ErrGroupNotFound
+		}
+	}
+
 	// Check if invite already exists.
-	query := `
+	query = `
 		SELECT gi.id FROM groups_invites gi
 		INNER JOIN identities i ON i.user_id = gi.user_id
 		WHERE gi.group_id = $1
@@ -295,7 +316,7 @@ func (s service) InvitesAddByID(c *gin.Context, payload invitesAddByIDRequest) (
 	`
 	log.Debug().Caller().Msg(query)
 
-	stt, err := s.db.PrepareContext(c, query)
+	stt, err = s.db.PrepareContext(c, query)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
@@ -340,6 +361,9 @@ func (s service) InvitesAddByID(c *gin.Context, payload invitesAddByIDRequest) (
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
+
+	log.Debug().Caller().Msg(fmt.Sprintf("group_invite_id=%s payload_group_id=%s user_id=%s payload_invited_by=%s",
+		groupInvite.ID, payload.GroupID, user.ID, payload.InvitedBy))
 
 	_, err = stt.ExecContext(c, groupInvite.ID, payload.GroupID, user.ID, payload.InvitedBy)
 	if err != nil {

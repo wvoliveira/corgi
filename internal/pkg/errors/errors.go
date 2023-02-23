@@ -21,7 +21,10 @@ var (
 	ErrFieldsRequired  = errors.New("require more body fields for this request")
 	ErrNotImplemented  = errors.New("not implemented yet")
 
-	// Token errors.
+	/**
+		Token errors.
+	 **/
+
 	ErrTokenInvalid = errors.New("invalid token")
 	ErrTokenType    = errors.New("type token must be 'auth' or 'personal'")
 
