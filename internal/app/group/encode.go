@@ -3,6 +3,7 @@ package group
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"time"
 )
 
 type addResponse struct {
@@ -20,25 +21,35 @@ type listResponse struct {
 	Pages  int           `json:"pages"`
 }
 
+type findByIDUserModel struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 type findByIDResponse struct {
 	Group model.Group `json:"group"`
-	// TODO: melhorar isso.. pelo amor
-	// Preciso realizar o encode de somente alguns valores do usuário
-	Users []struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	}
+	Users []findByIDUserModel
 }
 
 type deleteResponse struct{}
 
+type inviteModel struct {
+	InviteID         string    `json:"invite_id"`
+	CreatedAt        time.Time `json:"created_at"`
+	GroupName        string    `json:"group_name"`
+	GroupDisplayName string    `json:"group_display_name"`
+	GroupDescription string    `json:"group_description"`
+	InvitedByID      string    `json:"invited_by_id"`
+	InvitedByName    string    `json:"invited_by_name"`
+}
+
 type invitesListResponse struct {
-	Invites []model.GroupInvite `json:"invites"`
-	Limit   int                 `json:"limit"`
-	Page    int                 `json:"page"`
-	Sort    string              `json:"sort"`
-	Total   int64               `json:"total"`
-	Pages   int                 `json:"pages"`
+	Invites []inviteModel `json:"invites"`
+	Page    int           `json:"page"`
+	Pages   int           `json:"pages"`
+	Total   int64         `json:"total"`
+	Limit   int           `json:"limit"`
+	Sort    string        `json:"sort"`
 }
 
 func encodeFindByID(c *gin.Context, group model.Group, users []model.User) (res findByIDResponse) {

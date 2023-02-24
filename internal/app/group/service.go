@@ -4,14 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"math"
-
 	"github.com/gin-gonic/gin"
 	"github.com/oklog/ulid/v2"
 	"github.com/redis/go-redis/v9"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"math"
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
@@ -21,8 +20,8 @@ type Service interface {
 	FindByID(*gin.Context, string, string) (model.Group, []model.User, error)
 	Delete(*gin.Context, string, string) error
 	InvitesAddByID(*gin.Context, invitesAddByIDRequest) (model.GroupInvite, error)
-	InvitesListByID(*gin.Context, invitesListByIDRequest) (int64, int, []model.GroupInvite, error)
-	InvitesList(*gin.Context, invitesListRequest) (int64, int, []model.GroupInvite, error)
+	InvitesListByID(*gin.Context, invitesListByIDRequest) (invitesListResponse, error)
+	InvitesList(*gin.Context, invitesListRequest) (invitesListResponse, error)
 
 	NewHTTP(*gin.RouterGroup)
 	HTTPAdd(*gin.Context)
@@ -374,8 +373,11 @@ func (s service) InvitesAddByID(c *gin.Context, payload invitesAddByIDRequest) (
 	return
 }
 
-func (s service) InvitesListByID(c *gin.Context, payload invitesListByIDRequest) (total int64, pages int, invites []model.GroupInvite, err error) {
+func (s service) InvitesListByID(c *gin.Context, payload invitesListByIDRequest) (response invitesListResponse, err error) {
 	log := logger.Logger(c)
+
+	total := int64(0)
+	pages := 1
 
 	sttCount, _ := s.db.PrepareContext(c, "SELECT COUNT(0) FROM group_user WHERE group_id = $1")
 	err = sttCount.QueryRowContext(c, payload.GroupID).Scan(&total)
@@ -385,55 +387,70 @@ func (s service) InvitesListByID(c *gin.Context, payload invitesListByIDRequest)
 	}
 
 	// TODO: fix to use "sort" variable
-	query := `SELECT gi.* FROM groups_invites gi
-		INNER JOIN groups g on g.id = gi.group_id
-		WHERE g.id = $1
-		ORDER BY g.id ASC OFFSET $2 LIMIT $3
+	query := `SELECT gi.id, gi.created_at, g.name, g.display_name, g.description, gi.invited_by, iu.name
+		FROM groups g
+				 INNER JOIN groups_invites gi on gi.group_id = g.id
+				 INNER JOIN users u on u.id = gi.user_id
+				 INNER JOIN users iu on iu.id = gi.invited_by
+		WHERE u.id = $1 AND g.id = $2
+		ORDER BY g.id ASC OFFSET $3 LIMIT $4
 	`
 
 	log.Debug().Caller().Msg(query)
 	sttData, _ := s.db.PrepareContext(c, query)
 
-	rows, err := sttData.QueryContext(c, payload.GroupID, payload.Offset, payload.Limit)
+	rows, err := sttData.QueryContext(c, payload.WhoID, payload.GroupID, payload.Offset, payload.Limit)
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
 
 	defer rows.Close()
-	invites = []model.GroupInvite{}
-	gi := model.GroupInvite{}
+	gi := inviteModel{}
 
 	for rows.Next() {
-		err = rows.Scan(&gi.ID, &gi.CreatedAt, &gi.UpdatedAtNull, &gi.GroupID, &gi.UserID, &gi.InvitedBy, &gi.Accepted)
+		err = rows.Scan(
+			&gi.InviteID,
+			&gi.CreatedAt,
+			&gi.GroupName,
+			&gi.GroupDisplayName,
+			&gi.GroupDescription,
+			&gi.InvitedByID,
+			&gi.InvitedByName)
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
 			return
 		}
 
-		if gi.UpdatedAtNull.Valid {
-			gi.UpdatedAt = &gi.UpdatedAtNull.Time
-		}
-
-		invites = append(invites, gi)
+		response.Invites = append(response.Invites, gi)
 	}
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-		return total, pages, invites, e.ErrInternalServerError
+		return response, e.ErrInternalServerError
 	}
 
 	pages = int(math.Ceil(float64(total) / float64(payload.Limit)))
+
+	response.Page = payload.Page
+	response.Pages = pages
+	response.Total = total
+	response.Limit = payload.Limit
+	response.Sort = payload.Sort
 	return
 }
 
-func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (total int64, pages int, invites []model.GroupInvite, err error) {
+func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (response invitesListResponse, err error) {
 	log := logger.Logger(c)
 
+	total := int64(0)
+	pages := 1
+
 	query := `
-		SELECT COUNT(0) FROM groups_invites
-		INNER JOIN group_user gu on gu.group_id = groups_invites.group_id
-		WHERE gu.user_id = $1
+		SELECT COUNT(0) FROM groups g
+			INNER JOIN groups_invites gi on gi.group_id = g.id
+			INNER JOIN users u on u.id = gi.user_id
+		WHERE u.id = $1
 	`
 
 	sttCount, _ := s.db.PrepareContext(c, query)
@@ -445,9 +462,12 @@ func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (total 
 
 	// TODO: fix to use "sort" variable
 	query = `
-		SELECT gi.* FROM groups_invites gi
-		INNER JOIN group_user gu on gu.group_id = gi.group_id
-		WHERE gu.user_id = $1
+		SELECT gi.id, gi.created_at, g.name, g.display_name, g.description, gi.invited_by, iu.name
+		FROM groups g
+				 INNER JOIN groups_invites gi on gi.group_id = g.id
+				 INNER JOIN users u on u.id = gi.user_id
+				 INNER JOIN users iu on iu.id = gi.invited_by
+		WHERE u.id = $1
 		ORDER BY gi.id ASC OFFSET $2 LIMIT $3
 	`
 
@@ -461,28 +481,36 @@ func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (total 
 	}
 
 	defer rows.Close()
-	invites = []model.GroupInvite{}
-	gi := model.GroupInvite{}
+	gi := inviteModel{}
 
 	for rows.Next() {
-		err = rows.Scan(&gi.ID, &gi.CreatedAt, &gi.UpdatedAtNull, &gi.GroupID, &gi.UserID, &gi.InvitedBy, &gi.Accepted)
+		err = rows.Scan(
+			&gi.InviteID,
+			&gi.CreatedAt,
+			&gi.GroupName,
+			&gi.GroupDisplayName,
+			&gi.GroupDescription,
+			&gi.InvitedByID,
+			&gi.InvitedByName)
 		if err != nil {
 			log.Error().Caller().Msg(err.Error())
 			return
 		}
 
-		if gi.UpdatedAtNull.Valid {
-			gi.UpdatedAt = &gi.UpdatedAtNull.Time
-		}
-
-		invites = append(invites, gi)
+		response.Invites = append(response.Invites, gi)
 	}
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())
-		return total, pages, invites, e.ErrInternalServerError
+		return response, e.ErrInternalServerError
 	}
 
 	pages = int(math.Ceil(float64(total) / float64(payload.Limit)))
+
+	response.Page = payload.Page
+	response.Pages = pages
+	response.Total = total
+	response.Limit = payload.Limit
+	response.Sort = payload.Sort
 	return
 }
