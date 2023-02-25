@@ -180,7 +180,7 @@ func (s service) FindAll(ctx *gin.Context, payload findAllRequest) (total int64,
 	queryData := `SELECT id, user_id, created_at, updated_at, domain, keyword, url, title, active 
 		FROM links
 		WHERE user_id = $1
-		ORDER BY id ASC OFFSET $2 LIMIT $3
+		ORDER BY $2 OFFSET $3 LIMIT $4
 	`
 	log.Debug().Caller().Msg(queryData)
 
@@ -203,6 +203,7 @@ func (s service) FindAll(ctx *gin.Context, payload findAllRequest) (total int64,
 		ctx,
 		queryData,
 		payload.WhoID,
+		payload.Sort,
 		payload.Offset,
 		payload.Limit,
 	)
@@ -238,8 +239,6 @@ func (s service) FindAll(ctx *gin.Context, payload findAllRequest) (total int64,
 
 		links = append(links, link)
 	}
-
-	fmt.Println("LINKS: ", links)
 
 	if err != nil {
 		log.Error().Caller().Msg(err.Error())

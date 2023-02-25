@@ -70,6 +70,7 @@ func (s service) HTTPFindAll(ctx *gin.Context) {
 		Links: links,
 		Limit: payload.Limit,
 		Page:  payload.Page,
+		Sort:  payload.Sort,
 		Total: total,
 		Pages: pages,
 		Err:   err,

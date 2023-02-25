@@ -22,6 +22,7 @@ type findByIDRequest struct {
 type findAllRequest struct {
 	WhoID        string
 	Page         int
+	Sort         string
 	Offset       int
 	Limit        int
 	ShortenedURL string
@@ -113,6 +114,7 @@ func decodeFindAll(c *gin.Context) (req findAllRequest, err error) {
 
 	req.WhoID = v.(string)
 	req.Page = page
+	req.Sort = "id ASC"
 	req.Limit = limit
 	req.Offset = offset
 	req.ShortenedURL = c.Query("u")
