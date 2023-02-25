@@ -9,20 +9,19 @@ import (
 	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
-func checkLink(link model.Link) (err error) {
+func checkLink(domain, keyword, url string) (err error) {
 	blockedKeywords := constants.BLOCKED_KEYWORDS
 
 	sort.Strings(blockedKeywords)
-	index := sort.SearchStrings(blockedKeywords, link.Keyword)
+	index := sort.SearchStrings(blockedKeywords, keyword)
 
-	if index < len(blockedKeywords) && blockedKeywords[index] == link.Keyword {
+	if index < len(blockedKeywords) && blockedKeywords[index] == keyword {
 		return e.ErrLinkKeywordNotPermitted
 	}
 
-	err = validation.Validate(link.URL,
+	err = validation.Validate(url,
 		validation.Required,
 		is.URL,
 	)
@@ -34,7 +33,7 @@ func checkLink(link model.Link) (err error) {
 
 	domainDefault := viper.GetString("domain_default")
 
-	if link.Domain == domainDefault {
+	if domain == domainDefault {
 		return nil
 	}
 

@@ -19,31 +19,17 @@ import storage from "../../lib/utils/storage";
 const Profile = () => {
   const router = useRouter();
 
-  console.log("QUERY: ", router.query);
   const keyURL = `${SERVER_BASE_URL}/users/username/${encodeURIComponent(String(router.query?.pid))}`
-
   const { data, error } = useSWR(keyURL, fetcher);
   const { data: currentUser } = useSWR("user", storage);
-
-  console.log("fetchedProfile: ", data)
-  console.log("profileError: ", error)
 
   if (error) return <ErrorMessage message="Can't load profile" />;
 
   const profile = data?.data;
-  console.log(profile);
-
-  // const { username, bio, image, following } = profile;
   const username = profile?.username;
-  console.log(username);
-
-  console.log("currentUser", currentUser);
 
   const isLoggedIn = checkLogin(currentUser);
   const isUser = currentUser && username === currentUser?.username;
-
-  console.log("isLoggedIn: ", isLoggedIn);
-  console.log("isUser: ", isUser);
 
   const handleFollow = async () => {
     mutate(
@@ -68,15 +54,16 @@ const Profile = () => {
   return (
     <div>
       <div>
+        <br/>
         <CustomImage
           // src={image}
           src="image here"
           alt="User's profile image"
           className="user-img"
         />
-        <h4>{profile?.username}</h4>
+        <h4>{profile?.name}</h4>
         {/* <p>{bio}</p> */}
-        <p>"bio here"</p>
+        <p>A good description/bio here.</p>
         <EditProfileButton isUser={isUser} />
         <Maybe test={isLoggedIn}>
           <FollowUserButton
@@ -89,12 +76,11 @@ const Profile = () => {
           />
         </Maybe>
       </div>
-
           <div>
             <div>
               <ProfileTab profile={profile} />
             </div>
-            <ArticleList />
+            {/*<ArticleList />*/}
           </div>
     </div>
   );

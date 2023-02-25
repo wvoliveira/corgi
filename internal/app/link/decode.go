@@ -2,188 +2,170 @@ package link
 
 import (
 	"errors"
-	"strconv"
-	"time"
-
-	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	e "github.com/wvoliveira/corgi/internal/pkg/errors"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
+	"strconv"
 )
 
 type addRequest struct {
+	WhoID   string
 	Domain  string `json:"domain"`
 	Keyword string `json:"keyword"`
-	URL     string `json:"url"`
+	URL     string `json:"url" binding:"required"`
 	Title   string `json:"title"`
-	UserID  string `json:"user_id"`
 }
 
 type findByIDRequest struct {
-	ID     string `json:"id"`
-	UserID string `json:"user_id"`
+	WhoID  string
+	LinkID string `uri:"id" binding:"required"`
 }
 
 type findAllRequest struct {
+	WhoID        string
 	Page         int
-	Sort         string
 	Offset       int
 	Limit        int
-	UserID       string
 	ShortenedURL string
 	SearchText   string
 }
 
 type updateRequest struct {
-	ID        string    `json:"id"`
-	UpdatedAt time.Time `json:"updated_at"`
-	Title     string    `json:"title"`
+	WhoID  string
+	LinkID string `uri:"id" binding:"required"`
+	Title  string `json:"title" binding:"required"`
 }
 
 type deleteRequest struct {
-	ID      string `json:"id"`
+	WhoID   string
+	LinkID  string `uri:"id" binding:"required"`
 	Domain  string `json:"domain"`
 	Keyword string `json:"keyword"`
-	UserID  string `json:"user_id"`
 }
 
 type findFullURLRequest struct {
-	Domain  string `json:"-"`
-	Keyword string `json:"keyword"`
+	WhoID   string
+	Keyword string `uri:"keyword" binding:"required"`
+	Domain  string
 }
 
-func decodeAdd(c *gin.Context) (r addRequest, err error) {
-
-	session := sessions.Default(c)
-	v := session.Get("user")
-
-	if v == nil {
-		return r, e.ErrUserFromSession
+func decodeAdd(c *gin.Context) (req addRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
 	}
 
-	if err = c.ShouldBindJSON(&r); err != nil {
-		return r, err
+	if err = c.ShouldBindJSON(&req); err != nil {
+		return req, err
 	}
 
-	if r.Domain == "" {
-		r.Domain = c.Request.Host
+	if req.Domain == "" {
+		req.Domain = c.Request.Host
 	}
 
-	r.UserID = v.(model.User).ID
-	return r, nil
+	req.WhoID = v.(string)
+	return req, nil
 }
 
-func decodeFindByID(c *gin.Context) (r findByIDRequest, err error) {
-
-	session := sessions.Default(c)
-	v := session.Get("user")
-
-	if v == nil {
-		return r, errors.New("impossible to get user from session")
+func decodeFindByID(c *gin.Context) (req findByIDRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
 	}
 
-	linkID := c.Param("id")
-	if linkID == "" {
-		return r, errors.New("impossible to get link id from path")
+	err = c.ShouldBindUri(&req)
+	if err != nil {
+		return req, errors.New("impossible to get link id from path")
 	}
 
-	r.ID = linkID
-	r.UserID = v.(model.User).ID
-	return r, nil
+	req.WhoID = v.(string)
+	return req, nil
 }
 
-func decodeFindAll(c *gin.Context) (r findAllRequest, err error) {
-
-	session := sessions.Default(c)
-	v := session.Get("user")
-
-	if v == nil {
-		return r, errors.New("impossible to get user from session")
+func decodeFindAll(c *gin.Context) (req findAllRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
 	}
 
-	page, _ := strconv.Atoi(c.Query("page"))
-	limit, _ := strconv.Atoi(c.Query("limit"))
-	sort := c.Query("sort")
+	page := 1
+	limit := 10
 
-	if page == 0 {
-		page = 1
+	queryPage := c.DefaultQuery("page", "1")
+	queryLimit := c.DefaultQuery("limit", "10")
+
+	if p, err := strconv.Atoi(queryPage); err == nil {
+		page = p
 	}
 
-	if sort == "" {
-		sort = "ID desc"
-	}
-
-	switch {
-	case limit > 100:
-		limit = 100
-	case limit <= 0:
-		limit = 10
+	if l, err := strconv.Atoi(queryLimit); err == nil {
+		limit = l
+		switch {
+		case limit > 100:
+			limit = 100
+		case limit <= 0:
+			limit = 10
+		}
 	}
 
 	offset := (page - 1) * limit
 
-	r.Page = page
-	r.Sort = sort
-	r.Limit = limit
-	r.Offset = offset
-	r.UserID = v.(model.User).ID
-	r.ShortenedURL = c.Query("u")
-	r.SearchText = c.Query("q")
-
-	return r, nil
+	req.WhoID = v.(string)
+	req.Page = page
+	req.Limit = limit
+	req.Offset = offset
+	req.ShortenedURL = c.Query("u")
+	req.SearchText = c.Query("q")
+	return req, nil
 }
 
-func decodeUpdate(c *gin.Context) (r updateRequest, userID string, err error) {
-
-	session := sessions.Default(c)
-	v := session.Get("user")
-
-	if v == nil {
-		return r, userID, errors.New("impossible to get user from session")
+func decodeUpdate(c *gin.Context) (req updateRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
 	}
 
-	linkID := c.Param("id")
-	if linkID == "" {
-		return r, userID, errors.New("impossible to get link id from path")
+	if err = c.ShouldBindUri(&req); err != nil {
+		return req, err
 	}
 
-	if err = c.ShouldBindJSON(&r); err != nil {
-		return r, userID, err
+	if err = c.ShouldBindJSON(&req); err != nil {
+		return req, err
 	}
 
-	r.ID = linkID
-	userID = v.(model.User).ID
-
-	return r, userID, nil
+	req.WhoID = v.(string)
+	return req, nil
 }
 
-func decodeDelete(c *gin.Context) (r deleteRequest, err error) {
-
-	session := sessions.Default(c)
-	v := session.Get("user")
-
-	if v == nil {
-		return r, errors.New("impossible to get user from session")
+func decodeDelete(c *gin.Context) (req deleteRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
 	}
 
-	linkID := c.Param("id")
-	if linkID == "" {
-		return r, errors.New("impossible to get link id from path")
+	if err = c.ShouldBindUri(&req); err != nil {
+		return req, err
 	}
 
-	r.ID = linkID
-	r.UserID = v.(model.User).ID
-
-	return r, nil
+	req.WhoID = v.(string)
+	return req, nil
 }
 
-func decodeFullURL(c *gin.Context) (r findFullURLRequest, err error) {
-	keyword := c.Param("keyword")
-	if keyword == "" {
-		return r, errors.New("impossible to get keyword from path")
+func decodeFindByKeyword(c *gin.Context) (req findFullURLRequest, err error) {
+	v, ok := c.Get("user_id")
+	if !ok {
+		err = errors.New("impossible to know who you are")
+		return
 	}
 
-	r.Domain = c.Request.Host
-	r.Keyword = keyword
-	return r, nil
+	if err = c.ShouldBindUri(&req); err != nil {
+		return req, err
+	}
+
+	req.WhoID = v.(string)
+	req.Domain = c.Request.Host
+	return req, nil
 }

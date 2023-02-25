@@ -67,7 +67,7 @@ var (
 
 	// ErrLinkNotFound link not found in database.
 	ErrLinkNotFound            = errors.New("domain and keyword combination not found")
-	ErrLinkAlreadyExists       = errors.New("this link keyword already exists in our database")
+	ErrLinkAlreadyExists       = errors.New("this combination of domain and keyword already exists in our database")
 	ErrLinkInvalidDomain       = errors.New("try to input a valid domain")
 	ErrLinkInvalidKeyword      = errors.New("try to input a valid keyword between 6 and 15 chars")
 	ErrLinkKeywordNotPermitted = errors.New("this keyword is not permitted")

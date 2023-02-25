@@ -12,7 +12,7 @@ const ProfileTab = ({ profile }) => {
           href="/profile/[pid]"
           as={`/profile/${encodeURIComponent(profile?.username)}`}
         >
-          <span onClick={() => setPage(0)}>My Articles</span>
+          <span onClick={() => setPage(0)}>My links</span>
         </NavLink>
       </li>
       <li className="nav-item">
@@ -20,7 +20,7 @@ const ProfileTab = ({ profile }) => {
           href="/profile/[pid]?favorite=true"
           as={`/profile/${encodeURIComponent(profile?.username)}?favorite=true`}
         >
-          <span onClick={() => setPage(0)}>Favorited Articles</span>
+          <span onClick={() => setPage(0)}>Favorite links</span>
         </NavLink>
       </li>
     </ul>

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/oklog/ulid/v2"
-	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 	"github.com/wvoliveira/corgi/internal/pkg/common"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
@@ -23,19 +22,32 @@ import (
 
 // NewSQL create a sql database object.
 func NewSQL() (db *sql.DB) {
-	log := logger.Logger(context.TODO())
+	ctx := context.TODO()
+	log := logger.Logger(ctx)
 
 	datasource := viper.GetString("DB_URL")
-	db, err := sql.Open("postgres", datasource)
 
+	db, err := sql.Open("postgres", datasource)
 	if err != nil {
-		log.Fatal().Caller().Msg(fmt.Sprintf("failed to connect to database: %s", err.Error()))
+		// This will not be a connection error, but a DSN parse error or
+		// another initialization error.
+		log.Fatal().Caller().Msg(fmt.Sprintf("unable to use data source name: %s", err.Error()))
+	}
+
+	db.SetConnMaxLifetime(0)
+	db.SetMaxIdleConns(1)
+	db.SetMaxOpenConns(3)
+
+	// Ping the database to verify DSN provided by the user is valid and the
+	// server accessible. If the ping fails exit the program with an error.
+	if err := db.PingContext(ctx); err != nil {
+		log.Fatal().Caller().Msg(fmt.Sprintf("unable to connect to database: %v", err.Error()))
 	}
 
 	return
 }
 
-// NewKV create a cache/redis database object.
+// NewCache create a cache/redis database object.
 func NewCache() (db *redis.Client) {
 	log := logger.Logger(context.TODO())
 
@@ -61,6 +73,8 @@ func NewCache() (db *redis.Client) {
 }
 
 func CreateUserAdmin(db *sql.DB) {
+	log := logger.Logger(context.TODO())
+
 	user := model.User{
 		ID:       ulid.Make().String(),
 		Name:     "Administrator",

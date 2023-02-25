@@ -25,7 +25,7 @@ const Navbar = () => {
       {" · "}
       <Maybe test={isLoggedIn}>
         <CustomLink href="/editor/new" as="/editor/new">
-          New Post
+          New Link
         </CustomLink>
         {" · "}
         <CustomLink href="/user/settings" as="/user/settings">

@@ -6,7 +6,6 @@ import (
 	"github.com/gin-gonic/gin"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
-	"github.com/wvoliveira/corgi/internal/pkg/model"
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
@@ -19,45 +18,33 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r.GET("/:id", s.HTTPFindByID)
 	r.PATCH("/:id", s.HTTPUpdate)
 	r.DELETE("/:id", s.HTTPDelete)
-	r.GET("/f/:keyword", s.HTTPFindFullURL)
+	r.GET("/keyword/:keyword", s.HTTPFindFullURL)
 }
 
-func (s service) HTTPAdd(c *gin.Context) {
-
-	d, err := decodeAdd(c)
-
+func (s service) HTTPAdd(ctx *gin.Context) {
+	payload, err := decodeAdd(ctx)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(ctx, err)
 		return
 	}
 
-	link, err := s.Add(c, model.Link{
-		Domain:  d.Domain,
-		Keyword: d.Keyword,
-		URL:     d.URL,
-		Title:   d.Title,
-		UserID:  d.UserID,
-	})
-
+	link, err := s.Add(ctx, payload)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(ctx, err)
 		return
 	}
 
-	response.Default(c, link, "", http.StatusCreated)
+	response.Default(ctx, link, "", http.StatusCreated)
 }
 
 func (s service) HTTPFindByID(c *gin.Context) {
-
-	d, err := decodeFindByID(c)
-
+	payload, err := decodeFindByID(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	link, err := s.FindByID(c, d.ID, d.UserID)
-
+	link, err := s.FindByID(c, payload)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
@@ -66,87 +53,71 @@ func (s service) HTTPFindByID(c *gin.Context) {
 	response.Default(c, link, "", http.StatusOK)
 }
 
-func (s service) HTTPFindAll(c *gin.Context) {
-
-	dr, err := decodeFindAll(c)
-
+func (s service) HTTPFindAll(ctx *gin.Context) {
+	payload, err := decodeFindAll(ctx)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(ctx, err)
 		return
 	}
 
-	total, pages, links, err := s.FindAll(c, dr)
-
+	total, pages, links, err := s.FindAll(ctx, payload)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(ctx, err)
 		return
 	}
 
 	sr := findAllResponse{
 		Links: links,
-		Limit: dr.Limit,
-		Page:  dr.Page,
-		Sort:  dr.Sort,
+		Limit: payload.Limit,
+		Page:  payload.Page,
 		Total: total,
 		Pages: pages,
 		Err:   err,
 	}
 
-	response.Default(c, sr, "", http.StatusOK)
+	response.Default(ctx, sr, "", http.StatusOK)
 }
 
-func (s service) HTTPUpdate(c *gin.Context) {
-
-	dr, userID, err := decodeUpdate(c)
-
+func (s service) HTTPUpdate(ctx *gin.Context) {
+	payload, err := decodeUpdate(ctx)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(ctx, err)
 		return
 	}
 
-	err = s.Update(c, model.Link{
-		ID:     dr.ID,
-		Title:  dr.Title,
-		UserID: userID,
-	})
-
+	err = s.Update(ctx, payload)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(ctx, err)
 		return
 	}
 
-	response.Default(c, nil, "", http.StatusOK)
+	response.Default(ctx, nil, "", http.StatusOK)
 }
 
-func (s service) HTTPDelete(c *gin.Context) {
-
-	dr, err := decodeDelete(c)
-
+func (s service) HTTPDelete(ctx *gin.Context) {
+	payload, err := decodeDelete(ctx)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(ctx, err)
 		return
 	}
 
-	err = s.Delete(c, dr.ID, dr.UserID)
-
+	err = s.Delete(ctx, payload)
 	if err != nil {
-		e.EncodeError(c, err)
+		e.EncodeError(ctx, err)
 		return
 	}
 
-	response.Default(c, nil, "", http.StatusOK)
+	response.Default(ctx, nil, "", http.StatusOK)
 }
 
 func (s service) HTTPFindFullURL(c *gin.Context) {
-	d, err := decodeFullURL(c)
-
+	d, err := decodeFindByKeyword(c)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
 	link, err := s.FindFullURL(c, d.Domain, d.Keyword)
-
 	if err != nil {
 		e.EncodeError(c, err)
 		return
