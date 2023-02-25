@@ -1,4 +1,5 @@
 import React from "react";
+// @ts-ignore
 import { trigger } from "swr";
 
 import { getRange, getPageInfo } from "../../lib/utils/calculatePagination";

@@ -1,5 +1,6 @@
 import { useRouter } from 'next/router'
 import React, {useEffect} from "react";
+// @ts-ignore
 import useSWR, { mutate, trigger } from "swr";
 
 import SettingsForm from "../../components/profile/SettingsForm";

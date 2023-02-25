@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import React, {useEffect} from "react";
+// @ts-ignore
 import useSWR, { mutate, trigger } from "swr";
 
 import { SERVER_BASE_URL } from "../../lib/utils/constant";
@@ -17,129 +18,84 @@ import storage from "../../lib/utils/storage";
 
 const Profile = () => {
   const router = useRouter();
-  const [pid, setPID] = React.useState("");
-  const [initialProfile, setInitialProfile] = React.useState({});
 
   console.log("QUERY: ", router.query);
+  const keyURL = `${SERVER_BASE_URL}/users/username/${encodeURIComponent(String(router.query?.pid))}`
 
-  useEffect( () => {
-    // fetch('/api/profile-data')
-    //     .then((res) => res.json())
-    //     .then((data) => {
-    //       setData(data)
-    //       setLoading(false)
-    //     })
+  const { data, error } = useSWR(keyURL, fetcher);
+  const { data: currentUser } = useSWR("user", storage);
 
-    setPID(router.query.pid)
+  console.log("fetchedProfile: ", data)
+  console.log("profileError: ", error)
 
-    fetch(`${SERVER_BASE_URL}/users/username/${encodeURIComponent(String(router.query.pid))}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setInitialProfile(data)
-        })
+  if (error) return <ErrorMessage message="Can't load profile" />;
 
-  }, [router.query])
-
-  console.log("initialProfile: ", initialProfile);
-
-  const {
-    data: fetchedProfile,
-    error: profileError,
-  } = useSWR(
-    `${SERVER_BASE_URL}/users/username/${encodeURIComponent(String(pid))}`,
-    fetcher,
-      { initialData: initialProfile }
-  );
-
-  console.log("fetchedProfile: ", fetchedProfile)
-  console.log("profileError: ", profileError)
-
-  // return <></>;
-
-  if (profileError) return <ErrorMessage message="Can't load profile" />;
-
-  // const profile = fetchedProfile?.data;
-
-  const { data } = fetchedProfile || initialProfile;
-  console.log(data);
-
+  const profile = data?.data;
+  console.log(profile);
 
   // const { username, bio, image, following } = profile;
-  const username = data?.username;
+  const username = profile?.username;
   console.log(username);
 
-  const { data: currentUser } = useSWR("user", storage);
   console.log("currentUser", currentUser);
-  return <></>;
 
   const isLoggedIn = checkLogin(currentUser);
   const isUser = currentUser && username === currentUser?.username;
 
   console.log("isLoggedIn: ", isLoggedIn);
   console.log("isUser: ", isUser);
-  return <></>;
 
   const handleFollow = async () => {
     mutate(
-      `${SERVER_BASE_URL}/users/${pid}`,
+      `${SERVER_BASE_URL}/users/${router.query?.pid}`,
       { profile: { ...profile, following: true } },
       false
     );
-    UserAPI.follow(pid);
-    trigger(`${SERVER_BASE_URL}/users/${pid}`);
+    UserAPI.follow(router.query?.pid);
+    trigger(`${SERVER_BASE_URL}/users/${router.query?.pid}`);
   };
 
   const handleUnfollow = async () => {
     mutate(
-      `${SERVER_BASE_URL}/users/${pid}`,
+      `${SERVER_BASE_URL}/users/${router.query?.pid}`,
       { profile: { ...profile, following: true } },
       true
     );
-    UserAPI.unfollow(pid);
-    trigger(`${SERVER_BASE_URL}/users/${pid}`);
+    UserAPI.unfollow(router.query?.pid);
+    trigger(`${SERVER_BASE_URL}/users/${router.query?.pid}`);
   };
 
   return (
-    <div className="profile-page">
-      <div className="user-info">
-        <div className="container">
-          <div className="row">
-            <div className="col-xs-12 col-md-10 offset-md-1">
-              <CustomImage
-                // src={image}
-                src="image here"
-                alt="User's profile image"
-                className="user-img"
-              />
-              <h4>{profile?.username}</h4>
-              {/* <p>{bio}</p> */}
-              <p>"bio here"</p>
-              <EditProfileButton isUser={isUser} />
-              <Maybe test={isLoggedIn}>
-                <FollowUserButton
-                  isUser={isUser}
-                  username={profile?.username}
-                  // following={following}
-                  following="following here"
-                  follow={handleFollow}
-                  unfollow={handleUnfollow}
-                />
-              </Maybe>
-            </div>
-          </div>
-        </div>
+    <div>
+      <div>
+        <CustomImage
+          // src={image}
+          src="image here"
+          alt="User's profile image"
+          className="user-img"
+        />
+        <h4>{profile?.username}</h4>
+        {/* <p>{bio}</p> */}
+        <p>"bio here"</p>
+        <EditProfileButton isUser={isUser} />
+        <Maybe test={isLoggedIn}>
+          <FollowUserButton
+            isUser={isUser}
+            username={profile?.username}
+            // following={following}
+            following="following here"
+            follow={handleFollow}
+            unfollow={handleUnfollow}
+          />
+        </Maybe>
       </div>
 
-      <div className="container">
-        <div className="row">
-          <div className="col-xs-12 col-md-10 offset-md-1">
-            <div className="articles-toggle">
+          <div>
+            <div>
               <ProfileTab profile={profile} />
             </div>
             <ArticleList />
           </div>
-        </div>
-      </div>
     </div>
   );
 };

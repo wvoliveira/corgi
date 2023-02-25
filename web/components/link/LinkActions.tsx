@@ -1,5 +1,6 @@
 import Router, { useRouter } from "next/router";
 import React from "react";
+// @ts-ignore
 import useSWR, { trigger } from "swr";
 
 import CustomLink from "../common/CustomLink";
