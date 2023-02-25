@@ -40,7 +40,7 @@ const Profile = () => {
 
   }, [router.query])
 
-  console.log(initialProfile);
+  console.log("initialProfile: ", initialProfile);
 
   const {
     data: fetchedProfile,
@@ -51,22 +51,33 @@ const Profile = () => {
       { initialData: initialProfile }
   );
 
-  console.log(fetchedProfile)
-  console.log(profileError)
+  console.log("fetchedProfile: ", fetchedProfile)
+  console.log("profileError: ", profileError)
 
-  return (<></>);
+  // return <></>;
 
   if (profileError) return <ErrorMessage message="Can't load profile" />;
 
-  const profile = fetchedProfile?.data;
+  // const profile = fetchedProfile?.data;
+
+  const { data } = fetchedProfile || initialProfile;
+  console.log(data);
+
 
   // const { username, bio, image, following } = profile;
-  // const username = profile;
+  const username = data?.username;
+  console.log(username);
 
   const { data: currentUser } = useSWR("user", storage);
-  const isLoggedIn = checkLogin(currentUser);
+  console.log("currentUser", currentUser);
+  return <></>;
 
-  const isUser = currentUser && profile?.username === currentUser?.username;
+  const isLoggedIn = checkLogin(currentUser);
+  const isUser = currentUser && username === currentUser?.username;
+
+  console.log("isLoggedIn: ", isLoggedIn);
+  console.log("isUser: ", isUser);
+  return <></>;
 
   const handleFollow = async () => {
     mutate(
