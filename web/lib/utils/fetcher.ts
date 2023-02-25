@@ -3,16 +3,16 @@ import axios from "axios";
 const updateOptions = () => {
   if (typeof window === "undefined") return {};
 
-  if (!window.localStorage.user) return {};
+  if (!window.localStorage.tokens) return {};
 
-  if (Object.keys(window.localStorage.user).length === 0) return {};
+  if (Object.keys(window.localStorage.tokens).length === 0) return {};
 
-  const user = JSON.parse(window.localStorage.user);
+  const tokens = JSON.parse(window.localStorage.tokens);
 
-  if (!!user.access_token) {
+  if (!!tokens.access_token) {
     return {
       headers: {
-        Authorization: `Token ${user.access_token}`,
+        Authorization: `Bearer ${tokens.access_token}`,
       },
     };
   }

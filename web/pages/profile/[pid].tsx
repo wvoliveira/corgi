@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import React from "react";
+import React, {useEffect} from "react";
 import useSWR, { mutate, trigger } from "swr";
 
 import { SERVER_BASE_URL } from "../../lib/utils/constant";
@@ -17,17 +17,44 @@ import storage from "../../lib/utils/storage";
 
 const Profile = () => {
   const router = useRouter();
-  const {
-    query: { pid },
-  } = router;
+  const [pid, setPID] = React.useState("");
+  const [initialProfile, setInitialProfile] = React.useState({});
+
+  console.log("QUERY: ", router.query);
+
+  useEffect( () => {
+    // fetch('/api/profile-data')
+    //     .then((res) => res.json())
+    //     .then((data) => {
+    //       setData(data)
+    //       setLoading(false)
+    //     })
+
+    setPID(router.query.pid)
+
+    fetch(`${SERVER_BASE_URL}/users/username/${encodeURIComponent(String(router.query.pid))}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setInitialProfile(data)
+        })
+
+  }, [router.query])
+
+  console.log(initialProfile);
 
   const {
     data: fetchedProfile,
     error: profileError,
   } = useSWR(
-    `${SERVER_BASE_URL}/users/${encodeURIComponent(String(pid))}`,
-    fetcher
+    `${SERVER_BASE_URL}/users/username/${encodeURIComponent(String(pid))}`,
+    fetcher,
+      { initialData: initialProfile }
   );
+
+  console.log(fetchedProfile)
+  console.log(profileError)
+
+  return (<></>);
 
   if (profileError) return <ErrorMessage message="Can't load profile" />;
 
