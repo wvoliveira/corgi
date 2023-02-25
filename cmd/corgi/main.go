@@ -3,15 +3,11 @@ package main
 import (
 	"encoding/gob"
 	"github.com/casbin/casbin/v2"
+	"github.com/gin-gonic/gin"
 	cfa "github.com/naucon/casbin-fs-adapter"
-	"github.com/wvoliveira/corgi/configs/authorization"
-	"net/http"
-	"strings"
-
 	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
-
-	"github.com/gin-gonic/gin"
+	"github.com/wvoliveira/corgi/configs/authorization"
 	"github.com/wvoliveira/corgi/internal/app/auth/facebook"
 	"github.com/wvoliveira/corgi/internal/app/auth/google"
 	"github.com/wvoliveira/corgi/internal/app/auth/password"
@@ -30,6 +26,7 @@ import (
 	ratelimit "github.com/wvoliveira/corgi/internal/pkg/rate-limit"
 	"github.com/wvoliveira/corgi/internal/pkg/server"
 	"github.com/wvoliveira/corgi/web"
+	"net/http"
 )
 
 func init() {
@@ -63,17 +60,6 @@ func main() {
 	router.Use(middleware.CORS())
 	router.Use(middleware.Authentication())
 	router.Use(middleware.Authorization(enforcer))
-
-	// First, check if request path is inside web app.
-	// If yes, just answer the request and finish the request.
-	router.Use(func(c *gin.Context) {
-		reqPath := c.Request.URL.Path
-
-		if !strings.HasPrefix(reqPath, "/api") {
-			c.FileFromFS(reqPath, http.FS(web.DistFS))
-			return
-		}
-	})
 
 	apiRouter := router.Group("/api")
 
@@ -128,7 +114,7 @@ func main() {
 	{
 		// Central business service: manage link shortener.
 		service := link.NewService(db, cache)
-		service.NewHTTP(apiRouter)
+		service.NewHTTP(router, apiRouter)
 	}
 
 	{
@@ -143,6 +129,13 @@ func main() {
 		service := health.NewService(db, cache, constants.VERSION)
 		service.NewHTTP(apiRouter)
 	}
+
+	// Send requests that do not have a router defined.
+	router.NoRoute(func(c *gin.Context) {
+		reqPath := c.Request.URL.Path
+		c.FileFromFS(reqPath, http.FS(web.DistFS))
+		return
+	})
 
 	server.Graceful(router, viper.GetInt("SERVER_HTTP_PORT"))
 }

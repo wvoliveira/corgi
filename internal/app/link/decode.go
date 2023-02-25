@@ -6,6 +6,12 @@ import (
 	"strconv"
 )
 
+type redirectRequest struct {
+	WhoID   string
+	Keyword string `uri:"keyword" binding:"required"`
+	Domain  string
+}
+
 type addRequest struct {
 	WhoID   string
 	Domain  string `json:"domain"`

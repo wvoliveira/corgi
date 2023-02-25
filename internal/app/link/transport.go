@@ -9,7 +9,12 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/response"
 )
 
-func (s service) NewHTTP(rg *gin.RouterGroup) {
+// NewHTTP create a new http endpoint for link service.
+// This is a principal service, and it has a root router to redirect
+// links by domain and keyword combination.
+func (s service) NewHTTP(root *gin.Engine, rg *gin.RouterGroup) {
+	root.GET("/:keyword", s.HTTPRedirect)
+
 	r := rg.Group("/links")
 	r.Use(middleware.Checks())
 
@@ -19,6 +24,23 @@ func (s service) NewHTTP(rg *gin.RouterGroup) {
 	r.PATCH("/:id", s.HTTPUpdate)
 	r.DELETE("/:id", s.HTTPDelete)
 	r.GET("/keyword/:keyword", s.HTTPFindFullURL)
+}
+
+func (s service) HTTPRedirect(ctx *gin.Context) {
+	d, err := decodeFindByKeyword(ctx)
+	if err != nil {
+		e.EncodeError(ctx, err)
+		return
+	}
+
+	link, err := s.FindRedirectURL(ctx, d.Domain, d.Keyword)
+	if err != nil {
+		e.EncodeError(ctx, err)
+		return
+	}
+
+	url := encodeRedirect(link)
+	ctx.Redirect(301, url.URL)
 }
 
 func (s service) HTTPAdd(ctx *gin.Context) {

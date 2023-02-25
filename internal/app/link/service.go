@@ -19,6 +19,7 @@ import (
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
+	FindRedirectURL(*gin.Context, string, string) (model.Link, error)
 	Add(*gin.Context, addRequest) (model.Link, error)
 	FindByID(*gin.Context, findByIDRequest) (model.Link, error)
 	FindAll(*gin.Context, findAllRequest) (int64, int, []model.Link, error)
@@ -26,7 +27,8 @@ type Service interface {
 	Delete(*gin.Context, deleteRequest) (err error)
 	FindFullURL(*gin.Context, string, string) (model.Link, error)
 
-	NewHTTP(*gin.RouterGroup)
+	NewHTTP(*gin.Engine, *gin.RouterGroup)
+	HTTPRedirect(*gin.Context)
 	HTTPAdd(*gin.Context)
 	HTTPFindByID(*gin.Context)
 	HTTPFindAll(*gin.Context)
@@ -43,6 +45,38 @@ type service struct {
 // NewService creates a new authentication service.
 func NewService(db *sql.DB, cache *redis.Client) Service {
 	return service{db, cache}
+}
+
+// FindRedirectURL redirect to full link getting by domain and keyword combination.
+func (s service) FindRedirectURL(c *gin.Context, domain, keyword string) (m model.Link, err error) {
+	log := logger.Logger(c)
+
+	key := fmt.Sprintf("link_full_%s_%s", domain, keyword)
+	val, _ := itemFromCache(c, s.cache, key)
+	if val != "" {
+		m.URL = val
+		return
+	}
+
+	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2 AND active = true"
+	log.Debug().Caller().Msg(query)
+
+	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return m, e.ErrLinkNotFound
+		}
+
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	status := s.cache.Set(c, key, m.URL, 10*time.Minute)
+	err = status.Err()
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	return
 }
 
 // Add create a new shortener link.
