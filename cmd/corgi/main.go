@@ -18,7 +18,6 @@ import (
 	"github.com/wvoliveira/corgi/internal/app/link"
 	"github.com/wvoliveira/corgi/internal/app/user"
 	"github.com/wvoliveira/corgi/internal/pkg/config"
-	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	"github.com/wvoliveira/corgi/internal/pkg/database"
 	"github.com/wvoliveira/corgi/internal/pkg/logger"
 	"github.com/wvoliveira/corgi/internal/pkg/middleware"
@@ -28,6 +27,8 @@ import (
 	"github.com/wvoliveira/corgi/web"
 	"net/http"
 )
+
+const version = "0.0.1"
 
 func init() {
 	config.New()
@@ -126,7 +127,7 @@ func main() {
 	{
 		// Healthcheck endpoints.
 		// Kubernetes healthcheck like: readiness and liveness.
-		service := health.NewService(db, cache, constants.VERSION)
+		service := health.NewService(db, cache, version)
 		service.NewHTTP(apiRouter)
 	}
 

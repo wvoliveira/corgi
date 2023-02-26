@@ -20,3 +20,8 @@ type Link struct {
 
 	UserID string `json:"-"`
 }
+
+// LinkClicks represents metrics from specific short URL.
+type LinkClicks struct {
+	Total int `json:"total"`
+}

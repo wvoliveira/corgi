@@ -10,9 +10,13 @@ import (
 	"github.com/oklog/ulid/v2"
 	"github.com/redis/go-redis/v9"
 	"github.com/spf13/viper"
-	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 	"github.com/wvoliveira/corgi/internal/pkg/model"
+)
+
+const (
+	tokenAuth     = "token_auth:%s"
+	tokenPersonal = "token_personal:%s"
 )
 
 var jwtKey = []byte(viper.GetString("SECRET_KEY"))
@@ -29,8 +33,8 @@ func CreateToken(c context.Context, cache *redis.Client, typeToken string, userI
 	}
 
 	tokens := map[string]string{
-		"auth":     constants.TOKEN_AUTH,
-		"personal": constants.TOKEN_PERSONAL,
+		"auth":     tokenAuth,
+		"personal": tokenPersonal,
 	}
 
 	expirationTime := 48 * time.Hour

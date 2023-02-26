@@ -7,13 +7,15 @@ import (
 	"github.com/go-ozzo/ozzo-validation/v4/is"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-	"github.com/wvoliveira/corgi/internal/pkg/constants"
 	e "github.com/wvoliveira/corgi/internal/pkg/errors"
 )
 
-func checkLink(domain, keyword, url string) (err error) {
-	blockedKeywords := constants.BLOCKED_KEYWORDS
+// TODO: put theses keywords in database, so, we can update in real time.
+// Ref: https://www.mediavine.com/keyword-anti-targeting/
+var blockedKeywords = []string{"crash", "attack", "terrorist", "suicide", "nazi", "killed", "porn", "explosion",
+	"rape", "death", "isis", "shooting", "bomb", "dead", "murder", "terror", "kill", "sex", "massacre", "gun"}
 
+func checkLink(domain, keyword, url string) (err error) {
 	sort.Strings(blockedKeywords)
 	index := sort.SearchStrings(blockedKeywords, keyword)
 
