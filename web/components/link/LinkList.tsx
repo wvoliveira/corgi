@@ -21,10 +21,12 @@ const LinkList = () => {
   const router = useRouter();
   const { asPath, pathname, query } = router;
   if (query.page === undefined) {
+    // @ts-ignore
     query.page = 1
   }
 
   if (query.offset == undefined) {
+    // @ts-ignore
     query.offset = 0
   }
 
