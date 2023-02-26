@@ -97,7 +97,6 @@ func ValidateToken(signedToken string) (user model.User, err error) {
 			return []byte(jwtKey), nil
 		},
 	)
-
 	if err != nil {
 		return
 	}
@@ -109,7 +108,7 @@ func ValidateToken(signedToken string) (user model.User, err error) {
 	}
 
 	if claims.ExpiresAt < time.Now().Local().Unix() {
-		err = errors.New("token expired")
+		err = errors.New("token is expired")
 		return
 	}
 
