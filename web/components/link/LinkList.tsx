@@ -2,20 +2,12 @@ import { useRouter } from "next/router";
 import React from "react";
 import useSWR from "swr";
 
-import ArticlePreview from "./LinkPreview";
 import ErrorMessage from "../common/ErrorMessage";
 import LoadingSpinner from "../common/LoadingSpinner";
 import Maybe from "../common/Maybe";
 import Pagination from "../common/Pagination";
-import { usePageState } from "../../lib/context/PageContext";
-import {
-  usePageCountState,
-  usePageCountDispatch,
-} from "../../lib/context/PageCountContext";
-import useViewport from "../../lib/hooks/useViewport";
 import { SERVER_BASE_URL, DEFAULT_LIMIT } from "../../lib/utils/constant";
 import fetcher from "../../lib/utils/fetcher";
-import Link from "next/link";
 
 const LinkList = () => {
   const router = useRouter();
