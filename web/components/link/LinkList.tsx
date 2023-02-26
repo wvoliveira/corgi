@@ -15,84 +15,66 @@ import {
 import useViewport from "../../lib/hooks/useViewport";
 import { SERVER_BASE_URL, DEFAULT_LIMIT } from "../../lib/utils/constant";
 import fetcher from "../../lib/utils/fetcher";
+import Link from "next/link";
 
 const LinkList = () => {
-  const page = usePageState();
-  const pageCount = usePageCountState();
-  const setPageCount = usePageCountDispatch();
-  const lastIndex =
-    pageCount > 480 ? Math.ceil(pageCount / 20) : Math.ceil(pageCount / 20) - 1;
-
-  const { vw } = useViewport();
   const router = useRouter();
   const { asPath, pathname, query } = router;
-  const { favorite, follow, tag, pid } = query;
-
-  const isProfilePage = pathname.startsWith(`/profile`);
-
-  let fetchURL = `${SERVER_BASE_URL}/articles?offset=${page * DEFAULT_LIMIT}`;
-
-  switch (true) {
-    case !!tag:
-      fetchURL = `${SERVER_BASE_URL}/articles${asPath}&offset=${
-        page * DEFAULT_LIMIT
-      }`;
-      break;
-    case isProfilePage && !!favorite:
-      fetchURL = `${SERVER_BASE_URL}/articles?favorited=${encodeURIComponent(
-        String(pid)
-      )}&offset=${page * DEFAULT_LIMIT}`;
-      break;
-    case isProfilePage && !favorite:
-      fetchURL = `${SERVER_BASE_URL}/articles?author=${encodeURIComponent(
-        String(pid)
-      )}&offset=${page * DEFAULT_LIMIT}`;
-      break;
-    case !isProfilePage && !!follow:
-      fetchURL = `${SERVER_BASE_URL}/articles/feed?offset=${
-        page * DEFAULT_LIMIT
-      }`;
-      break;
-    default:
-      break;
+  if (query.page === undefined) {
+    query.page = 1
   }
 
-  const { data, error } = useSWR(fetchURL, fetcher);
+  if (query.offset == undefined) {
+    query.offset = 0
+  }
+
+  let fetchURL = `${SERVER_BASE_URL}/links?page=${query.page}&offset=${query.offset}`;
+  console.debug("fetchURL: ", fetchURL);
+
+  const { data: content, error } = useSWR(fetchURL, fetcher);
 
   if (error) {
     return (
-      <div className="col-md-9">
-        <div className="feed-toggle">
-          <ul className="nav nav-pills outline-active"></ul>
-        </div>
-        <ErrorMessage message="Cannot load recent articles..." />
+      <div>
+        <ErrorMessage message="Cannot load recent links..." />
       </div>
     );
   }
 
-  if (!data) return <LoadingSpinner />;
+  if (!content) return <LoadingSpinner />;
 
-  const { articles, articlesCount } = data;
-  setPageCount(articlesCount);
+  console.debug("Data: ", content)
+  console.debug("Error: ", error)
 
-  if (articles && articles.length === 0) {
-    return <div className="article-preview">No articles are here... yet.</div>;
+  const { data } = content;
+
+  if (data.links && data.links.length === 0) {
+    return <div>No links are here... yet.</div>;
   }
 
+  let protocol = window.location.protocol;
+  console.debug("Protocol: ", protocol);
+
+  // @ts-ignore
   return (
     <>
-      {articles?.map((article) => (
-        <ArticlePreview key={article.slug} article={article} />
-      ))}
+      {data.links?.map((link, index) => {
+        const shortURL = `${protocol}//${link.domain}/${link.keyword}`
+        return (
+          <p key={link.id} title={link.id}>
+            {link.id.substring(0, 5)} | {" "}
+            <a key={link.id} target="_blank" href={shortURL} rel={shortURL}>{shortURL.substring(0, 15)}</a>... | {" "}
+            {link.url}
+          </p>
+        )
+      })}
 
-      <Maybe test={articlesCount && articlesCount > 20}>
+      <Maybe test={data.total && data.total > 10}>
         <Pagination
-          total={pageCount}
-          limit={20}
-          pageCount={vw >= 768 ? 10 : 5}
-          currentPage={page}
-          lastIndex={lastIndex}
-          fetchURL={fetchURL}
+          page={data.page}
+          pages={data.pages}
+          limit={data.limit}
+          total={data.total}
         />
       </Maybe>
     </>
