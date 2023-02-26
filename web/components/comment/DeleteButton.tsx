@@ -1,5 +1,6 @@
 import axios from "axios";
 import { useRouter } from "next/router";
+// @ts-ignore
 import useSWR, { trigger } from "swr";
 
 import { SERVER_BASE_URL } from "../../lib/utils/constant";

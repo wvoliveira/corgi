@@ -1,0 +1,43 @@
+apiVersion: 1
+
+datasources:
+  - name: testdata
+    isDefault: true
+    type: testdata
+
+  - name: prometheus
+    uid: prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+    jsonData:
+      manageAlerts: true
+      prometheusType: Prometheus
+      prometheusVersion: 2.42.0
+
+  - name: loki
+    type: loki
+    access: proxy
+    url: http://loki:3100
+    editable: false
+    jsonData:
+      manageAlerts: false
+
+  - name: postgres
+    type: postgres
+    url: db:5432
+    user: user
+    database: corgi
+    readOnly: true
+    secureJsonData:
+      password: password
+    jsonData:
+      sslmode: "disable"
+
+  - name: redis
+    type: redis-datasource
+    access: proxy
+    url: "redis://cache:6379/0"
+    readOnly: true
+    secureJsonData:
+      password: password

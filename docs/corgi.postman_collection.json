@@ -13,7 +13,29 @@
 					"name": "password",
 					"item": [
 						{
-							"name": "Login",
+							"name": "Login admin",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"console.log(jsonData);",
+											"",
+											"var access_token = jsonData.data?.tokens?.access_token;",
+											"var refresh_token = jsonData.data?.tokens?.refresh_token;",
+											"",
+											"postman.setEnvironmentVariable(\"access_token\", access_token);",
+											"postman.setEnvironmentVariable(\"refresh_token\", refresh_token);",
+											"",
+											"console.log(\"Access token: \", access_token);",
+											"console.log(\"Refresh token: \", refresh_token);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
 							"request": {
 								"method": "POST",
 								"header": [],
@@ -39,16 +61,195 @@
 									]
 								}
 							},
-							"response": []
+							"response": [
+								{
+									"name": "Login admin",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"email\":\"{{admin_username}}\",\"password\":\"{{admin_password}}\"}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/api/auth/password/login",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"api",
+												"auth",
+												"password",
+												"login"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Sun, 19 Feb 2023 21:16:13 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "916"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"user\": {\n            \"username\": \"admin\",\n            \"name\": \"Administrator\",\n            \"role\": \"admin\",\n            \"active\": true\n        },\n        \"tokens\": {\n            \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiIiLCJpZCI6IjAxR1NOUkZaNzVHUlpZM1Y4MlJUM0MxVDZDIiwiY3JlYXRlZF9hdCI6IjIwMjMtMDItMTlUMjE6MTU6MTkuNjcxODMzWiIsInVwZGF0ZWRfYXQiOnsiVGltZSI6IjAwMDEtMDEtMDFUMDA6MDA6MDBaIiwiVmFsaWQiOmZhbHNlfSwidXNlcm5hbWUiOiJhZG1pbiIsIm5hbWUiOiJBZG1pbmlzdHJhdG9yIiwicm9sZSI6ImFkbWluIiwiYWN0aXZlIjp0cnVlLCJleHAiOjE2NzY5Mjc3NzN9.xx_DKocwcap1PBQG6OqlEYlJ7cu_2MtTPxvkTREzkhw\",\n            \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiIwMUdTTlJGWjc1R1JaWTNWODJSVDNDMVQ2QyIsImlkIjoiIiwiY3JlYXRlZF9hdCI6IjAwMDEtMDEtMDFUMDA6MDA6MDBaIiwidXBkYXRlZF9hdCI6eyJUaW1lIjoiMDAwMS0wMS0wMVQwMDowMDowMFoiLCJWYWxpZCI6ZmFsc2V9LCJ1c2VybmFtZSI6IiIsIm5hbWUiOiIiLCJyb2xlIjoiIiwiYWN0aXZlIjpmYWxzZSwiZXhwIjoxNzA3OTQ1MzczfQ.jQJm6-d9TjHV-0zcdbcijKZSyXiltnldmWCkLOvH9h8\"\n        }\n    }\n}"
+								}
+							]
 						},
 						{
-							"name": "Register",
+							"name": "Login user",
+							"event": [
+								{
+									"listen": "test",
+									"script": {
+										"exec": [
+											"var jsonData = JSON.parse(responseBody);",
+											"console.log(jsonData);",
+											"",
+											"var access_token = jsonData.data?.tokens?.access_token;",
+											"var refresh_token = jsonData.data?.tokens?.refresh_token;",
+											"",
+											"postman.setEnvironmentVariable(\"access_token\", access_token);",
+											"postman.setEnvironmentVariable(\"refresh_token\", refresh_token);",
+											"",
+											"console.log(\"Access token: \", access_token);",
+											"console.log(\"Refresh token: \", refresh_token);",
+											""
+										],
+										"type": "text/javascript"
+									}
+								}
+							],
 							"request": {
 								"method": "POST",
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"name\": \"Wellington\", \"email\":\"oliveira@live.it\",\"password\":\"password\"}",
+									"raw": "{\"email\":\"user1@email.com\",\"password\":\"user1\"}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/auth/password/login",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"auth",
+										"password",
+										"login"
+									]
+								}
+							},
+							"response": [
+								{
+									"name": "Login user 1",
+									"originalRequest": {
+										"method": "POST",
+										"header": [],
+										"body": {
+											"mode": "raw",
+											"raw": "{\"email\":\"user1@email.com\",\"password\":\"user1\"}",
+											"options": {
+												"raw": {
+													"language": "json"
+												}
+											}
+										},
+										"url": {
+											"raw": "{{endpoint}}/api/auth/password/login",
+											"host": [
+												"{{endpoint}}"
+											],
+											"path": [
+												"api",
+												"auth",
+												"password",
+												"login"
+											]
+										}
+									},
+									"status": "OK",
+									"code": 200,
+									"_postman_previewlanguage": "json",
+									"header": [
+										{
+											"key": "Access-Control-Allow-Credentials",
+											"value": "true"
+										},
+										{
+											"key": "Access-Control-Allow-Headers",
+											"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+										},
+										{
+											"key": "Access-Control-Allow-Methods",
+											"value": "POST, OPTIONS, GET, PUT"
+										},
+										{
+											"key": "Access-Control-Allow-Origin",
+											"value": "*"
+										},
+										{
+											"key": "Content-Type",
+											"value": "application/json; charset=utf-8"
+										},
+										{
+											"key": "Date",
+											"value": "Fri, 17 Feb 2023 16:21:34 GMT"
+										},
+										{
+											"key": "Content-Length",
+											"value": "812"
+										}
+									],
+									"cookie": [],
+									"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"name\": \"User1\",\n        \"role\": \"user\",\n        \"active\": true,\n        \"access_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiIiLCJpZCI6IjAxR1MxUzBaN0IxTTRORkhaUzdCTVBEWE5IIiwiY3JlYXRlZF9hdCI6IjIwMjMtMDItMTJUMDI6NTk6NDguMDc1MzQxWiIsInVwZGF0ZWRfYXQiOnsiVGltZSI6IjAwMDEtMDEtMDFUMDA6MDA6MDBaIiwiVmFsaWQiOmZhbHNlfSwibmFtZSI6IlVzZXIxIiwicm9sZSI6InVzZXIiLCJhY3RpdmUiOnRydWUsImV4cCI6MTY3NjczNzI5NH0.XNpcGPHiUwr8807CkJ-f2UKD9HQJCDcguNNxsTAJxVA\",\n        \"refresh_token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJVc2VySUQiOiIwMUdTMVMwWjdCMU00TkZIWlM3Qk1QRFhOSCIsImlkIjoiIiwiY3JlYXRlZF9hdCI6IjAwMDEtMDEtMDFUMDA6MDA6MDBaIiwidXBkYXRlZF9hdCI6eyJUaW1lIjoiMDAwMS0wMS0wMVQwMDowMDowMFoiLCJWYWxpZCI6ZmFsc2V9LCJuYW1lIjoiIiwicm9sZSI6IiIsImFjdGl2ZSI6ZmFsc2UsImV4cCI6MTcwNzc1NDg5NH0.2ujy4ov6Qe_cU6-QPRcgYM6-o1pcM7mBj2KmOSt87tM\"\n    }\n}"
+								}
+							]
+						},
+						{
+							"name": "Register user",
+							"request": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\"name\": \"User3\", \"email\":\"user3@email.com\",\"password\":\"user3\"}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -454,7 +655,14 @@
 					],
 					"request": {
 						"auth": {
-							"type": "noauth"
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
 						},
 						"method": "GET",
 						"header": [],
@@ -1051,14 +1259,14 @@
 						"method": "DELETE",
 						"header": [],
 						"url": {
-							"raw": "{{endpoint}}/api/links/{{param_link_id}}",
+							"raw": "{{endpoint}}/api/links/01GS1SCP4EJ8ZX1Y80BDMP7GA3",
 							"host": [
 								"{{endpoint}}"
 							],
 							"path": [
 								"api",
 								"links",
-								"{{param_link_id}}"
+								"01GS1SCP4EJ8ZX1Y80BDMP7GA3"
 							]
 						}
 					},
@@ -1103,6 +1311,96 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"status\": \"successful\"\n}"
+						}
+					]
+				},
+				{
+					"name": "Get full URL",
+					"protocolProfileBehavior": {
+						"followRedirects": false
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Host",
+								"value": "elga.io",
+								"type": "text",
+								"disabled": true
+							},
+							{
+								"key": "User-Agent",
+								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{endpoint}}/api/links/f/google",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"links",
+								"f",
+								"google"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get full URL",
+							"originalRequest": {
+								"method": "GET",
+								"header": [
+									{
+										"key": "Host",
+										"value": "elga.io",
+										"type": "text",
+										"disabled": true
+									},
+									{
+										"key": "User-Agent",
+										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
+										"type": "text"
+									}
+								],
+								"url": {
+									"raw": "{{endpoint}}/api/links/f/google",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"links",
+										"f",
+										"google"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3NjI0OTY4NHxEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzR3QUFRWlViMnRsYm5NQl81QUFBUVZNYVc1cmN3SF9sQUFCQkZSaFozTUJfNW9BQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUNyX2h3TUJBUWhPZFd4c1ZHbHRaUUhfaUFBQkFnRUVWR2x0WlFIX2hnQUJCVlpoYkdsa0FRSUFBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRZQUFRbFZjR1JoZEdWa1FYUUJfNFlBQVFsTVlYTjBURzluYVc0Ql80WUFBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9oZ0FBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUhUR0Z6ZEZWelpRSF9oZ0FCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80WUFBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hBQUFTXy1FU0FFYU1ERkhVekZTTjB0RVFURlFVVEUyVmxFelRqSTRXVUZLTlRJQkR3RUFBQUFPMjNwSjVDLUFFSkFBQUFFQUFRMUJaRzFwYm1semRISmhkRzl5QVFWaFpHMXBiZ0VCQUE9PXwyRZMj7plbXoJ2SBStGccnTrfb7i_1mUcPc_YGOdBfcw==; Path=/; Expires=Wed, 15 Mar 2023 00:54:44 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 13 Feb 2023 00:54:44 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "59"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"url\": \"https://google.com\"\n    }\n}"
 						}
 					]
 				}
@@ -1283,21 +1581,31 @@
 			]
 		},
 		{
-			"name": "user",
+			"name": "users",
 			"item": [
 				{
-					"name": "Show user",
+					"name": "Get me",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{endpoint}}/api/user/me",
+							"raw": "{{endpoint}}/api/users/me",
 							"host": [
 								"{{endpoint}}"
 							],
 							"path": [
 								"api",
-								"user",
+								"users",
 								"me"
 							]
 						}
@@ -1343,6 +1651,99 @@
 							],
 							"cookie": [],
 							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"name\": \"Admininistrator\",\n        \"role\": \"admin\",\n        \"identities\": [\n            {\n                \"provider\": \"email\",\n                \"uid\": \"admin@local\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Get by ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/api/users/01GSNRJ3WVZGY6EZ4545BB9YRM",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"01GSNRJ3WVZGY6EZ4545BB9YRM"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get by username",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/api/users/username/user9L4VbU2tp",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"users",
+								"username",
+								"user9L4VbU2tp"
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get by ID or username",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{endpoint}}/api/users/01GSHGXABFT50BX5A1HFAZBK4W",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"users",
+										"01GSHGXABFT50BX5A1HFAZBK4W"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 19 Feb 2023 01:25:09 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "88"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"username\": \"userhg7fcu2tp\",\n        \"name\": \"User1\",\n        \"role\": \"user\"\n    }\n}"
 						}
 					]
 				},
@@ -1436,11 +1837,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{endpoint}}/debug/config",
+							"raw": "{{endpoint}}/api/debug/config",
 							"host": [
 								"{{endpoint}}"
 							],
 							"path": [
+								"api",
 								"debug",
 								"config"
 							]
@@ -1454,11 +1856,12 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{endpoint}}/debug/env",
+							"raw": "{{endpoint}}/api/debug/env",
 							"host": [
 								"{{endpoint}}"
 							],
 							"path": [
+								"api",
 								"debug",
 								"env"
 							]
@@ -1469,226 +1872,26 @@
 			]
 		},
 		{
-			"name": "clicks",
-			"item": [
-				{
-					"name": "GET /api/clicks/:link",
-					"protocolProfileBehavior": {
-						"followRedirects": false
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Host",
-								"value": "elga.io",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{endpoint}}/api/clicks/localhost:8081_globo",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"clicks",
-								"localhost:8081_globo"
-							]
-						}
-					},
-					"response": []
-				}
-			]
-		},
-		{
-			"name": "log",
-			"item": [
-				{
-					"name": "POST /api/log",
-					"request": {
-						"method": "POST",
-						"header": [],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"level\": 30,\r\n    \"time\": 1674013295974,\r\n    \"pid\": 12368,\r\n    \"hostname\": \"chappie.local\",\r\n    \"msg\": \"Profile/Setting page\"\r\n}",
-							"options": {
-								"raw": {
-									"language": "json"
-								}
-							}
-						},
-						"url": {
-							"raw": "{{endpoint}}/api/log",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"log"
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "POST /api/links",
-							"originalRequest": {
-								"method": "POST",
-								"header": [],
-								"body": {
-									"mode": "raw",
-									"raw": "{\r\n    \"keyword\": \"terra\",\r\n    \"url\": \"https://terra.com\",\r\n    \"title\": \"Terra homepage\"\r\n}",
-									"options": {
-										"raw": {
-											"language": "json"
-										}
-									}
-								},
-								"url": {
-									"raw": "{{endpoint}}/api/links",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"links"
-									]
-								}
-							},
-							"status": "Created",
-							"code": 201,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json; charset=utf-8"
-								},
-								{
-									"key": "Set-Cookie",
-									"value": "session=MTY3MjQ1NTI4M3xEdi1CQkFFQ180SUFBUkFCRUFBQUxQLUNBQUlHYzNSeWFXNW5EQW9BQ0d0bGVYZHZjbVJ6Q0Z0ZGMzUnlhVzVuXzRNQ0FRTF9oQUFCREFBQV85UF9oQWdBQVFWbmJHOWlid1p6ZEhKcGJtY01CZ0FFZFhObGNqTm5hWFJvZFdJdVkyOXRMM2QyYjJ4cGRtVnBjbUV2WTI5eVoya3ZhVzUwWlhKdVlXd3ZjR3RuTDIxdlpHVnNMbFZ6WlhMX2hRTUJBUVJWYzJWeUFmLUdBQUVLQVFKSlJBRU1BQUVKUTNKbFlYUmxaRUYwQWYtSUFBRUpWWEJrWVhSbFpFRjBBZi1JQUFFRVRtRnRaUUVNQUFFRVVtOXNaUUVNQUFFR1FXTjBhWFpsQVFJQUFRcEpaR1Z1ZEdsMGFXVnpBZi1NQUFFR1ZHOXJaVzV6QWYtUUFBRUZUR2x1YTNNQl81UUFBUVJVWVdkekFmLWFBQUFBRVAtSEJRRUJCRlJwYldVQl80Z0FBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRnQUFRbFZjR1JoZEdWa1FYUUJfNGdBQVFsTVlYTjBURzluYVc0Ql80Z0FBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9pQUFBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUlBQUVKVlhCa1lYUmxaRUYwQWYtSUFBRUhUR0Z6ZEZWelpRSF9pQUFCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80Z0FBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2lBQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80Z0FBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hnQUFadi1HWXdFa1pHTXpNbUptTnpBdFpETTJPUzAwWVdWa0xXRXlaRGd0TVRobVl6aGhOR0kyTVRWbEFROEJBQUFBRHRxcC1SMHMxMjVnXzB3QkR3RUFBQUFPMnIzTWxoZ2doMmpfVEFFUFFXUnRhVzVwYm1semRISmhkRzl5QVFWaFpHMXBiZ0VCQUE9PXyg_4Wbu5lJhY49xG3x-12PjpBvT--eWfTfVYcp1nXzXg==; Path=/; Expires=Mon, 30 Jan 2023 02:54:43 GMT; Max-Age=2592000; HttpOnly"
-								},
-								{
-									"key": "Date",
-									"value": "Sat, 31 Dec 2022 02:54:43 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "283"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"id\": \"37e1d4ca-8d45-41f3-96c1-5d5b1be6e375\",\n        \"created_at\": \"2022-12-30T23:54:43.377495-03:00\",\n        \"updated_at\": \"2022-12-30T23:54:43.377511-03:00\",\n        \"domain\": \"localhost:8081\",\n        \"keyword\": \"terra\",\n        \"url\": \"https://terra.com\",\n        \"title\": \"Terra homepage\",\n        \"active\": \"true\"\n    }\n}"
-						}
-					]
-				}
-			]
-		},
-		{
-			"name": "short",
-			"item": [
-				{
-					"name": "Get full URL",
-					"protocolProfileBehavior": {
-						"followRedirects": false
-					},
-					"request": {
-						"method": "GET",
-						"header": [
-							{
-								"key": "Host",
-								"value": "elga.io",
-								"type": "text",
-								"disabled": true
-							},
-							{
-								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
-								"type": "text"
-							}
-						],
-						"url": {
-							"raw": "{{endpoint}}/api/short/terra",
-							"host": [
-								"{{endpoint}}"
-							],
-							"path": [
-								"api",
-								"short",
-								"terra"
-							]
-						}
-					},
-					"response": [
-						{
-							"name": "Get full URL",
-							"originalRequest": {
-								"method": "GET",
-								"header": [
-									{
-										"key": "Host",
-										"value": "elga.io",
-										"type": "text",
-										"disabled": true
-									},
-									{
-										"key": "User-Agent",
-										"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
-										"type": "text"
-									}
-								],
-								"url": {
-									"raw": "{{endpoint}}/api/short/terra",
-									"host": [
-										"{{endpoint}}"
-									],
-									"path": [
-										"api",
-										"short",
-										"terra"
-									]
-								}
-							},
-							"status": "OK",
-							"code": 200,
-							"_postman_previewlanguage": "json",
-							"header": [
-								{
-									"key": "Content-Type",
-									"value": "application/json; charset=utf-8"
-								},
-								{
-									"key": "Date",
-									"value": "Sat, 11 Feb 2023 04:29:18 GMT"
-								},
-								{
-									"key": "Content-Length",
-									"value": "58"
-								}
-							],
-							"cookie": [],
-							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"url\": \"https://terra.com\"\n    }\n}"
-						}
-					]
-				}
-			]
-		},
-		{
 			"name": "groups",
 			"item": [
 				{
 					"name": "Create a group",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"Group 2\",\n    \"display_name\": \"Group two\",\n    \"description\": \"O segundo melhor!!\"\n}",
+							"raw": "{\n    \"name\": \"O melhor grupo do mundo\",\n    \"display_name\": \"O melhor grupo\",\n    \"description\": \"Posso dizer que é o melhor grupo do mundo!\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1751,11 +1954,66 @@
 					]
 				},
 				{
+					"name": "Create a invite",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"user_email\": \"user3@email.com\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/groups/:id/invites",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"groups",
+								":id",
+								"invites"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "01GSP8SENCK6XZ1S1HFK8QGHAJ"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "List groups",
 					"protocolProfileBehavior": {
 						"disableBodyPruning": true
 					},
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"body": {
@@ -1778,7 +2036,69 @@
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "List groups",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/groups",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"groups"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 20 Feb 2023 03:53:14 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "398"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"data\": [\n            {\n                \"id\": \"01GSP8SENCK6XZ1S1HFK8QGHAJ\",\n                \"created_at\": \"2023-02-20T02:00:07.596613Z\",\n                \"updated_at\": null,\n                \"name\": \"O melhor grupo do mundo\",\n                \"display_name\": \"O melhor grupo\",\n                \"description\": \"Posso dizer que é o melhor grupo do mundo!\",\n                \"created_by\": \"01GSNRHWX86ZVFZ7X0VX7CKRT8\",\n                \"owner_id\": \"01GSNRHWX86ZVFZ7X0VX7CKRT8\"\n            }\n        ],\n        \"limit\": 10,\n        \"page\": 1,\n        \"sort\": \"ASC\",\n        \"total\": 1,\n        \"pages\": 1\n    }\n}"
+						}
+					]
 				},
 				{
 					"name": "Get by ID",
@@ -1786,6 +2106,16 @@
 						"disableBodyPruning": true
 					},
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "GET",
 						"header": [],
 						"body": {
@@ -1798,18 +2128,394 @@
 							}
 						},
 						"url": {
-							"raw": "{{endpoint}}/api/groups/01GS0P3GBWVXSKPWJGMQW3PV0M",
+							"raw": "{{endpoint}}/api/groups/:id",
 							"host": [
 								"{{endpoint}}"
 							],
 							"path": [
 								"api",
 								"groups",
-								"01GS0P3GBWVXSKPWJGMQW3PV0M"
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "01GSP8SENCK6XZ1S1HFK8QGHAJ"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get by ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/groups/01GS3MZ5EM8RFAV1RTHQ11M5A5",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"groups",
+										"01GS3MZ5EM8RFAV1RTHQ11M5A5"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3NjIzMzY2MXxEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzR3QUFRWlViMnRsYm5NQl81QUFBUVZNYVc1cmN3SF9sQUFCQkZSaFozTUJfNW9BQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUNyX2h3TUJBUWhPZFd4c1ZHbHRaUUhfaUFBQkFnRUVWR2x0WlFIX2hnQUJCVlpoYkdsa0FRSUFBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRZQUFRbFZjR1JoZEdWa1FYUUJfNFlBQVFsTVlYTjBURzluYVc0Ql80WUFBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9oZ0FBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUhUR0Z6ZEZWelpRSF9oZ0FCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80WUFBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hBQUFTXy1FU0FFYU1ERkhVekZTTjB0RVFURlFVVEUyVmxFelRqSTRXVUZLTlRJQkR3RUFBQUFPMjNwSjVDLUFFSkFBQUFFQUFRMUJaRzFwYm1semRISmhkRzl5QVFWaFpHMXBiZ0VCQUE9PXzjMI4L9KGGKhOFRgi-BfV_NnXSd7wzQfyoaS1znwWNyA==; Path=/; Expires=Tue, 14 Mar 2023 20:27:41 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 12 Feb 2023 20:27:41 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "408"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"group\": {\n            \"id\": \"01GS3MZ5EM8RFAV1RTHQ11M5A5\",\n            \"created_at\": \"2023-02-12T20:27:23.476845Z\",\n            \"updated_at\": {\n                \"Time\": \"0001-01-01T00:00:00Z\",\n                \"Valid\": false\n            },\n            \"name\": \"group 2\",\n            \"display_name\": \"Group two\",\n            \"description\": \"O segundo melhor!!\",\n            \"created_by\": \"01GS1R7KDA1PQ16VQ3N28YAJ52\",\n            \"owner_id\": \"01GS1R7KDA1PQ16VQ3N28YAJ52\"\n        },\n        \"Users\": [\n            {\n                \"id\": \"01GS1R7KDA1PQ16VQ3N28YAJ52\",\n                \"name\": \"Administrator\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "Delete a group",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/groups/:id",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"groups",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "01GS47FE6FE5F10FVVGWTRJZR7"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Get by ID",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/groups/01GS3MZ5EM8RFAV1RTHQ11M5A5",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"groups",
+										"01GS3MZ5EM8RFAV1RTHQ11M5A5"
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Set-Cookie",
+									"value": "session=MTY3NjIzMzY2MXxEdi1CQkFFQ180SUFBUkFCRUFBQV84el9nZ0FCQm5OMGNtbHVad3dHQUFSMWMyVnlNMmRwZEdoMVlpNWpiMjB2ZDNadmJHbDJaV2x5WVM5amIzSm5hUzlwYm5SbGNtNWhiQzl3YTJjdmJXOWtaV3d1VlhObGN2LURBd0VCQkZWelpYSUJfNFFBQVFvQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRnQUFRUk9ZVzFsQVF3QUFRUlNiMnhsQVF3QUFRWkJZM1JwZG1VQkFnQUJDa2xrWlc1MGFYUnBaWE1CXzR3QUFRWlViMnRsYm5NQl81QUFBUVZNYVc1cmN3SF9sQUFCQkZSaFozTUJfNW9BQUFBUV80VUZBUUVFVkdsdFpRSF9oZ0FBQUNyX2h3TUJBUWhPZFd4c1ZHbHRaUUhfaUFBQkFnRUVWR2x0WlFIX2hnQUJCVlpoYkdsa0FRSUFBQUFmXzRzQ0FRRVFXMTF0YjJSbGJDNUpaR1Z1ZEdsMGVRSF9qQUFCXzRvQUFQLVVfNGtEQVFFSVNXUmxiblJwZEhrQl80b0FBUW9CQWtsRUFRd0FBUWxEY21WaGRHVmtRWFFCXzRZQUFRbFZjR1JoZEdWa1FYUUJfNFlBQVFsTVlYTjBURzluYVc0Ql80WUFBUWhRY205MmFXUmxjZ0VNQUFFRFZVbEVBUXdBQVFoUVlYTnpkMjl5WkFFTUFBRUdWWE5sY2tsRUFRd0FBUWhXWlhKcFptbGxaQUVDQUFFS1ZtVnlhV1pwWldSQmRBSF9oZ0FBQUJ6X2p3SUJBUTFiWFcxdlpHVnNMbFJ2YTJWdUFmLVFBQUhfamdBQWFmLU5Bd0VCQlZSdmEyVnVBZi1PQUFFSEFRSkpSQUVNQUFFSlEzSmxZWFJsWkVGMEFmLUdBQUVKVlhCa1lYUmxaRUYwQWYtR0FBRUhUR0Z6ZEZWelpRSF9oZ0FCQlZSdmEyVnVBUXdBQVFsRmVIQnBjbVZ6U1c0Ql80WUFBUVpWYzJWeVNVUUJEQUFBQUJ2X2t3SUJBUXhiWFcxdlpHVnNMa3hwYm1zQl81UUFBZi1TQUFCMl81RURBUUVFVEdsdWF3SF9rZ0FCQ1FFQ1NVUUJEQUFCQ1VOeVpXRjBaV1JCZEFIX2hnQUJDVlZ3WkdGMFpXUkJkQUhfaUFBQkJrUnZiV0ZwYmdFTUFBRUhTMlY1ZDI5eVpBRU1BQUVEVlZKTUFRd0FBUVZVYVhSc1pRRU1BQUVHUVdOMGFYWmxBUXdBQVFaVmMyVnlTVVFCREFBQUFCcl9tUUlCQVF0YlhXMXZaR1ZzTGxSaFp3SF9tZ0FCXzVZQUFGcl9sUU1CQVFOVVlXY0JfNVlBQVFZQkFrbEVBUXdBQVFsRGNtVmhkR1ZrUVhRQl80WUFBUWxWY0dSaGRHVmtRWFFCXzRZQUFRUk9ZVzFsQVF3QUFRdEVaWE5qY21sd2RHbHZiZ0VNQUFFRlZYTmxjbk1CXzVnQUFBQWJfNWNDQVFFTVcxMXRiMlJsYkM1VmMyVnlBZi1ZQUFIX2hBQUFTXy1FU0FFYU1ERkhVekZTTjB0RVFURlFVVEUyVmxFelRqSTRXVUZLTlRJQkR3RUFBQUFPMjNwSjVDLUFFSkFBQUFFQUFRMUJaRzFwYm1semRISmhkRzl5QVFWaFpHMXBiZ0VCQUE9PXzjMI4L9KGGKhOFRgi-BfV_NnXSd7wzQfyoaS1znwWNyA==; Path=/; Expires=Tue, 14 Mar 2023 20:27:41 GMT; Max-Age=2592000; HttpOnly"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 12 Feb 2023 20:27:41 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "408"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"group\": {\n            \"id\": \"01GS3MZ5EM8RFAV1RTHQ11M5A5\",\n            \"created_at\": \"2023-02-12T20:27:23.476845Z\",\n            \"updated_at\": {\n                \"Time\": \"0001-01-01T00:00:00Z\",\n                \"Valid\": false\n            },\n            \"name\": \"group 2\",\n            \"display_name\": \"Group two\",\n            \"description\": \"O segundo melhor!!\",\n            \"created_by\": \"01GS1R7KDA1PQ16VQ3N28YAJ52\",\n            \"owner_id\": \"01GS1R7KDA1PQ16VQ3N28YAJ52\"\n        },\n        \"Users\": [\n            {\n                \"id\": \"01GS1R7KDA1PQ16VQ3N28YAJ52\",\n                \"name\": \"Administrator\"\n            }\n        ]\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "List invites by ID",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/groups/:id/invites",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"groups",
+								":id",
+								"invites"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "01GSP8SENCK6XZ1S1HFK8QGHAJ"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "List invites",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/groups/:id/invites",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"groups",
+										":id",
+										"invites"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "01GSP8SENCK6XZ1S1HFK8QGHAJ"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Mon, 20 Feb 2023 05:43:52 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "332"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"invites\": [\n            {\n                \"id\": \"01GSPJZGZSAA8WZ4K0GCYAFTGF\",\n                \"created_at\": \"2023-02-20T04:58:12.345517Z\",\n                \"updated_at\": null,\n                \"group_id\": \"01GSP8SENCK6XZ1S1HFK8QGHAJ\",\n                \"user_id\": \"01GSNRJ3WVZGY6EZ4545BB9YRM\",\n                \"invited_by\": \"01GSNRHWX86ZVFZ7X0VX7CKRT8\",\n                \"accepted\": false\n            }\n        ],\n        \"limit\": 10,\n        \"page\": 1,\n        \"sort\": \"ASC\",\n        \"total\": 1,\n        \"pages\": 1\n    }\n}"
+						}
+					]
+				},
+				{
+					"name": "List invites",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{access_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{endpoint}}/api/groups/invites",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"groups",
+								"invites"
 							]
 						}
 					},
 					"response": []
+				}
+			]
+		},
+		{
+			"name": "Get metrics",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{endpoint}}/api/metrics",
+					"host": [
+						"{{endpoint}}"
+					],
+					"path": [
+						"api",
+						"metrics"
+					]
+				}
+			},
+			"response": [
+				{
+					"name": "Get metrics",
+					"originalRequest": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/api/metrics",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"metrics"
+							]
+						}
+					},
+					"status": "OK",
+					"code": 200,
+					"_postman_previewlanguage": "plain",
+					"header": [
+						{
+							"key": "Access-Control-Allow-Credentials",
+							"value": "true"
+						},
+						{
+							"key": "Access-Control-Allow-Headers",
+							"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+						},
+						{
+							"key": "Access-Control-Allow-Methods",
+							"value": "POST, OPTIONS, GET, PUT"
+						},
+						{
+							"key": "Access-Control-Allow-Origin",
+							"value": "*"
+						},
+						{
+							"key": "Content-Encoding",
+							"value": "gzip"
+						},
+						{
+							"key": "Content-Type",
+							"value": "text/plain; version=0.0.4; charset=utf-8"
+						},
+						{
+							"key": "Date",
+							"value": "Tue, 21 Feb 2023 02:34:48 GMT"
+						},
+						{
+							"key": "Content-Length",
+							"value": "1362"
+						}
+					],
+					"cookie": [],
+					"body": "# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.\n# TYPE go_gc_duration_seconds summary\ngo_gc_duration_seconds{quantile=\"0\"} 4.4997e-05\ngo_gc_duration_seconds{quantile=\"0.25\"} 4.4997e-05\ngo_gc_duration_seconds{quantile=\"0.5\"} 0.000210592\ngo_gc_duration_seconds{quantile=\"0.75\"} 0.000210592\ngo_gc_duration_seconds{quantile=\"1\"} 0.000210592\ngo_gc_duration_seconds_sum 0.000255589\ngo_gc_duration_seconds_count 2\n# HELP go_goroutines Number of goroutines that currently exist.\n# TYPE go_goroutines gauge\ngo_goroutines 10\n# HELP go_info Information about the Go environment.\n# TYPE go_info gauge\ngo_info{version=\"go1.20\"} 1\n# HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.\n# TYPE go_memstats_alloc_bytes gauge\ngo_memstats_alloc_bytes 2.494312e+06\n# HELP go_memstats_alloc_bytes_total Total number of bytes allocated, even if freed.\n# TYPE go_memstats_alloc_bytes_total counter\ngo_memstats_alloc_bytes_total 5.278856e+06\n# HELP go_memstats_buck_hash_sys_bytes Number of bytes used by the profiling bucket hash table.\n# TYPE go_memstats_buck_hash_sys_bytes gauge\ngo_memstats_buck_hash_sys_bytes 1.449944e+06\n# HELP go_memstats_frees_total Total number of frees.\n# TYPE go_memstats_frees_total counter\ngo_memstats_frees_total 26537\n# HELP go_memstats_gc_sys_bytes Number of bytes used for garbage collection system metadata.\n# TYPE go_memstats_gc_sys_bytes gauge\ngo_memstats_gc_sys_bytes 8.128872e+06\n# HELP go_memstats_heap_alloc_bytes Number of heap bytes allocated and still in use.\n# TYPE go_memstats_heap_alloc_bytes gauge\ngo_memstats_heap_alloc_bytes 2.494312e+06\n# HELP go_memstats_heap_idle_bytes Number of heap bytes waiting to be used.\n# TYPE go_memstats_heap_idle_bytes gauge\ngo_memstats_heap_idle_bytes 2.82624e+06\n# HELP go_memstats_heap_inuse_bytes Number of heap bytes that are in use.\n# TYPE go_memstats_heap_inuse_bytes gauge\ngo_memstats_heap_inuse_bytes 4.907008e+06\n# HELP go_memstats_heap_objects Number of allocated objects.\n# TYPE go_memstats_heap_objects gauge\ngo_memstats_heap_objects 12538\n# HELP go_memstats_heap_released_bytes Number of heap bytes released to OS.\n# TYPE go_memstats_heap_released_bytes gauge\ngo_memstats_heap_released_bytes 2.342912e+06\n# HELP go_memstats_heap_sys_bytes Number of heap bytes obtained from system.\n# TYPE go_memstats_heap_sys_bytes gauge\ngo_memstats_heap_sys_bytes 7.733248e+06\n# HELP go_memstats_last_gc_time_seconds Number of seconds since 1970 of last garbage collection.\n# TYPE go_memstats_last_gc_time_seconds gauge\ngo_memstats_last_gc_time_seconds 1.6769468587031944e+09\n# HELP go_memstats_lookups_total Total number of pointer lookups.\n# TYPE go_memstats_lookups_total counter\ngo_memstats_lookups_total 0\n# HELP go_memstats_mallocs_total Total number of mallocs.\n# TYPE go_memstats_mallocs_total counter\ngo_memstats_mallocs_total 39075\n# HELP go_memstats_mcache_inuse_bytes Number of bytes in use by mcache structures.\n# TYPE go_memstats_mcache_inuse_bytes gauge\ngo_memstats_mcache_inuse_bytes 9600\n# HELP go_memstats_mcache_sys_bytes Number of bytes used for mcache structures obtained from system.\n# TYPE go_memstats_mcache_sys_bytes gauge\ngo_memstats_mcache_sys_bytes 15600\n# HELP go_memstats_mspan_inuse_bytes Number of bytes in use by mspan structures.\n# TYPE go_memstats_mspan_inuse_bytes gauge\ngo_memstats_mspan_inuse_bytes 127040\n# HELP go_memstats_mspan_sys_bytes Number of bytes used for mspan structures obtained from system.\n# TYPE go_memstats_mspan_sys_bytes gauge\ngo_memstats_mspan_sys_bytes 130560\n# HELP go_memstats_next_gc_bytes Number of heap bytes when next garbage collection will take place.\n# TYPE go_memstats_next_gc_bytes gauge\ngo_memstats_next_gc_bytes 4.677512e+06\n# HELP go_memstats_other_sys_bytes Number of bytes used for other system allocations.\n# TYPE go_memstats_other_sys_bytes gauge\ngo_memstats_other_sys_bytes 889048\n# HELP go_memstats_stack_inuse_bytes Number of bytes in use by the stack allocator.\n# TYPE go_memstats_stack_inuse_bytes gauge\ngo_memstats_stack_inuse_bytes 655360\n# HELP go_memstats_stack_sys_bytes Number of bytes obtained from system for stack allocator.\n# TYPE go_memstats_stack_sys_bytes gauge\ngo_memstats_stack_sys_bytes 655360\n# HELP go_memstats_sys_bytes Number of bytes obtained from system.\n# TYPE go_memstats_sys_bytes gauge\ngo_memstats_sys_bytes 1.9002632e+07\n# HELP go_threads Number of OS threads created.\n# TYPE go_threads gauge\ngo_threads 11\n# HELP process_cpu_seconds_total Total user and system CPU time spent in seconds.\n# TYPE process_cpu_seconds_total counter\nprocess_cpu_seconds_total 0\n# HELP process_max_fds Maximum number of open file descriptors.\n# TYPE process_max_fds gauge\nprocess_max_fds 524288\n# HELP process_open_fds Number of open file descriptors.\n# TYPE process_open_fds gauge\nprocess_open_fds 12\n# HELP process_resident_memory_bytes Resident memory size in bytes.\n# TYPE process_resident_memory_bytes gauge\nprocess_resident_memory_bytes 2.4875008e+07\n# HELP process_start_time_seconds Start time of the process since unix epoch in seconds.\n# TYPE process_start_time_seconds gauge\nprocess_start_time_seconds 1.6769468586e+09\n# HELP process_virtual_memory_bytes Virtual memory size in bytes.\n# TYPE process_virtual_memory_bytes gauge\nprocess_virtual_memory_bytes 1.43804416e+09\n# HELP process_virtual_memory_max_bytes Maximum amount of virtual memory available in bytes.\n# TYPE process_virtual_memory_max_bytes gauge\nprocess_virtual_memory_max_bytes 1.8446744073709552e+19\n# HELP promhttp_metric_handler_requests_in_flight Current number of scrapes being served.\n# TYPE promhttp_metric_handler_requests_in_flight gauge\npromhttp_metric_handler_requests_in_flight 1\n# HELP promhttp_metric_handler_requests_total Total number of scrapes by HTTP status code.\n# TYPE promhttp_metric_handler_requests_total counter\npromhttp_metric_handler_requests_total{code=\"200\"} 0\npromhttp_metric_handler_requests_total{code=\"500\"} 0\npromhttp_metric_handler_requests_total{code=\"503\"} 0\n"
 				}
 			]
 		}

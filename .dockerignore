@@ -1,0 +1,8 @@
+build/package/container/Dockerfile
+Dockerfile.in
+README.md
+
+.git
+.github
+.air
+.gitignore

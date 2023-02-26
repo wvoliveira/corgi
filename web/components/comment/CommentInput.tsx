@@ -1,6 +1,7 @@
 import axios from "axios";
 import { useRouter } from "next/router";
 import React from "react";
+// @ts-ignore
 import useSWR, { trigger } from "swr";
 
 import CustomImage from "../common/CustomImage";

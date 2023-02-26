@@ -15,8 +15,8 @@ type Group struct {
 	DisplayName string `json:"display_name"`
 	Description string `json:"description"`
 
-	// CreatedBy and OwnerID:
-	// UserID but you can pass the owner to another user
+	// CreatedBy and OwnerID is the same "UserID"
+	// but you can pass the group owner to another user.
 	CreatedBy string `json:"created_by"`
 	OwnerID   string `json:"owner_id"`
 }

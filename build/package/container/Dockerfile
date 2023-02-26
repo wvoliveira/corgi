@@ -1,53 +1,57 @@
-FROM node:16.14.0 AS ui
-
-WORKDIR /workspace/web
-
-COPY . /workspace
+FROM node:14.21.3 AS ui
 
 ENV NODE_OPTIONS --max_old_space_size=10240
 
-RUN yarn install
-RUN NEXT_TELEMETRY_DISABLED=1 yarn run export
+WORKDIR /src/web
+COPY . /src
+
+RUN npm install
+RUN NEXT_TELEMETRY_DISABLED=1 npm run export
 
 
-FROM golang:1.18.5 AS binary
+FROM golang:1.20 AS binary
 
-ARG commit
-ARG version
-ARG ksdate
+ARG VERSION
+ARG REVISION
+ARG DATE
 
 ENV GOOS=linux
 ENV GOARCH=amd64
 ENV GO111MODULE=on
 ENV CGO_ENABLED=0
 
-COPY --from=ui "/workspace" /workspace
-WORKDIR /workspace
+WORKDIR /src
 
-RUN rm -rfv /workspace/cmd/web; mv /workspace/web/dist /workspace/cmd/corgi/web
-RUN go build -o /app /workspace/cmd/corgi/*.go
+COPY go.mod /src
+COPY go.sum /src
+
+RUN go mod download
+
+COPY --from=ui /src/ /src
+
+RUN go build -o /opt/corgi/corgi /src/cmd/corgi/*.go
 
 
 FROM alpine:3.13
 
-ARG version
-
-LABEL version=$version
-LABEL ksdate=$ksdate
-LABEL description="Corgi. A URL shortener app."
+LABEL name="corgi"
+LABEL description="A URL shortener app."
+LABEL version=$VERSION
+LABEL revision=$REVISION
+LABEL ksdate=$DATE
 
 RUN /sbin/apk --no-cache add ca-certificates curl iproute2 tini
+RUN addgroup -g 1000 application && adduser -u 1000 -SDH -G application application
 
-COPY --from=binary "/app" /
-COPY --from=binary "/workspace/rbac_*" /
+COPY --from=binary /opt/corgi/corgi /opt/corgi/corgi
 
-WORKDIR /
+WORKDIR /opt/corgi/
 
+USER application
 EXPOSE 8081
 
 ENTRYPOINT ["/sbin/tini", "--"]
-
-CMD ["/app"]
+CMD ["./corgi"]
 
 HEALTHCHECK --interval=5m --timeout=3s \
   CMD curl -f http://localhost:8081/ || exit 1

@@ -435,6 +435,14 @@ help:
 	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes >/dev/null
 	date > $@
 
+build-app-docker:
+	docker buildx build                       \
+        --progress=plain                      \
+        --load                                \
+        -t wvoliveira/corgi:0.0.1             \
+        -f build/package/container/Dockerfile \
+        .
+
 build-web:
 	cd web && \
 	npm install --frozen-lockfile && \
@@ -443,7 +451,7 @@ build-web:
     mv dist ../cmd/corgi/web
 
 dev-dep:
-	docker-compose -f deployments/container/docker-compose.yaml up
+	docker-compose -f deployments/container/docker-compose.yaml up db migrate cache
 
 dev-env:
 	cp -f .env.example .env

@@ -134,22 +134,13 @@ func (s service) HTTPInvitesListByID(c *gin.Context) {
 		return
 	}
 
-	total, pages, invites, err := s.InvitesListByID(c, d)
+	res, err := s.InvitesListByID(c, d)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
 	}
 
-	resp := invitesListResponse{
-		Invites: invites,
-		Limit:   d.Limit,
-		Page:    d.Page,
-		Sort:    d.Sort,
-		Total:   total,
-		Pages:   pages,
-	}
-
-	response.Default(c, resp, "", http.StatusOK)
+	response.Default(c, res, "", http.StatusOK)
 }
 
 func (s service) HTTPInvitesList(c *gin.Context) {
@@ -159,19 +150,10 @@ func (s service) HTTPInvitesList(c *gin.Context) {
 		return
 	}
 
-	total, pages, invites, err := s.InvitesList(c, d)
+	resp, err := s.InvitesList(c, d)
 	if err != nil {
 		e.EncodeError(c, err)
 		return
-	}
-
-	resp := invitesListResponse{
-		Invites: invites,
-		Limit:   d.Limit,
-		Page:    d.Page,
-		Sort:    d.Sort,
-		Total:   total,
-		Pages:   pages,
 	}
 
 	response.Default(c, resp, "", http.StatusOK)
