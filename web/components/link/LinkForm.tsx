@@ -5,6 +5,8 @@ import useSWR, { mutate } from "swr";
 import storage from "../../lib/utils/storage";
 import ListErrors from "../common/ListErrors";
 import APILink from "../../lib/api/link";
+import {SERVER_BASE_URL} from "../../lib/utils/constant";
+import fetcher from "../../lib/utils/fetcher";
 
 const LinkForm = () => {
   const [isLoading, setLoading] = React.useState(false);
@@ -13,10 +15,14 @@ const LinkForm = () => {
   const [shortURL, setShortURL] = React.useState("");
   const [response, setResponse] = React.useState(null);
 
+  const protocol = window.location.protocol;
+
   const handleURLChange = React.useCallback(
     (e) => setFullURL(e.target.value),
     []
   );
+
+  console.log("Protocol: ", protocol);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,10 +41,12 @@ const LinkForm = () => {
       if (data?.data) {
         setResponse(data.data);
 
-        const link = window.location.protocol + "//" + data.data?.domain + "/" + data.data?.keyword;
+        const link = `${protocol}//${data.data?.domain}/${data.data?.keyword}`;
         setShortURL(link);
 
-        // mutate("user", data.data.user);
+        // Mutate links from home.
+        const keyList = `${SERVER_BASE_URL}/links`
+        await mutate(keyList, fetcher);
         // Router.push("/");
       }
     } catch (error) {

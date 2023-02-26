@@ -36,16 +36,11 @@ func Authentication() gin.HandlerFunc {
 			user, err = token.ValidateToken(accessToken)
 
 			if err != nil {
+				log.Error().Caller().Msg(err.Error())
 				// TODO: refactor this, please.
 				// I can't find jwt errors with "token is expired".
-				if strings.HasPrefix(err.Error(), "token is expired") {
-					user.ID = "0"
-					user.Role = "anon"
-				} else {
-					log.Error().Caller().Msg(err.Error())
-					e.EncodeError(c, e.ErrUnauthorized)
-					c.Abort()
-				}
+				user.ID = "0"
+				user.Role = "anon"
 			}
 		}
 

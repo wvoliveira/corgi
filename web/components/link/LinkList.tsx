@@ -22,6 +22,9 @@ const LinkList = () => {
     query.offset = 0
   }
 
+  const protocol = window.location.protocol;
+  console.debug("Protocol: ", protocol);
+
   let fetchURL = `${SERVER_BASE_URL}/links?page=${query.page}&offset=${query.offset}`;
   console.debug("fetchURL: ", fetchURL);
 
@@ -46,9 +49,6 @@ const LinkList = () => {
   if (data.links && data.links.length === 0) {
     return <div>No links are here... yet.</div>;
   }
-
-  let protocol = window.location.protocol;
-  console.debug("Protocol: ", protocol);
 
   // @ts-ignore
   return (
