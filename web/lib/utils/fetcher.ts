@@ -2,12 +2,10 @@ import axios from "axios";
 
 const updateOptions = () => {
   if (typeof window === "undefined") return {};
+  if (!window.localStorage.getItem("corgi.tokens")) return {};
+  if (Object.keys(window.localStorage.getItem("corgi.tokens")).length === 0) return {};
 
-  if (!window.localStorage.tokens) return {};
-
-  if (Object.keys(window.localStorage.tokens).length === 0) return {};
-
-  const tokens = JSON.parse(window.localStorage.tokens);
+  const tokens = JSON.parse(window.localStorage.getItem("corgi.tokens"));
 
   if (!!tokens.access_token) {
     return {

@@ -21,7 +21,7 @@ const Profile = () => {
 
   const keyURL = `${SERVER_BASE_URL}/users/username/${encodeURIComponent(String(router.query?.pid))}`
   const { data, error } = useSWR(keyURL, fetcher);
-  const { data: currentUser } = useSWR("user", storage);
+  const { data: currentUser } = useSWR("corgi.user", storage);
 
   if (error) return <ErrorMessage message="Can't load profile" />;
 

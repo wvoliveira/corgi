@@ -65,7 +65,7 @@ const APILink = {
     },
 
     create: async (url) => {
-        const tokens: any = JSON.parse(window.localStorage.getItem("tokens"));
+        const tokens: any = JSON.parse(window.localStorage.getItem("corgi.tokens"));
         const access_token = tokens?.access_token;
 
         const {data, status} = await axios.post(

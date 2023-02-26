@@ -20,8 +20,10 @@ const Settings = () => {
 
   const handleLogout = async (e) => {
     e.preventDefault();
-    window.localStorage.removeItem("user");
-    mutate("user", null);
+    window.localStorage.removeItem("corgi.user");
+    window.localStorage.removeItem("corgi.tokens");
+    mutate("corgi.user", null);
+    mutate("corgi.tokens", null);
     router.push(`/`).then(() => trigger("user"));
   };
 

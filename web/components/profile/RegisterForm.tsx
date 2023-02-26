@@ -33,7 +33,7 @@ const RegisterForm = () => {
         setErrors(data.errors);
       }
       if (data?.user) {
-        window.localStorage.setItem("user", JSON.stringify(data.user));
+        window.localStorage.setItem("corgi.user", JSON.stringify(data.user));
         mutate("user", data.user);
         Router.push("/");
       }

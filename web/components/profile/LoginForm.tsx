@@ -35,10 +35,10 @@ const LoginForm = () => {
       }
 
       if (data?.data?.user && data?.data?.tokens) {
-        window.localStorage.setItem("user", JSON.stringify(data.data.user));
-        window.localStorage.setItem("tokens", JSON.stringify(data.data.tokens));
+        window.localStorage.setItem("corgi.user", JSON.stringify(data.data.user));
+        window.localStorage.setItem("corgi.tokens", JSON.stringify(data.data.tokens));
 
-        mutate("user", data.data.user);
+        mutate("corgi.user", data.data.user);
         Router.push("/");
       }
     } catch (error) {

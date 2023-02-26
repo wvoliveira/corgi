@@ -10,7 +10,7 @@ import storage from "../../lib/utils/storage";
 
 const Navbar = () => {
   const setPage = usePageDispatch();
-  const { data: currentUser } = useSWR("user", storage);
+  const { data: currentUser } = useSWR("corgi.user", storage);
   const isLoggedIn = checkLogin(currentUser);
 
   const handleClick = React.useCallback(() => setPage(0), []);

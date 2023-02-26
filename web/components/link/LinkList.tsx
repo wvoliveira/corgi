@@ -26,6 +26,7 @@ const LinkList = () => {
   console.debug("fetchURL: ", fetchURL);
 
   const { data: content, error } = useSWR(fetchURL, fetcher);
+  console.error(error);
 
   if (error) {
     return (
