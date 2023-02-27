@@ -420,6 +420,7 @@ func (s service) Clicks(ctx *gin.Context, payload clicksRequest) (lc model.LinkC
 	}
 
 	// Send item to cache async.
+	// But whatever if errors happens.
 	go func() {
 		err := setItemToCache(ctx, s.cache, keyCache, total)
 		if err != nil {
@@ -431,6 +432,7 @@ func (s service) Clicks(ctx *gin.Context, payload clicksRequest) (lc model.LinkC
 	return
 }
 
+// itemFromCache get value from cache with specific key.
 func itemFromCache(c context.Context, cache *redis.Client, key string) (item string, err error) {
 	log := logger.Logger(c)
 	log.Debug().Caller().Msg(fmt.Sprintf("Collecting key '%s' from cache", key))
@@ -462,6 +464,7 @@ func setItemToCache(ctx context.Context, cache *redis.Client, key string, value 
 	return
 }
 
+// increaseCounter sum by 1 with Redis hash type.
 func increaseCounter(ctx context.Context, cache *redis.Client, domain, keyword string) {
 	log := logger.Logger(ctx)
 
