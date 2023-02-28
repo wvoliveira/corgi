@@ -51,7 +51,7 @@ const LinkForm = () => {
 
         // Mutate links from home.
         const keyList = `${SERVER_BASE_URL}/links`
-        await mutate(keyList, fetcher);
+        await mutate(key => typeof key === 'string' && key.startsWith(keyList),);
         // Router.push("/");
       }
     } catch (error) {
