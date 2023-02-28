@@ -11,7 +11,7 @@ import fetcher from "../../lib/utils/fetcher";
 const LinkForm = () => {
   const [protocol, setProtocol] = React.useState("http");
   const [isLoading, setLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState([]);
+  const [error, setError] = React.useState("");
   const [fullURL, setFullURL] = React.useState("");
   const [shortURL, setShortURL] = React.useState("");
   const [response, setResponse] = React.useState(null);
@@ -84,10 +84,8 @@ const LinkForm = () => {
         </button>
       </form>
 
-      <ListErrors errors={errors} />
+      {error && <ListErrors error={error} />}
 
-      {/*Protocol: {window.location.protocol}*/}
-      {console.log("RESPONSE: ", response)}
       {response &&
       <p>
         Link: <a href={shortURL}>{shortURL}</a>

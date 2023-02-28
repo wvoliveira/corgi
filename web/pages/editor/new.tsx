@@ -17,7 +17,7 @@ const PublishArticleEditor = () => {
   };
 
   const [isLoading, setLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState([]);
+  const [error, setError] = React.useState(null);
   const [posting, dispatch] = React.useReducer(editorReducer, initialState);
   const { data: currentUser } = useSWR("user", storage);
 
@@ -42,16 +42,14 @@ const PublishArticleEditor = () => {
     setLoading(false);
 
     if (status !== 200) {
-      setErrors(data.errors);
+      setError(data?.message);
     }
 
-    Router.push("/");
+    await Router.push("/");
   };
 
   return (
     <>
-      <ListErrors errors={errors} />
-
       <form>
         <p />
         <input
@@ -90,6 +88,8 @@ const PublishArticleEditor = () => {
           Publish Article
         </button>
       </form>
+
+      {error && <ListErrors error={error} />}
     </>
   );
 };

@@ -7,7 +7,7 @@ import APIAuthPassword from "../../lib/api/authPassword";
 
 const LoginForm = () => {
   const [isLoading, setLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState([]);
+  const [error, setError] = React.useState("");
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
@@ -31,27 +31,32 @@ const LoginForm = () => {
       console.log(data);
 
       if (status !== 200) {
-        setErrors(data.errors);
+        setError(data?.message);
       }
 
       if (data?.data?.user && data?.data?.tokens) {
         window.localStorage.setItem("corgi.user", JSON.stringify(data.data.user));
         window.localStorage.setItem("corgi.tokens", JSON.stringify(data.data.tokens));
 
-        mutate("corgi.user", data.data.user);
-        Router.push("/");
+        await mutate("corgi.user", data.data.user);
+        await Router.push("/");
       }
     } catch (error) {
-      console.error(error);
+      console.error("Error: ", error);
+      setError(error);
     } finally {
       setLoading(false);
     }
   };
 
+  if (error) {
+    setTimeout(() => {
+      setError("");
+    }, 3000)
+  }
+
   return (
     <>
-      <ListErrors errors={errors} />
-
       <form onSubmit={handleSubmit}>
         <input
           type="text"
@@ -74,6 +79,8 @@ const LoginForm = () => {
           Sign in
         </button>
       </form>
+
+      {error && <ListErrors error={error} />}
     </>
   );
 };

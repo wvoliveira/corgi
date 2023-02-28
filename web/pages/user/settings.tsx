@@ -9,7 +9,7 @@ import storage from "../../lib/utils/storage";
 
 const Settings = () => {
   const router = useRouter()
-  const { data: currentUser } = useSWR("user", storage);
+  const { data: currentUser } = useSWR("corgi.user", storage);
   const isLoggedIn = checkLogin(currentUser);
 
   useEffect(() => {
@@ -22,8 +22,8 @@ const Settings = () => {
     e.preventDefault();
     window.localStorage.removeItem("corgi.user");
     window.localStorage.removeItem("corgi.tokens");
-    mutate("corgi.user", null);
-    mutate("corgi.tokens", null);
+    await mutate("corgi.user", null);
+    await mutate("corgi.tokens", null);
     router.push(`/`).then(() => trigger("user"));
   };
 
