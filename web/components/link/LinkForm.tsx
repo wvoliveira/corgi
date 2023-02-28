@@ -1,5 +1,5 @@
 import Router, {useRouter} from "next/router";
-import React from "react";
+import React, {useEffect} from "react";
 import useSWR, { mutate } from "swr";
 
 import storage from "../../lib/utils/storage";
@@ -9,13 +9,18 @@ import {SERVER_BASE_URL} from "../../lib/utils/constant";
 import fetcher from "../../lib/utils/fetcher";
 
 const LinkForm = () => {
+  const [protocol, setProtocol] = React.useState("http");
   const [isLoading, setLoading] = React.useState(false);
   const [errors, setErrors] = React.useState([]);
   const [fullURL, setFullURL] = React.useState("");
   const [shortURL, setShortURL] = React.useState("");
   const [response, setResponse] = React.useState(null);
 
-  const protocol = window.location.protocol;
+  // const protocol = window.location.protocol;
+
+  useEffect(() => {
+    setProtocol(window.location.protocol);
+  });
 
   const handleURLChange = React.useCallback(
     (e) => setFullURL(e.target.value),

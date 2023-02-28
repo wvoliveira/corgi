@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import React from "react";
+import React, {useEffect} from "react";
 import useSWR from "swr";
 
 import ErrorMessage from "../common/ErrorMessage";
@@ -10,8 +10,14 @@ import { SERVER_BASE_URL, DEFAULT_LIMIT } from "../../lib/utils/constant";
 import fetcher from "../../lib/utils/fetcher";
 
 const LinkList = () => {
+  const [protocol, setProtocol] = React.useState("http");
   const router = useRouter();
   const { asPath, pathname, query } = router;
+
+  useEffect(() => {
+    setProtocol(window.location.protocol);
+  });
+
   if (query.page === undefined) {
     // @ts-ignore
     query.page = 1
@@ -22,7 +28,6 @@ const LinkList = () => {
     query.offset = 0
   }
 
-  const protocol = window.location.protocol;
   console.debug("Protocol: ", protocol);
 
   let fetchURL = `${SERVER_BASE_URL}/links?page=${query.page}&offset=${query.offset}`;
