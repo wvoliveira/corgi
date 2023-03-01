@@ -25,7 +25,8 @@ const Pagination = ({
     const previousPage = page === 1 && 1 || page-1
     const nextPage = page === pages && page || page+1
   return (
-    <>
+    <div>
+        <br/>
         Page: {page} {" "}
         Pages: {pages} {" "}
         Limit: {limit} {" "}
@@ -37,7 +38,7 @@ const Pagination = ({
         <Link href={`?page=${nextPage}`}>
           {`>`}
         </Link>
-    </>
+    </div>
   );
 };
 
