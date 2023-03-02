@@ -10,7 +10,7 @@ import storage from "../../lib/utils/storage";
 
 const SettingsForm = () => {
   const [isLoading, setLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState([]);
+  const [error, setError] = React.useState(null);
   const [userInfo, setUserInfo] = React.useState({
     image: "",
     username: "",
@@ -57,20 +57,18 @@ const SettingsForm = () => {
     setLoading(false);
 
     if (status !== 200) {
-      setErrors(data.errors.body);
+      setError(data.errors.body);
     }
 
     if (data?.user) {
       window.localStorage.setItem("corgi.user", JSON.stringify(data.user));
-      mutate("user", data.user);
-      Router.push(`/`);
+      await mutate("user", data.user);
+      await Router.push(`/`);
     }
   };
 
   return (
     <React.Fragment>
-      <ListErrors errors={errors} />
-
       <form onSubmit={submitForm}>
         <p />
         <input
@@ -115,6 +113,8 @@ const SettingsForm = () => {
           Update Settings
         </button>
       </form>
+
+      {error && <ListErrors error={error} />}
     </React.Fragment>
   );
 };

@@ -123,7 +123,7 @@ class MyDocument extends Document {
             type="application/ld+json"
             dangerouslySetInnerHTML={{
               __html: `{
-              "@context": "http://schema.org/",
+              "@context": "https://schema.org/",
               "@type": "Organization",
               "url": "https://corgi.app/",
               "logo": "https://corgi.app/images/share-link.png",
@@ -134,16 +134,6 @@ class MyDocument extends Document {
             }}
           />
           <link rel="manifest" href="/manifest.json" />
-          {/* <link rel="stylesheet" href="/css/bootstrap.min.css" /> */}
-          {/* <link
-            rel="stylesheet"
-            href="/css/ionicons.min.css"
-          /> */}
-
-          {/* <link
-            rel="stylesheet"
-            href="/css/fonts.css?family=Titillium+Web:700|Source+Serif+Pro:400,700|Merriweather+Sans:400,700|Source+Sans+Pro:400,300,600,700,300italic,400italic,600italic,700italic&display=swap"
-          /> */}
         </Head>
         <body>
           <Main />

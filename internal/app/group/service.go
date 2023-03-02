@@ -377,7 +377,6 @@ func (s service) InvitesListByID(c *gin.Context, payload invitesListByIDRequest)
 	log := logger.Logger(c)
 
 	total := int64(0)
-	pages := 1
 
 	sttCount, _ := s.db.PrepareContext(c, "SELECT COUNT(0) FROM group_user WHERE group_id = $1")
 	err = sttCount.QueryRowContext(c, payload.GroupID).Scan(&total)
@@ -430,7 +429,7 @@ func (s service) InvitesListByID(c *gin.Context, payload invitesListByIDRequest)
 		return response, e.ErrInternalServerError
 	}
 
-	pages = int(math.Ceil(float64(total) / float64(payload.Limit)))
+	pages := int(math.Ceil(float64(total) / float64(payload.Limit)))
 
 	response.Page = payload.Page
 	response.Pages = pages
@@ -444,7 +443,6 @@ func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (respon
 	log := logger.Logger(c)
 
 	total := int64(0)
-	pages := 1
 
 	query := `
 		SELECT COUNT(0) FROM groups g
@@ -505,7 +503,7 @@ func (s service) InvitesList(c *gin.Context, payload invitesListRequest) (respon
 		return response, e.ErrInternalServerError
 	}
 
-	pages = int(math.Ceil(float64(total) / float64(payload.Limit)))
+	pages := int(math.Ceil(float64(total) / float64(payload.Limit)))
 
 	response.Page = payload.Page
 	response.Pages = pages

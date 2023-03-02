@@ -24,6 +24,8 @@ func (s service) NewHTTP(root *gin.Engine, rg *gin.RouterGroup) {
 	r.PATCH("/:id", s.HTTPUpdate)
 	r.DELETE("/:id", s.HTTPDelete)
 	r.GET("/keyword/:keyword", s.HTTPFindFullURL)
+	//r.GET("/clicks", s.HTTPClicks)
+	r.GET("/clicks", s.HTTPClicks)
 }
 
 func (s service) HTTPRedirect(ctx *gin.Context) {
@@ -148,4 +150,21 @@ func (s service) HTTPFindFullURL(c *gin.Context) {
 
 	url := encodeFindByKeyword(link)
 	response.Default(c, url, "", http.StatusOK)
+}
+
+func (s service) HTTPClicks(c *gin.Context) {
+	payload, err := decodeClicks(c)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	linkClicks, err := s.Clicks(c, payload)
+	if err != nil {
+		e.EncodeError(c, err)
+		return
+	}
+
+	//url := encodeFindByKeyword(linkClicks)
+	response.Default(c, linkClicks, "", http.StatusOK)
 }

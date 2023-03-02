@@ -1,5 +1,5 @@
 import Router, {useRouter} from "next/router";
-import React from "react";
+import React, {useEffect} from "react";
 import useSWR, { mutate } from "swr";
 
 import storage from "../../lib/utils/storage";
@@ -9,13 +9,18 @@ import {SERVER_BASE_URL} from "../../lib/utils/constant";
 import fetcher from "../../lib/utils/fetcher";
 
 const LinkForm = () => {
+  const [protocol, setProtocol] = React.useState("http");
   const [isLoading, setLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState([]);
+  const [error, setError] = React.useState("");
   const [fullURL, setFullURL] = React.useState("");
   const [shortURL, setShortURL] = React.useState("");
   const [response, setResponse] = React.useState(null);
 
-  const protocol = window.location.protocol;
+  // const protocol = window.location.protocol;
+
+  useEffect(() => {
+    setProtocol(window.location.protocol);
+  });
 
   const handleURLChange = React.useCallback(
     (e) => setFullURL(e.target.value),
@@ -35,7 +40,7 @@ const LinkForm = () => {
       console.debug("DATA: ", data);
 
       if (status !== 201) {
-        setErrors(data.errors);
+        setError(data.errors);
       }
 
       if (data?.data) {
@@ -46,7 +51,7 @@ const LinkForm = () => {
 
         // Mutate links from home.
         const keyList = `${SERVER_BASE_URL}/links`
-        await mutate(keyList, fetcher);
+        await mutate(key => typeof key === 'string' && key.startsWith(keyList),);
         // Router.push("/");
       }
     } catch (error) {
@@ -79,15 +84,14 @@ const LinkForm = () => {
         </button>
       </form>
 
-      <ListErrors errors={errors} />
+      {error && <ListErrors error={error} />}
 
-      {/*Protocol: {window.location.protocol}*/}
-      {console.log("RESPONSE: ", response)}
       {response &&
       <p>
         Link: <a href={shortURL}>{shortURL}</a>
       </p>
       }
+      <br/>
     </>
   );
 };

@@ -1,13 +1,13 @@
 {
 	"info": {
 		"_postman_id": "af226f11-7b8a-4c40-a937-36f35aca4109",
-		"name": "corgi",
+		"name": "Corgi",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
 		"_exporter_id": "2226970"
 	},
 	"item": [
 		{
-			"name": "auth",
+			"name": "Auth",
 			"item": [
 				{
 					"name": "password",
@@ -156,7 +156,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"email\":\"user1@email.com\",\"password\":\"user1\"}",
+									"raw": "{\"email\":\"user2@email.com\",\"password\":\"user2\"}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -249,7 +249,7 @@
 								"header": [],
 								"body": {
 									"mode": "raw",
-									"raw": "{\"name\": \"User3\", \"email\":\"user3@email.com\",\"password\":\"user3\"}",
+									"raw": "{\n    \"name\": \"User1\",\n    \"email\": \"user1@email.com\",\n    \"password\": \"user1\"\n}",
 									"options": {
 										"raw": {
 											"language": "json"
@@ -629,7 +629,7 @@
 			]
 		},
 		{
-			"name": "links",
+			"name": "Links",
 			"item": [
 				{
 					"name": "List links",
@@ -654,20 +654,10 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{endpoint}}/api/links",
+							"raw": "{{endpoint}}/api/links?offset=0",
 							"host": [
 								"{{endpoint}}"
 							],
@@ -683,8 +673,12 @@
 								},
 								{
 									"key": "limit",
-									"value": "10",
+									"value": "1",
 									"disabled": true
+								},
+								{
+									"key": "offset",
+									"value": "0"
 								}
 							]
 						}
@@ -953,7 +947,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\r\n    \"keyword\": \"google\",\r\n    \"url\": \"https://google.com\",\r\n    \"title\": \"Google homepage\"\r\n}",
+							"raw": "{\r\n    \"keyword\": \"terra\",\r\n    \"url\": \"https://terra.com\",\r\n    \"title\": \"Terra homepage\"\r\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1024,7 +1018,7 @@
 					]
 				},
 				{
-					"name": "Create a link w/ keyword",
+					"name": "Create a link without keyword",
 					"request": {
 						"method": "POST",
 						"header": [],
@@ -1327,23 +1321,18 @@
 								"value": "elga.io",
 								"type": "text",
 								"disabled": true
-							},
-							{
-								"key": "User-Agent",
-								"value": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_12_6) AppleWebKit/603.3.8 (KHTML, like Gecko) Version/10.1.2 Safari/603.3.8",
-								"type": "text"
 							}
 						],
 						"url": {
-							"raw": "{{endpoint}}/api/links/f/google",
+							"raw": "{{endpoint}}/api/links/keyword/WM8QC-8ap",
 							"host": [
 								"{{endpoint}}"
 							],
 							"path": [
 								"api",
 								"links",
-								"f",
-								"google"
+								"keyword",
+								"WM8QC-8ap"
 							]
 						}
 					},
@@ -1403,11 +1392,149 @@
 							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"url\": \"https://google.com\"\n    }\n}"
 						}
 					]
+				},
+				{
+					"name": "Redirect",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/:id",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "WM8QC-8ap"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Clicks",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{endpoint}}/api/links/clicks?u=localhost:8081/WM8QC-8ap",
+							"host": [
+								"{{endpoint}}"
+							],
+							"path": [
+								"api",
+								"links",
+								"clicks"
+							],
+							"query": [
+								{
+									"key": "u",
+									"value": "localhost:8081/WM8QC-8ap"
+								}
+							]
+						}
+					},
+					"response": [
+						{
+							"name": "Clicks",
+							"originalRequest": {
+								"method": "GET",
+								"header": [],
+								"url": {
+									"raw": "{{endpoint}}/api/links/clicks?u=localhost:8081/WM8QC-8ap",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"links",
+										"clicks"
+									],
+									"query": [
+										{
+											"key": "u",
+											"value": "localhost:8081/WM8QC-8ap"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Sun, 26 Feb 2023 23:53:42 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "43"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\",\n    \"data\": {\n        \"total\": 53\n    }\n}"
+						}
+					]
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},
 		{
-			"name": "health",
+			"name": "Health",
 			"item": [
 				{
 					"name": "Health",
@@ -1581,21 +1708,11 @@
 			]
 		},
 		{
-			"name": "users",
+			"name": "Users",
 			"item": [
 				{
-					"name": "Get me",
+					"name": "Who am I?",
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{access_token}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "GET",
 						"header": [],
 						"url": {
@@ -1679,7 +1796,7 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{endpoint}}/api/users/username/user9L4VbU2tp",
+							"raw": "{{endpoint}}/api/users/username/admin",
 							"host": [
 								"{{endpoint}}"
 							],
@@ -1687,7 +1804,7 @@
 								"api",
 								"users",
 								"username",
-								"user9L4VbU2tp"
+								"admin"
 							]
 						}
 					},
@@ -1826,10 +1943,40 @@
 						}
 					]
 				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				}
 			]
 		},
 		{
-			"name": "debug",
+			"name": "Debug",
 			"item": [
 				{
 					"name": "GET /debug/config",
@@ -1872,7 +2019,7 @@
 			]
 		},
 		{
-			"name": "groups",
+			"name": "Groups",
 			"item": [
 				{
 					"name": "Create a group",
@@ -1891,7 +2038,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"name\": \"O melhor grupo do mundo\",\n    \"display_name\": \"O melhor grupo\",\n    \"description\": \"Posso dizer que é o melhor grupo do mundo!\"\n}",
+							"raw": "{\n    \"name\": \"Name group xpto\",\n    \"display_name\": \"Display name xpto\",\n    \"description\": \"Description xpto\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1970,7 +2117,7 @@
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n    \"user_email\": \"user3@email.com\"\n}",
+							"raw": "{\n    \"user_email\": \"user2@email.com\"\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -1991,12 +2138,82 @@
 							"variable": [
 								{
 									"key": "id",
-									"value": "01GSP8SENCK6XZ1S1HFK8QGHAJ"
+									"value": "01GT0D8A0FP30RARK6ZZ32FJV1"
 								}
 							]
 						}
 					},
-					"response": []
+					"response": [
+						{
+							"name": "Create a invite",
+							"originalRequest": {
+								"method": "POST",
+								"header": [],
+								"body": {
+									"mode": "raw",
+									"raw": "{\n    \"user_email\": \"user2@email.com\"\n}",
+									"options": {
+										"raw": {
+											"language": "json"
+										}
+									}
+								},
+								"url": {
+									"raw": "{{endpoint}}/api/groups/:id/invites",
+									"host": [
+										"{{endpoint}}"
+									],
+									"path": [
+										"api",
+										"groups",
+										":id",
+										"invites"
+									],
+									"variable": [
+										{
+											"key": "id",
+											"value": "01GT08W9HXXSHBQYYGRD47DJQX"
+										}
+									]
+								}
+							},
+							"status": "OK",
+							"code": 200,
+							"_postman_previewlanguage": "json",
+							"header": [
+								{
+									"key": "Access-Control-Allow-Credentials",
+									"value": "true"
+								},
+								{
+									"key": "Access-Control-Allow-Headers",
+									"value": "Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization, accept, origin, Cache-Control, X-Requested-With"
+								},
+								{
+									"key": "Access-Control-Allow-Methods",
+									"value": "POST, OPTIONS, GET, PUT"
+								},
+								{
+									"key": "Access-Control-Allow-Origin",
+									"value": "*"
+								},
+								{
+									"key": "Content-Type",
+									"value": "application/json; charset=utf-8"
+								},
+								{
+									"key": "Date",
+									"value": "Thu, 23 Feb 2023 23:30:19 GMT"
+								},
+								{
+									"key": "Content-Length",
+									"value": "23"
+								}
+							],
+							"cookie": [],
+							"body": "{\n    \"status\": \"successful\"\n}"
+						}
+					]
 				},
 				{
 					"name": "List groups",
@@ -2441,6 +2658,36 @@
 						}
 					},
 					"response": []
+				}
+			],
+			"auth": {
+				"type": "bearer",
+				"bearer": [
+					{
+						"key": "token",
+						"value": "{{access_token}}",
+						"type": "string"
+					}
+				]
+			},
+			"event": [
+				{
+					"listen": "prerequest",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
+				},
+				{
+					"listen": "test",
+					"script": {
+						"type": "text/javascript",
+						"exec": [
+							""
+						]
+					}
 				}
 			]
 		},

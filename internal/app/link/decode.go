@@ -6,12 +6,6 @@ import (
 	"strconv"
 )
 
-type redirectRequest struct {
-	WhoID   string
-	Keyword string `uri:"keyword" binding:"required"`
-	Domain  string
-}
-
 type addRequest struct {
 	WhoID   string
 	Domain  string `json:"domain"`
@@ -52,6 +46,13 @@ type findFullURLRequest struct {
 	WhoID   string
 	Keyword string `uri:"keyword" binding:"required"`
 	Domain  string
+}
+
+type clicksRequest struct {
+	WhoID         string
+	ShortURL      string
+	TimestampFrom string
+	TimestampTo   string
 }
 
 func decodeAdd(c *gin.Context) (req addRequest, err error) {
@@ -176,4 +177,19 @@ func decodeFindByKeyword(c *gin.Context) (req findFullURLRequest, err error) {
 	req.WhoID = v.(string)
 	req.Domain = c.Request.Host
 	return req, nil
+}
+
+func decodeClicks(ctx *gin.Context) (req clicksRequest, err error) {
+	shortURL := ctx.Query("u")
+	timestampFrom := ctx.Query("tsf")
+	timestampTo := ctx.Query("tst")
+
+	if shortURL == "" {
+		return req, errors.New("you need pass short URL with 'u' query param")
+	}
+
+	req.ShortURL = shortURL
+	req.TimestampFrom = timestampFrom
+	req.TimestampTo = timestampTo
+	return
 }

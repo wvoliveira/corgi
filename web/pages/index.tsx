@@ -20,16 +20,6 @@ const Home = () => (
       <div>
         <LinkForm />
         <LinkList />
-
-        <div>
-          <MainView />
-          {/* <div>
-            <div>
-              <p>Popular Tags</p>
-              <Tags />
-            </div>
-          </div> */}
-        </div>
       </div>
     </div>
   </>

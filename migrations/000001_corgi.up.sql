@@ -9,11 +9,13 @@ CREATE TABLE IF NOT EXISTS users(
 	active BOOLEAN DEFAULT true
 );
 
-CREATE UNIQUE INDEX idx_users_username ON users(username);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_active ON users(active);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_users_username ON users(username);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+CREATE INDEX IF NOT EXISTS idx_users_active ON users(active);
 
-INSERT INTO users(id, name, username, role, active) VALUES('0', 'Anonymous', 'anonymous', 'anonymous', false);
+INSERT INTO users(id, name, username, role, active)
+VALUES('0', 'Anonymous', 'anonymous', 'anonymous', false)
+ON CONFLICT DO NOTHING;
 
 CREATE TABLE IF NOT EXISTS identities(
 	id         VARCHAR (30) PRIMARY KEY,
@@ -46,8 +48,13 @@ CREATE TABLE IF NOT EXISTS links(
 	CONSTRAINT fk_user FOREIGN KEY(user_id) REFERENCES users(id)
 );
 
-CREATE INDEX idx_links_domain ON links (domain);
-CREATE UNIQUE INDEX idx_links_keyword ON links (keyword);
+CREATE INDEX IF NOT EXISTS idx_links_domain ON links (domain);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_links_keyword ON links (keyword);
+
+CREATE TABLE IF NOT EXISTS links_clicks(
+    link_id VARCHAR (30) UNIQUE REFERENCES links(id),
+    total INT
+);
 
 CREATE TABLE IF NOT EXISTS groups(
 	id VARCHAR (30) PRIMARY KEY,
@@ -65,16 +72,16 @@ CREATE TABLE IF NOT EXISTS groups(
 	CONSTRAINT fk_owner_id FOREIGN KEY(owner_id) REFERENCES users(id)
 );
 
-CREATE INDEX idx_groups_created_by ON groups (created_by);
-CREATE INDEX idx_groups_owner_id ON groups (owner_id);
+CREATE INDEX IF NOT EXISTS idx_groups_created_by ON groups (created_by);
+CREATE INDEX IF NOT EXISTS idx_groups_owner_id ON groups (owner_id);
 
-CREATE TABLE group_user(
+CREATE TABLE IF NOT EXISTS group_user(
 	group_id VARCHAR (30) REFERENCES groups(id) ON UPDATE CASCADE ON DELETE CASCADE,
 	user_id VARCHAR (30) REFERENCES users(id) ON UPDATE CASCADE
 );
 
-CREATE INDEX idx_group_user_group_id ON group_user(group_id);
-CREATE INDEX idx_group_user_user_id ON group_user(user_id);
+CREATE INDEX IF NOT EXISTS idx_group_user_group_id ON group_user(group_id);
+CREATE INDEX IF NOT EXISTS idx_group_user_user_id ON group_user(user_id);
 
 CREATE TABLE IF NOT EXISTS groups_invites(
 	id VARCHAR (30) PRIMARY KEY,

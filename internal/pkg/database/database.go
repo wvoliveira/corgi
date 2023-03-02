@@ -20,12 +20,17 @@ import (
 	"github.com/redis/go-redis/v9"
 )
 
+const (
+	dbURL    = "DB_URL"
+	cacheURL = "CACHE_URL"
+)
+
 // NewSQL create a sql database object.
 func NewSQL() (db *sql.DB) {
 	ctx := context.TODO()
 	log := logger.Logger(ctx)
 
-	datasource := viper.GetString("DB_URL")
+	datasource := viper.GetString(dbURL)
 
 	db, err := sql.Open("postgres", datasource)
 	if err != nil {
@@ -51,7 +56,7 @@ func NewSQL() (db *sql.DB) {
 func NewCache() (db *redis.Client) {
 	log := logger.Logger(context.TODO())
 
-	datasource := viper.GetString("CACHE_URL")
+	datasource := viper.GetString(cacheURL)
 	opt, err := redis.ParseURL(datasource)
 
 	opt.DialTimeout = 3 * time.Second // no time unit = seconds

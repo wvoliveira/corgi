@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"github.com/wvoliveira/corgi/internal/pkg/common"
 	"math"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -17,6 +19,17 @@ import (
 	"github.com/wvoliveira/corgi/internal/pkg/model"
 )
 
+const (
+	keyCacheShortLink                   = "cache:link_short:%s:%s"                      // Ex.: cache:link_short:domain:keyword
+	keyCacheShortLinkMetricCounterTotal = "cache:link_short:%s:%s:metric:counter_total" // Cache value for sum of counter metric.
+
+	// These values stay inside hash value.
+	keyMetricShortLink = "metric:link_short:%s:%s" // Ex.: metric:link_short:domain:keyword
+	keyMetricCounter   = "counter:%s"              // Ex.: counter:yyyy-mm-dd-hh-MM
+	keyLatestSync      = "latest:sync:%s"          // Ex.: latest:sync:<timestamp>
+	keyLatestCheck     = "latest:check:%s"         // Ex.: latest:check:<timestamp>
+)
+
 // Service encapsulates the link service logic, http handlers and another transport layer.
 type Service interface {
 	FindRedirectURL(*gin.Context, string, string) (model.Link, error)
@@ -26,6 +39,7 @@ type Service interface {
 	Update(*gin.Context, updateRequest) error
 	Delete(*gin.Context, deleteRequest) (err error)
 	FindFullURL(*gin.Context, string, string) (model.Link, error)
+	Clicks(*gin.Context, clicksRequest) (model.LinkClicks, error)
 
 	NewHTTP(*gin.Engine, *gin.RouterGroup)
 	HTTPRedirect(*gin.Context)
@@ -35,6 +49,7 @@ type Service interface {
 	HTTPUpdate(*gin.Context)
 	HTTPDelete(*gin.Context)
 	HTTPFindFullURL(*gin.Context)
+	HTTPClicks(*gin.Context)
 }
 
 type service struct {
@@ -48,20 +63,23 @@ func NewService(db *sql.DB, cache *redis.Client) Service {
 }
 
 // FindRedirectURL redirect to full link getting by domain and keyword combination.
-func (s service) FindRedirectURL(c *gin.Context, domain, keyword string) (m model.Link, err error) {
-	log := logger.Logger(c)
+func (s service) FindRedirectURL(ctx *gin.Context, domain, keyword string) (m model.Link, err error) {
+	log := logger.Logger(ctx)
 
-	key := fmt.Sprintf("link_full_%s_%s", domain, keyword)
-	val, _ := itemFromCache(c, s.cache, key)
+	key := fmt.Sprintf(keyCacheShortLink, domain, keyword)
+	val, _ := itemFromCache(ctx, s.cache, key)
 	if val != "" {
 		m.URL = val
+
+		// If found, increase counter in background process.
+		go increaseCounter(ctx, s.cache, domain, keyword)
 		return
 	}
 
 	query := "SELECT url FROM links WHERE domain = $1 AND keyword = $2 AND active = true"
 	log.Debug().Caller().Msg(query)
 
-	err = s.db.QueryRowContext(c, query, domain, keyword).Scan(&m.URL)
+	err = s.db.QueryRowContext(ctx, query, domain, keyword).Scan(&m.URL)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return m, e.ErrLinkNotFound
@@ -71,10 +89,13 @@ func (s service) FindRedirectURL(c *gin.Context, domain, keyword string) (m mode
 		return
 	}
 
-	status := s.cache.Set(c, key, m.URL, 10*time.Minute)
+	// If found, increase counter in background process.
+	go increaseCounter(ctx, s.cache, domain, keyword)
+
+	status := s.cache.Set(ctx, key, m.URL, 10*time.Minute)
 	err = status.Err()
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Error().Caller().Msg(err.Error())
 	}
 	return
 }
@@ -271,6 +292,14 @@ func (s service) FindAll(ctx *gin.Context, payload findAllRequest) (total int64,
 			link.UpdatedAt = &link.UpdatedAtNull.Time
 		}
 
+		//clicks, err := s.Clicks(ctx, clicksRequest{
+		//	WhoID:    payload.WhoID,
+		//	ShortURL: fmt.Sprintf("%s/%s", link.Domain, link.Keyword),
+		//})
+		//if err == nil {
+		//	link.Clicks = clicks
+		//}
+
 		links = append(links, link)
 	}
 
@@ -340,7 +369,7 @@ func (s service) Delete(ctx *gin.Context, payload deleteRequest) (err error) {
 func (s service) FindFullURL(c *gin.Context, domain, keyword string) (m model.Link, err error) {
 	log := logger.Logger(c)
 
-	key := fmt.Sprintf("link_full_%s_%s", domain, keyword)
+	key := fmt.Sprintf(keyCacheShortLink, domain, keyword)
 	val, _ := itemFromCache(c, s.cache, key)
 	if val != "" {
 		m.URL = val
@@ -368,13 +397,60 @@ func (s service) FindFullURL(c *gin.Context, domain, keyword string) (m model.Li
 	return
 }
 
+func (s service) Clicks(ctx *gin.Context, payload clicksRequest) (lc model.LinkClicks, err error) {
+	log := logger.Logger(ctx)
+
+	// Check if this key exists in cache,
+	// if not, set with expiration for 10 seconds.
+	domain, keyword := common.SplitURL(payload.ShortURL)
+	keyCache := fmt.Sprintf(keyCacheShortLinkMetricCounterTotal, domain, keyword)
+
+	val, _ := itemFromCache(ctx, s.cache, keyCache)
+	if val != "" {
+		total, err := strconv.Atoi(val)
+		if err != nil {
+			return lc, err
+		}
+
+		lc.Total = total
+		return lc, err
+	}
+
+	key := fmt.Sprintf(keyMetricShortLink, domain, keyword)
+	log.Debug().Caller().Msg(key)
+
+	cmd := s.cache.HVals(ctx, key)
+	result, err := cmd.Result()
+	if err != nil {
+		log.Error().Caller().Msg(err.Error())
+		return
+	}
+
+	total := 0
+	for _, value := range result {
+		i, _ := strconv.Atoi(value)
+		total += i
+	}
+
+	// Send item to cache async.
+	// But whatever if errors happens.
+	go func() {
+		err := setItemToCache(ctx, s.cache, keyCache, total)
+		if err != nil {
+			log.Error().Caller().Msg(fmt.Sprintf("Error to create cache: %s", err.Error()))
+		}
+	}()
+
+	lc.Total = total
+	return
+}
+
+// itemFromCache get value from cache with specific key.
 func itemFromCache(c context.Context, cache *redis.Client, key string) (item string, err error) {
 	log := logger.Logger(c)
-
 	log.Debug().Caller().Msg(fmt.Sprintf("Collecting key '%s' from cache", key))
 
 	item, err = cache.Get(c, key).Result()
-
 	if err != nil {
 		if !errors.Is(err, redis.Nil) {
 			log.Error().Caller().Msg(err.Error())
@@ -387,6 +463,36 @@ func itemFromCache(c context.Context, cache *redis.Client, key string) (item str
 		return
 	}
 
-	log.Debug().Caller().Msg("No, key '%s' is not cached!")
+	log.Debug().Caller().Msg(fmt.Sprintf("Key '%s' is not cached!", key))
 	return
+}
+
+// setItemToCache send item to cache and set 10 seconds for default expiration.
+func setItemToCache(ctx context.Context, cache *redis.Client, key string, value any) (err error) {
+	status := cache.Set(ctx, key, value, time.Second*10)
+	err = status.Err()
+	if err != nil {
+		return
+	}
+	return
+}
+
+// increaseCounter sum by 1 with Redis hash type.
+func increaseCounter(ctx context.Context, cache *redis.Client, domain, keyword string) {
+	log := logger.Logger(ctx)
+
+	now := time.Now().Format("2006-01-02-15")
+	log.Debug().Caller().Msg(fmt.Sprintf("Now: %s", now))
+
+	keyHash := fmt.Sprintf(keyMetricShortLink, domain, keyword)
+	keyCounter := fmt.Sprintf(keyMetricCounter, now)
+
+	log.Debug().Caller().Msg(fmt.Sprintf("Key hash: %s", keyHash))
+	log.Debug().Caller().Msg(fmt.Sprintf("Key counter: %s", keyCounter))
+
+	cache.HSet(ctx, keyHash)
+	stat := cache.HIncrBy(ctx, keyHash, keyCounter, 1)
+
+	counter, _ := stat.Result()
+	log.Debug().Caller().Msg(fmt.Sprintf("Counter per hour: %d", counter))
 }
