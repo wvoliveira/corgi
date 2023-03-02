@@ -135,8 +135,12 @@ func Logger() gin.HandlerFunc {
 		if raw != "" {
 			path = path + "?" + raw
 		}
-
 		param.Path = path
+
+		message := "req"
+		if param.ErrorMessage != "" {
+			message = fmt.Sprintf("req error=%s", param.ErrorMessage)
+		}
 
 		log.Info().Caller().
 			Time("timestamp", param.TimeStamp).
@@ -147,7 +151,7 @@ func Logger() gin.HandlerFunc {
 			Int("status_code", param.StatusCode).
 			Dur("latency", param.Latency).
 			Str("user_agent", param.Request.UserAgent()).
-			Msg(param.ErrorMessage)
+			Msg(message)
 	}
 }
 

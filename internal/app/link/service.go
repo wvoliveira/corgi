@@ -25,7 +25,9 @@ const (
 
 	// These values stay inside hash value.
 	keyMetricShortLink = "metric:link_short:%s:%s" // Ex.: metric:link_short:domain:keyword
-	keyMetricCounter   = "counter:%s"              // Ex.: inside hash metric:link_short:domain:keyword > counter:yyyy-mm-dd-hh-MM
+	keyMetricCounter   = "counter:%s"              // Ex.: counter:yyyy-mm-dd-hh-MM
+	keyLatestSync      = "latest:sync:%s"          // Ex.: latest:sync:<timestamp>
+	keyLatestCheck     = "latest:check:%s"         // Ex.: latest:check:<timestamp>
 )
 
 // Service encapsulates the link service logic, http handlers and another transport layer.
@@ -64,13 +66,13 @@ func NewService(db *sql.DB, cache *redis.Client) Service {
 func (s service) FindRedirectURL(ctx *gin.Context, domain, keyword string) (m model.Link, err error) {
 	log := logger.Logger(ctx)
 
-	// Just increase counter in background process.
-	go increaseCounter(ctx, s.cache, domain, keyword)
-
 	key := fmt.Sprintf(keyCacheShortLink, domain, keyword)
 	val, _ := itemFromCache(ctx, s.cache, key)
 	if val != "" {
 		m.URL = val
+
+		// If found, increase counter in background process.
+		go increaseCounter(ctx, s.cache, domain, keyword)
 		return
 	}
 
@@ -86,6 +88,9 @@ func (s service) FindRedirectURL(ctx *gin.Context, domain, keyword string) (m mo
 		log.Error().Caller().Msg(err.Error())
 		return
 	}
+
+	// If found, increase counter in background process.
+	go increaseCounter(ctx, s.cache, domain, keyword)
 
 	status := s.cache.Set(ctx, key, m.URL, 10*time.Minute)
 	err = status.Err()
@@ -287,6 +292,14 @@ func (s service) FindAll(ctx *gin.Context, payload findAllRequest) (total int64,
 			link.UpdatedAt = &link.UpdatedAtNull.Time
 		}
 
+		//clicks, err := s.Clicks(ctx, clicksRequest{
+		//	WhoID:    payload.WhoID,
+		//	ShortURL: fmt.Sprintf("%s/%s", link.Domain, link.Keyword),
+		//})
+		//if err == nil {
+		//	link.Clicks = clicks
+		//}
+
 		links = append(links, link)
 	}
 
@@ -468,7 +481,7 @@ func setItemToCache(ctx context.Context, cache *redis.Client, key string, value 
 func increaseCounter(ctx context.Context, cache *redis.Client, domain, keyword string) {
 	log := logger.Logger(ctx)
 
-	now := time.Now().Format("2006-01-02-15-04")
+	now := time.Now().Format("2006-01-02-15")
 	log.Debug().Caller().Msg(fmt.Sprintf("Now: %s", now))
 
 	keyHash := fmt.Sprintf(keyMetricShortLink, domain, keyword)
@@ -478,5 +491,8 @@ func increaseCounter(ctx context.Context, cache *redis.Client, domain, keyword s
 	log.Debug().Caller().Msg(fmt.Sprintf("Key counter: %s", keyCounter))
 
 	cache.HSet(ctx, keyHash)
-	cache.HIncrBy(ctx, keyHash, keyCounter, 1)
+	stat := cache.HIncrBy(ctx, keyHash, keyCounter, 1)
+
+	counter, _ := stat.Result()
+	log.Debug().Caller().Msg(fmt.Sprintf("Counter per hour: %d", counter))
 }

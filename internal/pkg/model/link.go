@@ -18,7 +18,8 @@ type Link struct {
 	Title   string `json:"title"`
 	Active  string `json:"active"`
 
-	UserID string `json:"-"`
+	UserID string     `json:"-"`
+	Clicks LinkClicks `json:"clicks"`
 }
 
 // LinkClicks represents metrics from specific short URL.

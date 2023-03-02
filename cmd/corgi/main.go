@@ -135,7 +135,6 @@ func main() {
 	router.NoRoute(func(c *gin.Context) {
 		reqPath := c.Request.URL.Path
 		c.FileFromFS(reqPath, http.FS(web.DistFS))
-		return
 	})
 
 	server.Graceful(router, viper.GetInt("SERVER_HTTP_PORT"))

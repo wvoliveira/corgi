@@ -12,7 +12,7 @@ import fetcher from "../../lib/utils/fetcher";
 const LinkList = () => {
     const [protocol, setProtocol] = React.useState("http");
     const router = useRouter();
-    const {asPath, pathname, query} = router;
+    const {query} = router;
 
     useEffect(() => {
         setProtocol(window.location.protocol);
@@ -22,13 +22,10 @@ const LinkList = () => {
         // @ts-ignore
         query.page = 1
     }
-
     if (query.offset == undefined) {
         // @ts-ignore
         query.offset = 0
     }
-
-    console.debug("Protocol: ", protocol);
 
     let fetchURL = `${SERVER_BASE_URL}/links?page=${query.page}&offset=${query.offset}`;
     console.debug("fetchURL: ", fetchURL);
@@ -63,7 +60,7 @@ const LinkList = () => {
                     <th className="table-td-id">ID</th>
                     <th>Full URL</th>
                     <th>Short URL</th>
-                    <th>Actions</th>
+                    <th>Clicks</th>
                 </tr>
             {data.links?.map((link, index) => {
                 const shortURL = `${protocol}//${link.domain}/${link.keyword}`
@@ -78,7 +75,7 @@ const LinkList = () => {
                                  href={shortURL}
                                  rel={shortURL}>{shortURL}
                              </a></td>
-                            <td>View, edit or delete</td>
+                            <td>{link?.clicks?.total}</td>
                         </tr>
                     </>
                 )

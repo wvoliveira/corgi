@@ -40,7 +40,7 @@ const LinkForm = () => {
       console.debug("DATA: ", data);
 
       if (status !== 201) {
-        setErrors(data.errors);
+        setError(data.errors);
       }
 
       if (data?.data) {
@@ -91,6 +91,7 @@ const LinkForm = () => {
         Link: <a href={shortURL}>{shortURL}</a>
       </p>
       }
+      <br/>
     </>
   );
 };
