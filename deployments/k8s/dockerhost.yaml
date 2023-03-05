@@ -1,3 +1,6 @@
+#
+# YOU DON'T NEED THIS MANIFEST FILE IN PRODUCTION ENVIRONMENT.
+#
 # Its usefull to connect from k8s pod to resource host.
 # Like redis, postgresql, etc in docker-compose.
 # Check: https://github.com/kubernetes-sigs/kind/issues/1200#issuecomment-1304855791
