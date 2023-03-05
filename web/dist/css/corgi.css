@@ -1,0 +1,34 @@
+/*table {*/
+/*    table-layout: auto;*/
+/*    border: 1px solid black;*/
+/*}*/
+
+table {
+    border-collapse: collapse;
+    table-layout: fixed;
+    width: max-content;
+}
+
+table, th, td {
+    border: 1px solid lightgray;
+}
+
+th {
+    padding: 5px;
+    text-align: left;
+}
+
+td {
+    padding: 5px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.table-td-id {
+    max-inline-size: 50px;
+}
+
+.table-td-full-url {
+    max-inline-size: 200px;
+}

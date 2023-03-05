@@ -11,7 +11,7 @@ import (
 	sredis "github.com/ulule/limiter/v3/drivers/store/redis"
 )
 
-func NewMiddleware(router *gin.Engine, cache *redis.Client) {
+func NewMiddleware(router *gin.RouterGroup, cache *redis.Client) {
 	// Define a limit rate to 10 requests per seconds.
 	rate, err := limiter.NewRateFromFormatted("10-S")
 	if err != nil {
@@ -33,6 +33,6 @@ func NewMiddleware(router *gin.Engine, cache *redis.Client) {
 	// Create a new middleware with the limiter instance.
 	middleware := mgin.NewMiddleware(limiter.New(store, rate))
 
-	router.ForwardedByClientIP = true
+	//router.ForwardedByClientIP = true
 	router.Use(middleware)
 }

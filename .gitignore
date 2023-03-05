@@ -22,3 +22,4 @@ configs/corgi.yaml
 /tools/bin
 
 k6-output.json
+/deployments/k8s/output/*.yaml

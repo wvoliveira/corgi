@@ -7,7 +7,7 @@ import APIAuthPassword from "../../lib/api/authPassword";
 
 const RegisterForm = () => {
   const [isLoading, setLoading] = React.useState(false);
-  const [errors, setErrors] = React.useState([]);
+  const [error, setError] = React.useState([]);
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
 
@@ -30,7 +30,7 @@ const RegisterForm = () => {
         password
       );
       if (status !== 200 && data?.errors) {
-        setErrors(data.errors);
+        setError(data.errors);
       }
       if (data?.user) {
         window.localStorage.setItem("corgi.user", JSON.stringify(data.user));
@@ -46,7 +46,7 @@ const RegisterForm = () => {
 
   return (
     <>
-      <ListErrors errors={errors} />
+      <ListErrors error={error} />
 
       <form onSubmit={handleSubmit}>
         <input

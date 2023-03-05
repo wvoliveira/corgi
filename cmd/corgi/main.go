@@ -73,7 +73,7 @@ func main() {
 	if zerolog.GlobalLevel() == zerolog.DebugLevel {
 		server.AddPProf(apiRouter)
 	} else {
-		ratelimit.NewMiddleware(router, cache)
+		ratelimit.NewMiddleware(apiRouter, cache)
 	}
 
 	{
