@@ -4,7 +4,6 @@ import React, {useEffect} from "react";
 import useSWR, { mutate, trigger } from "swr";
 
 import { SERVER_BASE_URL } from "../../lib/utils/constant";
-import ArticleList from "../../components/article/ArticleList";
 import CustomImage from "../../components/common/CustomImage";
 import ErrorMessage from "../../components/common/ErrorMessage";
 import Maybe from "../../components/common/Maybe";
