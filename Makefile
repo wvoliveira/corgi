@@ -440,7 +440,7 @@ docker-build:
         --progress=plain                      \
         --load                                \
         -t wvoliveira/corgi:0.0.1             \
-        -f build/package/container/Dockerfile \
+        -f build/package/docker/Dockerfile \
         .
 
 docker-run:
@@ -465,7 +465,7 @@ build-web:
     mv dist ../cmd/corgi/web
 
 dev-dep:
-	docker-compose -f deployments/container/docker-compose.yaml up db migrate cache
+	docker-compose -f deployments/docker/docker-compose.yaml up db migrate cache
 
 dev-env:
 	cp -f .env.example .env
@@ -491,3 +491,4 @@ k8s-manifests:
 # And you need a ingress controller too. Run this command to install at local cluster:
 # kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.6.4/deploy/static/provider/cloud/deploy.yaml
 k8s-apply: k8s-manifests
+	kubectl apply -f deployments/k8s/output/*.yaml
