@@ -435,13 +435,27 @@ help:
 	docker run --rm --privileged multiarch/qemu-user-static --reset -p yes >/dev/null
 	date > $@
 
-build-app-docker:
+docker-build:
 	docker buildx build                       \
         --progress=plain                      \
         --load                                \
         -t wvoliveira/corgi:0.0.1             \
         -f build/package/container/Dockerfile \
         .
+
+docker-run:
+	docker run \
+		--rm \
+		--network="host" \
+		-p 8081:8081 \
+	  	-e CORGI_DB_URL='postgres://user:password@127.0.0.1:5432/corgi?sslmode=disable' \
+	  	-e CORGI_CACHE_URL='redis://:password@127.0.0.1:6379/0' \
+	  	--health-cmd="wget --no-verbose --tries=1 --spider http://localhost:8081/api/health || exit 1" \
+	  	--health-interval 10s \
+	  	--health-retries 5 \
+	  	--health-start-period 5s \
+	  	--health-timeout 5s \
+  		wvoliveira/corgi:0.0.1
 
 build-web:
 	cd web && \

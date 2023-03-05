@@ -2,7 +2,7 @@ import React from "react";
 
 const ListErrors = ({error}) => {
     return (
-      <p>{error}.</p>
+      <p>{error}</p>
 )};
 
 export default ListErrors;
