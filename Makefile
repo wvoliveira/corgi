@@ -480,3 +480,14 @@ dev-run:
 dev-load-test:
 	k6 run --out json=k6-output.json scripts/k6/2-min.js > /dev/null &
 	sleep 1; tail -f k6-output.json | jq --unbuffered  -r '.data.tags | select(has("status")) | .status' | go run scripts/k6/graph.go
+
+# Obs.: you need go-template to run this task
+# Check: https://developer.harness.io/docs/continuous-delivery/cd-technical-reference/cd-k8s-ref/example-kubernetes-manifests-using-go-templating/
+k8s-manifests:
+	 cd deployments/k8s; for file in $(ls *.yaml); do go-template -t $file -f values.yaml.example -o output; done
+
+# You need k8s cluster to run this command.
+# I'm using kind. Check: https://kind.sigs.k8s.io/docs/user/ingress/#create-cluster
+# And you need a ingress controller too. Run this command to install at local cluster:
+# kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/controller-v1.6.4/deploy/static/provider/cloud/deploy.yaml
+k8s-apply: k8s-manifests

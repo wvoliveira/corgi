@@ -20,11 +20,12 @@ Use sua própria infraestrutura para instalar esse encurtador de links. Com vár
 
 ## Desenvolvimento local
 
-Requisitos:
+### API
 
-* Go 1.20
-* Node 8+
-* Docker
+Requisitos para a API:
+
+* Go 1.20+
+* Docker 23+
 
 Suba as dependências com o Docker (PostgreSQL e Redis):
 
@@ -46,3 +47,23 @@ make dev-run
 ```
 
 Há uma collection do Postman na pasta docs\/
+
+### Frontend
+
+Requisitos para o Frontend:
+
+* Corgi API (passo anterior)
+* Node 14+
+
+Vá para a pasta "web" e instale as dependências:
+
+```bash
+cd web
+npm install
+```
+
+Inicie no modo desenvolvedor:
+
+```bash
+npm run dev
+```

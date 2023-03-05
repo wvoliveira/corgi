@@ -1,0 +1,17 @@
+name: corgi-service
+replicas: 5
+
+image: wvoliveira/corgi:latest
+
+namespace: corgi-service
+
+serviceType: LoadBalancer
+servicePort: 8081
+serviceTargetPort: 8081
+
+env:
+  config:
+    key: value
+  secrets:
+    CORGI_DB_URL: postgres://user:password@dockerhost:5432/corgi?sslmode=disable
+    CORGI_CACHE_URL: redis://:password@dockerhost:6379/0
